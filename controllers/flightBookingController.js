@@ -316,29 +316,84 @@ exports.storeFlightBooking = async (req, res) => {
 };
 
 // ============================================================================
-// GET USER BOOKINGS - Tampilkan Semua Flight Booking User
+// GET USER BOOKINGS - Advanced Version with Filters & Pagination
 // ============================================================================
 /**
- * @desc    Get all flight bookings for authenticated user
+ * @desc    Get all flight bookings for authenticated user with advanced filters
  * @route   GET /api/flights/bookings
  * @access  Private (require authCheck middleware)
- * @query   ?tripId=trip123 - Filter by trip (optional)
- * @query   ?status=CONFIRMED - Filter by booking status (optional)
+ * @query   Same as hotel bookings + additional flight-specific filters
  */
 exports.getUserBookings = async (req, res) => {
   try {
     // 1. Ambil userId dari middleware
     const { uid: userId } = req.user;
 
-    // 2. Ambil filter dari query
-    const { tripId, status } = req.query;
+    // 2. Ambil filter parameters
+    const {
+      tripId,
+      status,
+      startDate,
+      endDate,
+      minPrice,
+      maxPrice,
+      origin,
+      destination,
+      airline,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      page = 1,
+      limit = 10,
+    } = req.query;
 
-    // 3. Build query
+    // 3. Validasi pagination
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+
+    if (pageNum < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Page must be greater than 0",
+      });
+    }
+
+    if (limitNum < 1 || limitNum > 50) {
+      return res.status(400).json({
+        success: false,
+        message: "Limit must be between 1 and 50",
+      });
+    }
+
+    // 4. Validasi sortBy
+    const allowedSortFields = [
+      "price",
+      "departureDate",
+      "createdAt",
+      "totalPrice",
+    ];
+    if (!allowedSortFields.includes(sortBy)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid sortBy field. Allowed: ${allowedSortFields.join(
+          ", "
+        )}`,
+      });
+    }
+
+    // 5. Validasi sortOrder
+    if (!["asc", "desc"].includes(sortOrder)) {
+      return res.status(400).json({
+        success: false,
+        message: "sortOrder must be 'asc' or 'desc'",
+      });
+    }
+
+    // 6. Build base query
     let query = bookingsCollection
       .where("userId", "==", userId)
       .where("bookingType", "==", "flight");
 
-    // Apply filters
+    // 7. Apply simple filters
     if (tripId) {
       query = query.where("tripId", "==", tripId);
     }
@@ -347,61 +402,174 @@ exports.getUserBookings = async (req, res) => {
       query = query.where("bookingStatus", "==", status.toUpperCase());
     }
 
-    // 4. Execute query
+    // 8. Get all matching documents
     const snapshot = await query.get();
 
-    // 5. Check if empty
+    // 9. Check if empty
     if (snapshot.empty) {
       return res.status(200).json({
         success: true,
         message: "No flight bookings found",
         data: [],
         count: 0,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          totalPages: 0,
+          totalItems: 0,
+          hasNextPage: false,
+          hasPrevPage: false,
+        },
+        emptyState: {
+          title: "No Flight Bookings",
+          description:
+            "You haven't booked any flights yet. Search for flights and start your journey!",
+          actionText: "Search Flights",
+          actionUrl: "/flights/search",
+          imageUrl:
+            "https://images.unsplash.com/photo-1436491865332-7a61a109cc05",
+        },
       });
     }
 
-    // 6. Map data and sort by booking date (newest first)
-    const bookings = snapshot.docs
-      .map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }))
-      .sort((a, b) => {
-        const dateA = a.bookedAt?.toDate?.() || new Date(0);
-        const dateB = b.bookedAt?.toDate?.() || new Date(0);
-        return dateB - dateA;
-      });
+    // 10. Map data and apply memory filters
+    let bookings = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
 
-    // 7. Return response
+    // Filter by date range (departure date)
+    if (startDate || endDate) {
+      bookings = bookings.filter((booking) => {
+        const departure = new Date(booking.departureDate);
+
+        if (startDate) {
+          const start = new Date(startDate);
+          if (departure < start) return false;
+        }
+
+        if (endDate) {
+          const end = new Date(endDate);
+          if (departure > end) return false;
+        }
+
+        return true;
+      });
+    }
+
+    // Filter by price range
+    if (minPrice || maxPrice) {
+      const min = minPrice ? parseFloat(minPrice) : 0;
+      const max = maxPrice ? parseFloat(maxPrice) : Infinity;
+
+      bookings = bookings.filter((booking) => {
+        const price = booking.totalPrice || 0;
+        return price >= min && price <= max;
+      });
+    }
+
+    // Filter by origin
+    if (origin) {
+      bookings = bookings.filter((booking) => {
+        return booking.origin?.toUpperCase() === origin.toUpperCase();
+      });
+    }
+
+    // Filter by destination
+    if (destination) {
+      bookings = bookings.filter((booking) => {
+        return booking.destination?.toUpperCase() === destination.toUpperCase();
+      });
+    }
+
+    // Filter by airline
+    if (airline) {
+      bookings = bookings.filter((booking) => {
+        return booking.airline?.toUpperCase() === airline.toUpperCase();
+      });
+    }
+
+    // 11. Apply sorting
+    bookings.sort((a, b) => {
+      let aVal, bVal;
+
+      switch (sortBy) {
+        case "price":
+        case "totalPrice":
+          aVal = a.totalPrice || 0;
+          bVal = b.totalPrice || 0;
+          break;
+
+        case "departureDate":
+          aVal = new Date(a.departureDate || 0).getTime();
+          bVal = new Date(b.departureDate || 0).getTime();
+          break;
+
+        case "createdAt":
+        default:
+          aVal = a.createdAt?.toDate?.() || new Date(0);
+          bVal = b.createdAt?.toDate?.() || new Date(0);
+          aVal = aVal.getTime();
+          bVal = bVal.getTime();
+          break;
+      }
+
+      return sortOrder === "asc" ? aVal - bVal : bVal - aVal;
+    });
+
+    // 12. Apply pagination
+    const totalItems = bookings.length;
+    const totalPages = Math.ceil(totalItems / limitNum);
+    const startIndex = (pageNum - 1) * limitNum;
+    const endIndex = startIndex + limitNum;
+    const paginatedBookings = bookings.slice(startIndex, endIndex);
+
+    // 13. Calculate summary
+    const totalSpent = bookings.reduce(
+      (sum, b) => sum + (b.totalPrice || 0),
+      0
+    );
+    const averagePrice = bookings.length > 0 ? totalSpent / bookings.length : 0;
+    const totalPassengers = bookings.reduce(
+      (sum, b) => sum + (b.numberOfPassengers || 0),
+      0
+    );
+
+    // 14. Return response
     return res.status(200).json({
       success: true,
       message: "Flight bookings retrieved successfully",
-      data: bookings,
-      count: bookings.length,
+      data: paginatedBookings,
+      count: paginatedBookings.length,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        totalPages: totalPages,
+        totalItems: totalItems,
+        hasNextPage: pageNum < totalPages,
+        hasPrevPage: pageNum > 1,
+        nextPage: pageNum < totalPages ? pageNum + 1 : null,
+        prevPage: pageNum > 1 ? pageNum - 1 : null,
+      },
+      summary: {
+        totalBookings: totalItems,
+        totalSpent: Math.round(totalSpent),
+        averagePrice: Math.round(averagePrice),
+        totalPassengers: totalPassengers,
+        currency: paginatedBookings[0]?.currency || "IDR",
+      },
+      appliedFilters: {
+        tripId: tripId || null,
+        status: status || null,
+        dateRange: startDate || endDate ? { startDate, endDate } : null,
+        priceRange: minPrice || maxPrice ? { minPrice, maxPrice } : null,
+        origin: origin || null,
+        destination: destination || null,
+        airline: airline || null,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
+      },
     });
-
-    // Response example:
-    // {
-    //   "success": true,
-    //   "message": "Flight bookings retrieved successfully",
-    //   "data": [
-    //     {
-    //       "id": "flight_abc123",
-    //       "confirmationNumber": "FLIGHT_1730534567_A8F3G2",
-    //       "bookingStatus": "CONFIRMED",
-    //       "origin": "CGK",
-    //       "destination": "DPS",
-    //       "departureDate": "2025-12-20T07:00:00",
-    //       "airline": "GA",
-    //       "flightNumber": "123",
-    //       "totalPrice": 2500000,
-    //       "currency": "IDR",
-    //       "numberOfPassengers": 1,
-    //       "bookedAt": "2025-11-02T10:30:00.000Z"
-    //     }
-    //   ],
-    //   "count": 1
-    // }
   } catch (error) {
     console.error("Error getting user flight bookings:", error);
     return res.status(500).json({

@@ -279,6 +279,58 @@ exports.storeHotelBooking = async (req, res) => {
     }
 
     // 9. Prepare data untuk Firestore
+
+    const continentMapping = {
+      // Asia
+      DPS: "Asia",
+      JKT: "Asia",
+      CGK: "Asia",
+      SIN: "Asia",
+      BKK: "Asia",
+      HKG: "Asia",
+      TYO: "Asia",
+      NRT: "Asia",
+      DEL: "Asia",
+      BOM: "Asia",
+      DXB: "Asia",
+
+      // Europe
+      LON: "Europe",
+      LHR: "Europe",
+      PAR: "Europe",
+      CDG: "Europe",
+      AMS: "Europe",
+      FCO: "Europe",
+      MAD: "Europe",
+      BCN: "Europe",
+      FRA: "Europe",
+      MUC: "Europe",
+      VIE: "Europe",
+      ZRH: "Europe",
+
+      // America
+      NYC: "America",
+      JFK: "America",
+      LAX: "America",
+      MIA: "America",
+      CHI: "America",
+      ORD: "America",
+      YYZ: "America",
+      MEX: "America",
+
+      // Oceania
+      SYD: "Oceania",
+      MEL: "Oceania",
+      AKL: "Oceania",
+
+      // Africa
+      JNB: "Africa",
+      CPT: "Africa",
+      CAI: "Africa",
+    };
+
+    const hotelCityCode = hotelInfo.cityCode || hotelInfo.iataCode;
+    const continent = continentMapping[hotelCityCode] || "Unknown";
     const hotelInfo = amadeusData.hotel || {};
     const roomInfo = amadeusData.room || {};
     const priceInfo = amadeusData.price || {};
@@ -305,6 +357,7 @@ exports.storeHotelBooking = async (req, res) => {
       hotelCityCode: hotelInfo.cityCode || null,
       hotelLatitude: hotelInfo.latitude || null,
       hotelLongitude: hotelInfo.longitude || null,
+      continent: continent,
 
       // Room Info
       roomType: roomInfo.type || null,
@@ -404,29 +457,92 @@ exports.storeHotelBooking = async (req, res) => {
 // ... (getUserBookings, getBookingDetail, cancelBooking tetap sama)
 
 // ============================================================================
-// 2. GET USER BOOKINGS - Tampilkan Semua Booking User
+// GET USER BOOKINGS - Advanced Version with Filters & Pagination
 // ============================================================================
 /**
- * @desc    Get all bookings for authenticated user
+ * @desc    Get all hotel bookings for authenticated user with advanced filters
  * @route   GET /api/hotels/bookings
  * @access  Private (require authCheck middleware)
  * @query   ?tripId=trip123 - Filter by trip (optional)
  * @query   ?status=CONFIRMED - Filter by booking status (optional)
+ * @query   ?startDate=2025-12-01 - Filter bookings from this date (optional)
+ * @query   ?endDate=2025-12-31 - Filter bookings until this date (optional)
+ * @query   ?minPrice=1000000 - Minimum price filter (optional)
+ * @query   ?maxPrice=5000000 - Maximum price filter (optional)
+ * @query   ?continent=Asia - Filter by continent (optional)
+ * @query   ?sortBy=price - Sort field: price, checkInDate, createdAt (optional, default: createdAt)
+ * @query   ?sortOrder=desc - Sort order: asc, desc (optional, default: desc)
+ * @query   ?page=1 - Page number (optional, default: 1)
+ * @query   ?limit=10 - Items per page (optional, default: 10, max: 50)
  */
 exports.getUserBookings = async (req, res) => {
   try {
     // 1. Ambil userId dari middleware
     const { uid: userId } = req.user;
 
-    // 2. Ambil filter dari query
-    const { tripId, status } = req.query;
+    // 2. Ambil filter parameters dari query
+    const {
+      tripId,
+      status,
+      startDate,
+      endDate,
+      minPrice,
+      maxPrice,
+      continent,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      page = 1,
+      limit = 10,
+    } = req.query;
 
-    // 3. Build query
+    // 3. Validasi pagination parameters
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+
+    if (pageNum < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Page must be greater than 0",
+      });
+    }
+
+    if (limitNum < 1 || limitNum > 50) {
+      return res.status(400).json({
+        success: false,
+        message: "Limit must be between 1 and 50",
+      });
+    }
+
+    // 4. Validasi sortBy field
+    const allowedSortFields = [
+      "price",
+      "checkInDate",
+      "createdAt",
+      "totalPrice",
+    ];
+    if (!allowedSortFields.includes(sortBy)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid sortBy field. Allowed: ${allowedSortFields.join(
+          ", "
+        )}`,
+      });
+    }
+
+    // 5. Validasi sortOrder
+    if (!["asc", "desc"].includes(sortOrder)) {
+      return res.status(400).json({
+        success: false,
+        message: "sortOrder must be 'asc' or 'desc'",
+      });
+    }
+
+    // 6. Build base query
     let query = bookingsCollection
       .where("userId", "==", userId)
       .where("bookingType", "==", "hotel");
 
-    // Apply filters
+    // 7. Apply simple filters (Firestore native)
     if (tripId) {
       query = query.where("tripId", "==", tripId);
     }
@@ -435,37 +551,157 @@ exports.getUserBookings = async (req, res) => {
       query = query.where("bookingStatus", "==", status.toUpperCase());
     }
 
-    // 4. Execute query
+    // Note: Date range, price range, dan continent akan di-filter di memory
+    // karena Firestore limitation (can't use range queries on multiple fields)
+
+    // 8. Get all matching documents (before date/price filtering)
     const snapshot = await query.get();
 
-    // 5. Check if empty
+    // 9. Check if empty
     if (snapshot.empty) {
       return res.status(200).json({
         success: true,
         message: "No hotel bookings found",
         data: [],
         count: 0,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          totalPages: 0,
+          totalItems: 0,
+          hasNextPage: false,
+          hasPrevPage: false,
+        },
+        emptyState: {
+          title: "No Hotel Bookings",
+          description:
+            "You haven't booked any hotels yet. Start exploring destinations and find your perfect stay!",
+          actionText: "Explore Hotels",
+          actionUrl: "/hotels/search",
+          imageUrl:
+            "https://images.unsplash.com/photo-1566073771259-6a8506099945",
+        },
       });
     }
 
-    // 6. Map data and sort by booking date (newest first)
-    const bookings = snapshot.docs
-      .map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }))
-      .sort((a, b) => {
-        const dateA = a.bookedAt?.toDate?.() || new Date(0);
-        const dateB = b.bookedAt?.toDate?.() || new Date(0);
-        return dateB - dateA;
-      });
+    // 10. Map data and apply memory filters
+    let bookings = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
 
-    // 7. Return response
+    // Filter by date range
+    if (startDate || endDate) {
+      bookings = bookings.filter((booking) => {
+        const checkIn = new Date(booking.checkInDate);
+
+        if (startDate) {
+          const start = new Date(startDate);
+          if (checkIn < start) return false;
+        }
+
+        if (endDate) {
+          const end = new Date(endDate);
+          if (checkIn > end) return false;
+        }
+
+        return true;
+      });
+    }
+
+    // Filter by price range
+    if (minPrice || maxPrice) {
+      const min = minPrice ? parseFloat(minPrice) : 0;
+      const max = maxPrice ? parseFloat(maxPrice) : Infinity;
+
+      bookings = bookings.filter((booking) => {
+        const price = booking.totalPrice || 0;
+        return price >= min && price <= max;
+      });
+    }
+
+    // Filter by continent
+    if (continent) {
+      bookings = bookings.filter((booking) => {
+        // Assume we have continent info in booking
+        // You might need to add this field when creating booking
+        return booking.continent?.toLowerCase() === continent.toLowerCase();
+      });
+    }
+
+    // 11. Apply sorting
+    bookings.sort((a, b) => {
+      let aVal, bVal;
+
+      switch (sortBy) {
+        case "price":
+        case "totalPrice":
+          aVal = a.totalPrice || 0;
+          bVal = b.totalPrice || 0;
+          break;
+
+        case "checkInDate":
+          aVal = new Date(a.checkInDate || 0).getTime();
+          bVal = new Date(b.checkInDate || 0).getTime();
+          break;
+
+        case "createdAt":
+        default:
+          aVal = a.createdAt?.toDate?.() || new Date(0);
+          bVal = b.createdAt?.toDate?.() || new Date(0);
+          aVal = aVal.getTime();
+          bVal = bVal.getTime();
+          break;
+      }
+
+      return sortOrder === "asc" ? aVal - bVal : bVal - aVal;
+    });
+
+    // 12. Apply pagination (after filtering)
+    const totalItems = bookings.length;
+    const totalPages = Math.ceil(totalItems / limitNum);
+    const startIndex = (pageNum - 1) * limitNum;
+    const endIndex = startIndex + limitNum;
+    const paginatedBookings = bookings.slice(startIndex, endIndex);
+
+    // 13. Calculate summary statistics
+    const totalSpent = bookings.reduce(
+      (sum, b) => sum + (b.totalPrice || 0),
+      0
+    );
+    const averagePrice = bookings.length > 0 ? totalSpent / bookings.length : 0;
+
+    // 14. Return response
     return res.status(200).json({
       success: true,
       message: "Hotel bookings retrieved successfully",
-      data: bookings,
-      count: bookings.length,
+      data: paginatedBookings,
+      count: paginatedBookings.length,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        totalPages: totalPages,
+        totalItems: totalItems,
+        hasNextPage: pageNum < totalPages,
+        hasPrevPage: pageNum > 1,
+        nextPage: pageNum < totalPages ? pageNum + 1 : null,
+        prevPage: pageNum > 1 ? pageNum - 1 : null,
+      },
+      summary: {
+        totalBookings: totalItems,
+        totalSpent: Math.round(totalSpent),
+        averagePrice: Math.round(averagePrice),
+        currency: paginatedBookings[0]?.currency || "IDR",
+      },
+      appliedFilters: {
+        tripId: tripId || null,
+        status: status || null,
+        dateRange: startDate || endDate ? { startDate, endDate } : null,
+        priceRange: minPrice || maxPrice ? { minPrice, maxPrice } : null,
+        continent: continent || null,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
+      },
     });
 
     // Response example:
@@ -475,21 +711,47 @@ exports.getUserBookings = async (req, res) => {
     //   "data": [
     //     {
     //       "id": "booking123",
-    //       "confirmationNumber": "AMADEUS123456",
-    //       "hotelName": "MELIA WHITE HOUSE",
+    //       "confirmationNumber": "MOCK_123",
+    //       "hotelName": "JW Marriott",
     //       "checkInDate": "2025-12-20",
     //       "checkOutDate": "2025-12-22",
-    //       "totalPrice": 285.50,
+    //       "totalPrice": 2500000,
+    //       "currency": "IDR",
     //       "bookingStatus": "CONFIRMED"
     //     }
     //   ],
-    //   "count": 1
+    //   "count": 10,
+    //   "pagination": {
+    //     "page": 1,
+    //     "limit": 10,
+    //     "totalPages": 3,
+    //     "totalItems": 25,
+    //     "hasNextPage": true,
+    //     "hasPrevPage": false,
+    //     "nextPage": 2,
+    //     "prevPage": null
+    //   },
+    //   "summary": {
+    //     "totalBookings": 25,
+    //     "totalSpent": 62500000,
+    //     "averagePrice": 2500000,
+    //     "currency": "IDR"
+    //   },
+    //   "appliedFilters": {
+    //     "tripId": null,
+    //     "status": "CONFIRMED",
+    //     "dateRange": { "startDate": "2025-12-01", "endDate": "2025-12-31" },
+    //     "priceRange": { "minPrice": "1000000", "maxPrice": "5000000" },
+    //     "continent": "Asia",
+    //     "sortBy": "price",
+    //     "sortOrder": "desc"
+    //   }
     // }
   } catch (error) {
-    console.error("Error getting user bookings:", error);
+    console.error("Error getting user hotel bookings:", error);
     return res.status(500).json({
       success: false,
-      message: "Failed to retrieve bookings",
+      message: "Failed to retrieve hotel bookings",
       error: error.message,
     });
   }
