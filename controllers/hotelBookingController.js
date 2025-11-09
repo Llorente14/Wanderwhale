@@ -6,7 +6,7 @@
 
 const { db, admin } = require("../index");
 const amadeusService = require("../services/amadeusService");
-
+const notificationService = require("../services/notificationService");
 // ============================================================================
 // COLLECTION REFERENCES
 // ============================================================================
@@ -363,11 +363,24 @@ exports.storeHotelBooking = async (req, res) => {
     // 12. Get complete booking data
     const savedBooking = await bookingRef.get();
 
+    try {
+      await notificationService.notifyBookingSuccess(userId, {
+        bookingId: bookingId,
+        bookingType: "hotel",
+        hotelName: hotelInfo.name || "Unknown Hotel",
+        confirmationNumber: providerConfirmationId,
+      });
+      console.log("✅ Booking success notification created");
+    } catch (notifError) {
+      // Don't fail booking if notification fails
+      console.error("⚠️ Failed to create notification:", notifError.message);
+    }
+
     // 13. Return success response
     return res.status(201).json({
       success: true,
       message: MOCK_AMADEUS_BOOKING
-        ? "Hotel booking created successfully (Mock Mode)"
+        ? "Hotel booking created successfully"
         : "Hotel booking created successfully",
       data: {
         bookingId: bookingId,
@@ -656,6 +669,17 @@ exports.cancelBooking = async (req, res) => {
     // 8. (Optional) Call Amadeus cancellation API
     //    Uncomment jika implement real cancellation
     // await amadeusService.cancelHotelBooking(bookingData.confirmationNumber);
+
+    try {
+      await notificationService.notifyBookingCancelled(userId, {
+        bookingId: bookingId,
+        bookingType: "hotel",
+        hotelName: bookingData.hotelName,
+      });
+      console.log("✅ Booking cancellation notification created");
+    } catch (notifError) {
+      console.error("⚠️ Failed to create notification:", notifError.message);
+    }
 
     // 9. Return success response
     return res.status(200).json({

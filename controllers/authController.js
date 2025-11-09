@@ -5,7 +5,7 @@
 // ============================================================================
 
 const { db, admin } = require("../index");
-
+const notificationService = require("../services/notificationService");
 // ============================================================================
 // COLLECTION REFERENCE
 // ============================================================================
@@ -94,6 +94,15 @@ exports.register = async (req, res) => {
     // const link = await admin.auth().generateEmailVerificationLink(email);
     // await sendVerificationEmail(email, link);
 
+    try {
+      await notificationService.notifyWelcome(
+        userRecord.uid,
+        displayName || "Traveler"
+      );
+      console.log("✅ Welcome notification created");
+    } catch (notifError) {
+      console.error("⚠️ Failed to create notification:", notifError.message);
+    }
     // 8. Return response sukses
     //    NOTE: Tidak kirim token, user harus login untuk mendapat token
     return res.status(201).json({

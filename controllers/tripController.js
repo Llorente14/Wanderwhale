@@ -13,7 +13,7 @@
 
 const { db, admin } = require("../index");
 const tripsCollection = db.collection("trips");
-
+const notificationService = require("../services/notificationService");
 // ============================================================================
 // 1. CREATE - Membuat Trip Baru
 // ============================================================================
@@ -67,6 +67,16 @@ exports.store = async (req, res) => {
 
     // Update dokumen dengan tripId-nya sendiri
     await docRef.update({ tripId: docRef.id });
+
+    try {
+      await notificationService.notifyTripCreated(uid, {
+        tripId: docRef.id,
+        tripName: tripData.tripName,
+      });
+      console.log("✅ Trip created notification sent");
+    } catch (notifError) {
+      console.error("⚠️ Failed to create notification:", notifError.message);
+    }
 
     return res.status(201).json({
       success: true,

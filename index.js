@@ -37,6 +37,7 @@ const destinationRoutes = require("./routes/destinationRoutes");
 const hotelRoutes = require("./routes/hotelRoutes");
 const authRoutes = require("./routes/authRoutes");
 const flightRoutes = require("./routes/flightRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 // 7. Definisikan Rute API Utama
 // Memberi tahu Express untuk menggunakan file rute tersebut
@@ -46,6 +47,7 @@ app.use("/api/destinations", destinationRoutes);
 app.use("/api/hotels", hotelRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/flights", flightRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // 8. Jalankan Server
 app.listen(port, () => {

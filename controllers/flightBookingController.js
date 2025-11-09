@@ -12,7 +12,7 @@ const { db, admin } = require("../index");
 
 const bookingsCollection = db.collection("bookings");
 const tripsCollection = db.collection("trips");
-
+const notificationService = require("../services/notificationService");
 // Mock mode flag
 const MOCK_AMADEUS_FLIGHT_BOOKING =
   process.env.MOCK_AMADEUS_FLIGHT_BOOKING === "true";
@@ -249,6 +249,19 @@ exports.storeFlightBooking = async (req, res) => {
 
     // 11. Get complete booking data
     const savedBooking = await bookingRef.get();
+
+    try {
+      await notificationService.notifyBookingSuccess(userId, {
+        bookingId: bookingId,
+        bookingType: "flight",
+        origin: firstSegment.departure?.iataCode || "Unknown",
+        destination: lastSegment.arrival?.iataCode || "Unknown",
+        confirmationNumber: mockConfirmationNumber,
+      });
+      console.log("✅ Flight booking success notification created");
+    } catch (notifError) {
+      console.error("⚠️ Failed to create notification:", notifError.message);
+    }
 
     // 12. Return success response
     return res.status(201).json({
@@ -573,6 +586,18 @@ exports.cancelBooking = async (req, res) => {
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       paymentStatus: "refunded", // Dummy
     });
+
+    try {
+      await notificationService.notifyBookingCancelled(userId, {
+        bookingId: bookingId,
+        bookingType: "flight",
+        origin: bookingData.origin,
+        destination: bookingData.destination,
+      });
+      console.log("✅ Flight cancellation notification created");
+    } catch (notifError) {
+      console.error("⚠️ Failed to create notification:", notifError.message);
+    }
 
     // 8. Return success response
     return res.status(200).json({

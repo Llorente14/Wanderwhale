@@ -4,7 +4,7 @@
 // ============================================================================
 
 const { db, admin } = require("../index");
-
+const notificationService = require("../services/notificationService");
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
@@ -74,6 +74,16 @@ exports.store = async (req, res) => {
 
     // 8. Ambil data hotel yang baru dibuat
     const newHotel = await docRef.get();
+
+    try {
+      await notificationService.notifyHotelAdded(req.user.uid, {
+        tripId: tripId,
+        hotelName: hotelData.hotelName || "New Hotel",
+      });
+      console.log("✅ Hotel added notification sent");
+    } catch (notifError) {
+      console.error("⚠️ Failed to create notification:", notifError.message);
+    }
 
     return res.status(201).json({
       success: true,

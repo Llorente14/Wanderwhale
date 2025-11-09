@@ -4,7 +4,7 @@
 // ============================================================================
 
 const { db, admin } = require("../index");
-
+const notificationService = require("../services/notificationService");
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
@@ -70,6 +70,16 @@ exports.store = async (req, res) => {
 
     // 7. Ambil data destinasi yang baru dibuat
     const newDestination = await docRef.get();
+
+    try {
+      await notificationService.notifyDestinationAdded(req.user.uid, {
+        tripId: tripId,
+        destinationName: destinationData.name || "New Destination",
+      });
+      console.log("✅ Destination added notification sent");
+    } catch (notifError) {
+      console.error("⚠️ Failed to create notification:", notifError.message);
+    }
 
     return res.status(201).json({
       success: true,
