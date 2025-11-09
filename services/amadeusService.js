@@ -554,6 +554,266 @@ async function createHotelBooking(bookingData) {
 }
 
 // ============================================================================
+// PUBLIC FUNCTIONS - FLIGHT SEARCH & BOOKING
+// ============================================================================
+
+/**
+ * Search locations (airports/cities) by keyword
+ * @param {string} keyword - Search keyword (e.g., "Jakarta", "CGK")
+ * @param {string} subType - Location type: AIRPORT, CITY
+ * @returns {Promise<Object>} Location data
+ *
+ * @example
+ * const locations = await searchFlightLocations("jakarta", "CITY");
+ */
+async function searchFlightLocations(keyword, subType) {
+  if (!keyword) {
+    throw new Error("keyword parameter is required");
+  }
+
+  if (!subType) {
+    throw new Error("subType parameter is required (AIRPORT or CITY)");
+  }
+
+  const params = {
+    keyword: keyword,
+    subType: subType.toUpperCase(),
+    "page[limit]": 10,
+  };
+
+  return await callAmadeusAPI("/v1/reference-data/locations", params);
+}
+
+/**
+ * Search flight offers
+ * @param {Object} searchParams - Flight search parameters
+ * @returns {Promise<Object>} Flight offers data
+ *
+ * @example
+ * const offers = await searchFlightOffers({
+ *   originDestinations: [...],
+ *   travelers: [...],
+ *   sources: ["GDS"],
+ *   searchCriteria: { maxFlightOffers: 50 }
+ * });
+ */
+async function searchFlightOffers(searchParams) {
+  const {
+    originDestinations,
+    travelers,
+    sources = ["GDS"],
+    searchCriteria = { maxFlightOffers: 50 },
+  } = searchParams;
+
+  // Validasi parameters
+  if (!originDestinations || originDestinations.length === 0) {
+    throw new Error("originDestinations is required");
+  }
+
+  if (!travelers || travelers.length === 0) {
+    throw new Error("travelers is required");
+  }
+
+  // Build request body
+  const requestBody = {
+    originDestinations,
+    travelers,
+    sources,
+    searchCriteria,
+  };
+
+  try {
+    const accessToken = await getAccessToken();
+    const url = `${AMADEUS_CONFIG.baseUrl}/v2/shopping/flight-offers`;
+
+    console.log(`🌐 Searching flight offers...`);
+    console.log("📤 Request Body:", JSON.stringify(requestBody, null, 2));
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    const data = await response.json();
+
+    console.log("📥 Response Status:", response.status);
+
+    if (!response.ok) {
+      console.error("❌ Amadeus Flight Search Error:", data);
+      throw new Error(data.errors?.[0]?.detail || "Flight search failed");
+    }
+
+    console.log(`✅ Found ${data.data?.length || 0} flight offers`);
+    return data;
+  } catch (error) {
+    console.error("❌ Error searching flight offers:", error.message);
+    throw error;
+  }
+}
+
+/**
+ * Confirm flight offer pricing before booking or getting seatmap
+ * @param {Object} flightOfferData - Flight offer object(s) to confirm
+ * @returns {Promise<Object>} Confirmed pricing data
+ *
+ * @note This is MANDATORY before calling seatmap API
+ *       Amadeus needs to validate and lock the price first
+ *
+ * @example
+ * const confirmedOffer = await confirmFlightOfferPricing({
+ *   data: {
+ *     type: "flight-offers-pricing",
+ *     flightOffers: [{ ...flightOfferObject... }]
+ *   }
+ * });
+ */
+async function confirmFlightOfferPricing(flightOfferData) {
+  if (!flightOfferData || !flightOfferData.data) {
+    throw new Error("Flight offer data is required");
+  }
+
+  try {
+    const accessToken = await getAccessToken();
+    const url = `${AMADEUS_CONFIG.baseUrl}/v1/shopping/flight-offers/pricing`;
+
+    console.log(`🌐 Confirming flight offer pricing...`);
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(flightOfferData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("❌ Amadeus Pricing Error:", data);
+      throw new Error(
+        data.errors?.[0]?.detail || "Failed to confirm flight offer pricing"
+      );
+    }
+
+    console.log(`✅ Flight offer pricing confirmed successfully`);
+    return data;
+  } catch (error) {
+    console.error("❌ Error confirming flight offer pricing:", error.message);
+    throw error;
+  }
+}
+
+/**
+ * Get seatmap for flight offer (MUST confirm pricing first)
+ * @param {Object} confirmedFlightOfferData - CONFIRMED flight offer from pricing API
+ * @returns {Promise<Object>} Seatmap data
+ *
+ * @note Input MUST be result from confirmFlightOfferPricing()
+ *
+ * @example
+ * // Step 1: Confirm pricing first
+ * const confirmed = await confirmFlightOfferPricing({
+ *   data: {
+ *     type: "flight-offers-pricing",
+ *     flightOffers: [flightOffer]
+ *   }
+ * });
+ *
+ * // Step 2: Get seatmap with confirmed offer
+ * const seatmap = await getFlightSeatmap({
+ *   data: confirmed.data.flightOffers
+ * });
+ */
+async function getFlightSeatmap(confirmedFlightOfferData) {
+  if (!confirmedFlightOfferData || !confirmedFlightOfferData.data) {
+    throw new Error("Confirmed flight offer data is required");
+  }
+
+  try {
+    const accessToken = await getAccessToken();
+    const url = `${AMADEUS_CONFIG.baseUrl}/v1/shopping/seatmaps`;
+
+    console.log(`🌐 Getting seatmap...`);
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(confirmedFlightOfferData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("❌ Amadeus Seatmap Error:", data);
+      throw new Error(data.errors?.[0]?.detail || "Failed to get seatmap");
+    }
+
+    console.log(`✅ Seatmap retrieved successfully`);
+    return data;
+  } catch (error) {
+    console.error("❌ Error getting seatmap:", error.message);
+    throw error;
+  }
+}
+
+/**
+ * Get seatmap for flight offer
+ * @param {Object} flightOfferData - Flight offer object(s)
+ * @returns {Promise<Object>} Seatmap data
+ *
+ * @note DECISION: Kirim entire flightOffer dari Flutter
+ *       Alasan: Lebih efisien, avoid double API call
+ *       Trade-off: Request body lebih besar, tapi Firebase quota lebih hemat
+ *
+ * @example
+ * const seatmap = await getFlightSeatmap({
+ *   data: [{ ...flightOfferObject... }]
+ * });
+ */
+async function getFlightSeatmap(flightOfferData) {
+  if (!flightOfferData || !flightOfferData.data) {
+    throw new Error("Flight offer data is required");
+  }
+
+  try {
+    const accessToken = await getAccessToken();
+    const url = `${AMADEUS_CONFIG.baseUrl}/v1/shopping/seatmaps`;
+
+    console.log(`🌐 Getting seatmap...`);
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(flightOfferData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("❌ Amadeus Seatmap Error:", data);
+      throw new Error(data.errors?.[0]?.detail || "Failed to get seatmap");
+    }
+
+    console.log(`✅ Seatmap retrieved successfully`);
+    return data;
+  } catch (error) {
+    console.error("❌ Error getting seatmap:", error.message);
+    throw error;
+  }
+}
+
+// ============================================================================
 // EXPORTS
 // ============================================================================
 
@@ -565,6 +825,9 @@ module.exports = {
   searchHotelOffers,
   confirmOfferPricing,
   createHotelBooking,
-  // Export for testing purposes
+  searchFlightLocations,
+  searchFlightOffers,
+  confirmFlightOfferPricing,
+  getFlightSeatmap,
   getAccessToken,
 };

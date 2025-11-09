@@ -36,6 +36,7 @@ const tripRoutes = require("./routes/tripRoutes");
 const destinationRoutes = require("./routes/destinationRoutes");
 const hotelRoutes = require("./routes/hotelRoutes");
 const authRoutes = require("./routes/authRoutes");
+const flightRoutes = require("./routes/flightRoutes");
 
 // 7. Definisikan Rute API Utama
 // Memberi tahu Express untuk menggunakan file rute tersebut
@@ -44,8 +45,46 @@ app.use("/api/trips", tripRoutes); // Langsung /api/trips
 app.use("/api/destinations", destinationRoutes);
 app.use("/api/hotels", hotelRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/flights", flightRoutes);
 
 // 8. Jalankan Server
 app.listen(port, () => {
   console.log(`🚀 Server API berjalan di http://localhost:${port}`);
+});
+
+//Welcome Point
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    message: "Wanderwhale API is running",
+    version: "1.0.0",
+    endpoints: {
+      auth: "/api/auth",
+      users: "/api/users",
+      trips: "/api/trips",
+      destinations: "/api/destinations",
+      hotels: "/api/hotels",
+      flights: "/api/flights",
+    },
+  });
+});
+
+//Error Handling
+// 404 Handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Endpoint not found",
+    path: req.path,
+  });
+});
+
+// Error Handler
+app.use((error, req, res, next) => {
+  console.error("Unhandled error:", error);
+  res.status(500).json({
+    success: false,
+    message: "Internal server error",
+    error: error.message,
+  });
 });
