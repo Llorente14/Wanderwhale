@@ -1,0 +1,1315 @@
+[
+  {
+    "name": "Bali",
+    "country": "Indonesia",
+    "city": "Denpasar",
+    "continent": "Asia",
+    "description": "Pulau Dewata yang terkenal dengan keindahan pantai, budaya yang kental, dan alam yang memukau.",
+    "imageUrl": "https://images.unsplash.com/photo-1540496905036-5937c10647cc",
+    "images": [
+      "https://images.unsplash.com/photo-1519451241324-20b4ea2c4220",
+      "https://images.unsplash.com/photo-1537953773345-d172ccfa1380"
+    ],
+    "rating": 4.8,
+    "reviewsCount": 2100,
+    "averageBudget": 5000000,
+    "isPopular": true,
+    "tags": ["pantai", "budaya", "alam", "tropis"],
+    "popularActivities": [
+      {
+        "name": "Surfing",
+        "description": "Aktivitas selancar di pantai-pantai Bali seperti Kuta dan Uluwatu, populer bagi pemula maupun profesional.",
+        "imageUrl": "https://images.unsplash.com/photo-1502680390469-be75c67b63f8"
+      },
+      {
+        "name": "Yoga",
+        "description": "Latihan yoga dan meditasi di Ubud, Bali, yang terkenal sebagai pusat retret kesehatan dan spiritualitas global.",
+        "imageUrl": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b"
+      },
+      {
+        "name": "Pura Uluwatu",
+        "description": "Pura Hindu kuno di atas tebing curam 70m, terkenal dengan pemandangan laut dan pertunjukan tari Kecak saat senja.",
+        "imageUrl": "https://images.unsplash.com/photo-1610255333333-d3c53e0d8b4e"
+      }
+    ]
+  },
+  {
+    "name": "Jakarta",
+    "country": "Indonesia",
+    "city": "Jakarta",
+    "continent": "Asia",
+    "description": "Ibu kota metropolitan Indonesia, pusat bisnis, politik, dan sejarah dengan landmark Monas.",
+    "imageUrl": "https://images.unsplash.com/photo-1550496149-c1c68f6a4de4",
+    "images": [
+      "https://images.unsplash.com/photo-1588622872381-e408a2307d0d",
+      "https://images.unsplash.com/photo-1533226362531-cff0a32c68c1"
+    ],
+    "rating": 4.3,
+    "reviewsCount": 1850,
+    "averageBudget": 3500000,
+    "isPopular": true,
+    "tags": ["kota", "bisnis", "sejarah", "kuliner"],
+    "popularActivities": [
+      {
+        "name": "Monumen Nasional (Monas)",
+        "description": "Tugu peringatan setinggi 132 meter di Lapangan Merdeka, melambangkan perjuangan kemerdekaan Indonesia.",
+        "imageUrl": "https://images.unsplash.com/photo-1588622872381-e408a2307d0d"
+      },
+      {
+        "name": "Kota Tua",
+        "description": "Kawasan bersejarah di Jakarta yang menampilkan arsitektur kolonial Belanda, museum, dan Alun-Alun Fatahillah.",
+        "imageUrl": "https://images.unsplash.com/photo-1533226362531-cff0a32c68c1"
+      },
+      {
+        "name": "Ancol",
+        "description": "Taman Impian Jaya Ancol, kawasan rekreasi terpadu di tepi laut yang mencakup Dunia Fantasi, SeaWorld, dan pantai.",
+        "imageUrl": "https://images.unsplash.com/photo-1621235889153-f72836d3c01f"
+      }
+    ]
+  },
+  {
+    "name": "Yogyakarta",
+    "country": "Indonesia",
+    "city": "Yogyakarta",
+    "continent": "Asia",
+    "description": "Jantung budaya Jawa, rumah bagi Candi Borobudur, Candi Prambanan, dan Keraton.",
+    "imageUrl": "https://images.unsplash.com/photo-1596223538334-b6a1d43906a7",
+    "images": [
+      "https://images.unsplash.com/photo-1589334208775-0538d583c11a",
+      "https://images.unsplash.com/photo-1551634839-a78b3f5245c9"
+    ],
+    "rating": 4.9,
+    "reviewsCount": 2500,
+    "averageBudget": 4000000,
+    "isPopular": true,
+    "tags": ["budaya", "sejarah", "candi", "seni", "batik"],
+    "popularActivities": [
+      {
+        "name": "Candi Borobudur",
+        "description": "Candi Buddha Mahayana terbesar di dunia, berlokasi di Magelang dan merupakan Situs Warisan Dunia UNESCO.",
+        "imageUrl": "https://images.unsplash.com/photo-1596223538334-b6a1d43906a7"
+      },
+      {
+        "name": "Candi Prambanan",
+        "description": "Kompleks candi Hindu terbesar di Indonesia yang didedikasikan untuk Trimurti (Siwa, Wisnu, Brahma).",
+        "imageUrl": "https://images.unsplash.com/photo-1551634839-a78b3f5245c9"
+      },
+      {
+        "name": "Jalan Malioboro",
+        "description": "Jalan perbelanjaan dan pusat wisata utama di Yogyakarta, terkenal dengan pedagang kaki lima, batik, dan kuliner.",
+        "imageUrl": "https://images.unsplash.com/photo-1570777263541-4770381615f7"
+      }
+    ]
+  },
+  {
+    "name": "Makassar",
+    "country": "Indonesia",
+    "city": "Makassar",
+    "continent": "Asia",
+    "description": "Kota pelabuhan ramai di Sulawesi Selatan, terkenal dengan Pantai Losari dan Benteng Rotterdam.",
+    "imageUrl": "https://images.unsplash.com/photo-1563273177-3366c8f69661",
+    "images": [
+      "https://images.unsplash.com/photo-1618231360155-b6d41b6c8f42",
+      "https://images.unsplash.com/photo-1590518774149-5f2c7a7f466c"
+    ],
+    "rating": 4.4,
+    "reviewsCount": 900,
+    "averageBudget": 3500000,
+    "isPopular": true,
+    "tags": ["kota", "kuliner", "sejarah", "pantai"],
+    "popularActivities": [
+      {
+        "name": "Pantai Losari",
+        "description": "Ikon waterfront Kota Makassar, terkenal sebagai tempat menikmati matahari terbenam dan pusat kuliner malam.",
+        "imageUrl": "https://images.unsplash.com/photo-1590518774149-5f2c7a7f466c"
+      },
+      {
+        "name": "Benteng Rotterdam",
+        "description": "Benteng peninggalan Kerajaan Gowa-Tallo yang dipugar oleh Belanda, kini menjadi museum dan cagar budaya.",
+        "imageUrl": "https://images.unsplash.com/photo-1618231360155-b6d41b6c8f42"
+      },
+      {
+        "name": "Pulau Samalona",
+        "description": "Pulau kecil berpasir putih dekat Makassar, tujuan populer untuk berenang, snorkeling, dan rekreasi pantai.",
+        "imageUrl": "https://images.unsplash.com/photo-1604857416921-a9e96e73686f"
+      }
+    ]
+  },
+  {
+    "name": "Bukittinggi",
+    "country": "Indonesia",
+    "city": "Bukittinggi",
+    "continent": "Asia",
+    "description": "Pusat budaya Minangkabau di dataran tinggi, terkenal dengan Jam Gadang dan Ngarai Sianok.",
+    "imageUrl": "https://images.unsplash.com/photo-1598466847525-2e63a131154c",
+    "images": [
+      "https://images.unsplash.com/photo-1627763632029-9a1b32d06173",
+      "https://images.unsplash.com/photo-1579483364923-440467c693a0"
+    ],
+    "rating": 4.7,
+    "reviewsCount": 850,
+    "averageBudget": 3000000,
+    "isPopular": true,
+    "tags": ["budaya", "alam", "sejarah", "kuliner"],
+    "popularActivities": [
+      {
+        "name": "Jam Gadang",
+        "description": "Menara jam ikonik yang menjadi landmark utama Bukittinggi, hadiah dari Ratu Belanda Wilhelmina.",
+        "imageUrl": "https://images.unsplash.com/photo-1598466847525-2e63a131154c"
+      },
+      {
+        "name": "Ngarai Sianok",
+        "description": "Lembah curam (ngarai) yang hijau dan subur, menawarkan pemandangan alam spektakuler di tepi kota.",
+        "imageUrl": "https://images.unsplash.com/photo-1579483364923-440467c693a0"
+      },
+      {
+        "name": "Lobang Jepang",
+        "description": "Terowongan bawah tanah peninggalan Perang Dunia II, digunakan sebagai bunker pertahanan oleh tentara Jepang.",
+        "imageUrl": "https://images.unsplash.com/photo-1627763632029-9a1b32d06173"
+      }
+    ]
+  },
+  {
+    "name": "Manado",
+    "country": "Indonesia",
+    "city": "Manado",
+    "continent": "Asia",
+    "description": "Gerbang utama Sulawesi Utara, terkenal dengan Taman Nasional Bunaken dan kuliner khas.",
+    "imageUrl": "https://images.unsplash.com/photo-1601633596742-e646f6f96d83",
+    "images": [
+      "https://images.unsplash.com/photo-1518548415303-a16b34b8c32d",
+      "https://images.unsplash.com/photo-1588820468350-f8f23f3b610d"
+    ],
+    "rating": 4.6,
+    "reviewsCount": 1100,
+    "averageBudget": 5000000,
+    "isPopular": true,
+    "tags": ["diving", "alam", "kuliner", "kota"],
+    "popularActivities": [
+      {
+        "name": "Taman Nasional Bunaken",
+        "description": "Surga bawah laut kelas dunia, terkenal dengan dinding karang vertikal dan keanekaragaman hayati laut yang kaya.",
+        "imageUrl": "https://images.unsplash.com/photo-1518548415303-a16b34b8c32d"
+      },
+      {
+        "name": "Pulau Siladen",
+        "description": "Pulau kecil yang tenang di dekat Bunaken, ideal untuk snorkeling, bersantai, dan menikmati resor pantai.",
+        "imageUrl": "https://images.unsplash.com/photo-1588820468350-f8f23f3b610d"
+      },
+      {
+        "name": "Danau Linow",
+        "description": "Danau vulkanik unik yang airnya dapat berubah warna (hijau, biru, toska) karena kandungan belerangnya.",
+        "imageUrl": "https://images.unsplash.com/photo-1619623035300-e7135d5635e3"
+      }
+    ]
+  },
+  {
+    "name": "Tana Toraja",
+    "country": "Indonesia",
+    "city": "Rantepao",
+    "continent": "Asia",
+    "description": "Wilayah dataran tinggi unik dengan arsitektur Tongkonan dan ritual pemakaman yang khas.",
+    "imageUrl": "https://images.unsplash.com/photo-1590527370830-1a733e8b0b8c",
+    "images": [
+      "https://images.unsplash.com/photo-1571404111320-316b3e839211",
+      "https://images.unsplash.com/photo-1570777263541-4770381615f7"
+    ],
+    "rating": 4.8,
+    "reviewsCount": 950,
+    "averageBudget": 5500000,
+    "isPopular": true,
+    "tags": ["budaya", "ritual", "alam", "dataran tinggi"],
+    "popularActivities": [
+      {
+        "name": "Kete Kesu",
+        "description": "Desa adat Toraja yang ikonik dengan deretan rumah Tongkonan dan kuburan gantung kuno di tebing batu.",
+        "imageUrl": "https://images.unsplash.com/photo-1590527370830-1a733e8b0b8c"
+      },
+      {
+        "name": "Londa",
+        "description": "Situs pemakaman gua alami yang mistis, berisi peti mati (erong) dan patung arwah (tau-tau) yang usianya ratusan tahun.",
+        "imageUrl": "https://images.unsplash.com/photo-1571404111320-316b3e839211"
+      },
+      {
+        "name": "Bori Kalimbuang",
+        "description": "Situs megalitikum kuno dengan puluhan batu menhir (simbuang batu) yang didirikan untuk upacara pemakaman Rambu Solo'.",
+        "imageUrl": "https://images.unsplash.com/photo-1604579201659-c16b3343603b"
+      }
+    ]
+  },
+  {
+    "name": "Wakatobi",
+    "country": "Indonesia",
+    "city": "Wangi-Wangi",
+    "continent": "Asia",
+    "description": "Taman nasional laut dan cagar biosfer dunia dengan salah satu terumbu karang terbaik.",
+    "imageUrl": "https://images.unsplash.com/photo-1588628082676-96b61a3493f2",
+    "images": [
+      "https://images.unsplash.com/photo-1599420186946-7b6fb4e297f0",
+      "https://images.unsplash.com/photo-1531121612543-52c6f1c416f2"
+    ],
+    "rating": 4.9,
+    "reviewsCount": 700,
+    "averageBudget": 10000000,
+    "isPopular": true,
+    "tags": ["diving", "pantai", "pulau", "alam"],
+    "popularActivities": [
+      {
+        "name": "Diving",
+        "description": "Aktivitas utama di Cagar Biosfer Dunia UNESCO ini, menjelajahi titik selam kelas dunia dengan terumbu karang yang kaya.",
+        "imageUrl": "https://images.unsplash.com/photo-1599420186946-7b6fb4e297f0"
+      },
+      {
+        "name": "Snorkeling",
+        "description": "Menikmati keindahan taman laut dan ikan berwarna-warni di perairan dangkal Wakatobi yang jernih.",
+        "imageUrl": "https://images.unsplash.com/photo-1508209283332-95f87b81136b"
+      },
+      {
+        "name": "Perkampungan Bajo Sampela",
+        "description": "Desa unik Suku Bajo di mana seluruh rumah panggungnya dibangun di atas air, terpisah dari daratan.",
+        "imageUrl": "https://images.unsplash.com/photo-1588628082676-96b61a3493f2"
+      }
+    ]
+  },
+  {
+    "name": "Sabang (Pulau Weh)",
+    "country": "Indonesia",
+    "city": "Sabang",
+    "continent": "Asia",
+    "description": "Terletak di Pulau Weh, dikenal sebagai titik 'Nol Kilometer' Indonesia dan surga diving.",
+    "imageUrl": "https://images.unsplash.com/photo-1584284144186-09e2b104a37f",
+    "images": [
+      "https://images.unsplash.com/photo-1584284144186-09e2b104a37f",
+      "https://images.unsplash.com/photo-1518548415303-a16b34b8c32d"
+    ],
+    "rating": 4.7,
+    "reviewsCount": 650,
+    "averageBudget": 4000000,
+    "isPopular": true,
+    "tags": ["diving", "pantai", "alam", "monumen"],
+    "popularActivities": [
+      {
+        "name": "Tugu Nol Kilometer",
+        "description": "Monumen yang menandai titik paling barat wilayah Indonesia, menjadi simbol geografis dan tujuan wisata wajib.",
+        "imageUrl": "https://images.unsplash.com/photo-1584284144186-09e2b104a37f"
+      },
+      {
+        "name": "Pantai Iboih",
+        "description": "Pantai berair jernih dan tenang, dikenal sebagai 'surga tersembunyi' dan gerbang utama menuju Pulau Rubiah.",
+        "imageUrl": "https://images.unsplash.com/photo-1584284144041-0b32269ab022"
+      },
+      {
+        "name": "Pulau Rubiah",
+        "description": "Pulau kecil di seberang Iboih yang terkenal sebagai 'taman laut' untuk snorkeling dan diving di antara terumbu karang.",
+        "imageUrl": "https://images.unsplash.com/photo-1616421111613-20ae600e1948"
+      }
+    ]
+  },
+  {
+    "name": "Sumba",
+    "country": "Indonesia",
+    "city": "Waingapu",
+    "continent": "Asia",
+    "description": "Pulau eksotis dengan pemandangan sabana, kuda liar, dan budaya megalitikum yang masih hidup.",
+    "imageUrl": "https://images.unsplash.com/photo-1570777263541-4770381615f7",
+    "images": [
+      "https://images.unsplash.com/photo-1590527370830-1a733e8b0b8c",
+      "https://images.unsplash.com/photo-1540496905036-5937c10647cc"
+    ],
+    "rating": 4.8,
+    "reviewsCount": 800,
+    "averageBudget": 7000000,
+    "isPopular": true,
+    "tags": ["alam", "sabana", "budaya", "pantai", "tenun"],
+    "popularActivities": [
+      {
+        "name": "Bukit Wairinding",
+        "description": "Hamparan perbukitan sabana yang sangat luas dan fotogenik, berubah warna menjadi hijau saat musim hujan dan kuning saat kemarau.",
+        "imageUrl": "https://images.unsplash.com/photo-1570171922482-cc68406f52ac"
+      },
+      {
+        "name": "Danau Weekuri",
+        "description": "Laguna air asin yang sangat jernih berwarna biru toska, terpisah dari lautan oleh tebing karang.",
+        "imageUrl": "https://images.unsplash.com/photo-1570777263541-4770381615f7"
+      },
+      {
+        "name": "Pantai Nihiwatu",
+        "description": "Pantai eksklusif bagian dari Nihi Sumba Resort, terkenal secara global karena ombak 'Occy's Left' untuk surfing.",
+        "imageUrl": "https://images.unsplash.com/photo-1540496905036-5937c10647cc"
+      }
+    ]
+  },
+  {
+    "name": "Palembang",
+    "country": "Indonesia",
+    "city": "Palembang",
+    "continent": "Asia",
+    "description": "Kota tertua di Indonesia, dikenal dengan Jembatan Ampera, Sungai Musi, dan kuliner Pempek.",
+    "imageUrl": "https://images.unsplash.com/photo-1582845601956-f0f2f111f18f",
+    "images": [
+      "https://images.unsplash.com/photo-1550496149-c1c68f6a4de4",
+      "https://images.unsplash.com/photo-1579483364923-440467c693a0"
+    ],
+    "rating": 4.5,
+    "reviewsCount": 750,
+    "averageBudget": 2500000,
+    "isPopular": true,
+    "tags": ["kuliner", "sejarah", "kota", "sungai"],
+    "popularActivities": [
+      {
+        "name": "Jembatan Ampera",
+        "description": "Landmark utama Kota Palembang, jembatan megah yang melintasi Sungai Musi dan menghubungkan Seberang Ulu dan Ilir.",
+        "imageUrl": "https://images.unsplash.com/photo-1550496149-c1c68f6a4de4"
+      },
+      {
+        "name": "Pulau Kemaro",
+        "description": "Delta kecil di tengah Sungai Musi, terkenal dengan pagoda 9 lantai, klenteng Tionghoa, dan kisah cinta legenda.",
+        "imageUrl": "https://images.unsplash.com/photo-1582845601956-f0f2f111f18f"
+      },
+      {
+        "name": "Makan Pempek",
+        "description": "Aktivitas kuliner wajib, mencicipi hidangan khas Palembang berbahan ikan dan sagu dengan kuah cuko asam pedas.",
+        "imageUrl": "https://images.unsplash.com/photo-1559056004-a5a25c312733"
+      }
+    ]
+  },
+  {
+    "name": "Pontianak",
+    "country": "Indonesia",
+    "city": "Pontianak",
+    "continent": "Asia",
+    "description": "Ibu kota Kalimantan Barat yang dilintasi garis khatulistiwa, dikenal dengan Tugu Khatulistiwa.",
+    "imageUrl": "https://images.unsplash.com/photo-1591011316542-f283b3d8d641",
+    "images": [
+      "https://images.unsplash.com/photo-1588683101103-510c41f7e0d3",
+      "https://images.unsplash.com/photo-1616618399086-bbe7a221f7c5"
+    ],
+    "rating": 4.3,
+    "reviewsCount": 500,
+    "averageBudget": 2800000,
+    "isPopular": false,
+    "tags": ["khatulistiwa", "kota", "sungai", "budaya"],
+    "popularActivities": [
+      {
+        "name": "Tugu Khatulistiwa",
+        "description": "Monumen ikonik yang menandai titik pasti lintasan garis ekuator (khatulistiwa) di Kota Pontianak.",
+        "imageUrl": "https://images.unsplash.com/photo-1604273821415-0158d69efa39"
+      },
+      {
+        "name": "Rumah Radakng",
+        "description": "Replika rumah adat Suku Dayak Kanayatn yang sangat besar, difungsikan sebagai pusat pelestarian budaya Dayak.",
+        "imageUrl": "https://images.unsplash.com/photo-1588683101103-510c41f7e0d3"
+      },
+      {
+        "name": "Keraton Kadriah",
+        "description": "Istana Kesultanan Pontianak yang bersejarah, berlokasi di tepi Sungai Kapuas dengan arsitektur dominan kayu dan warna kuning.",
+        "imageUrl": "https://images.unsplash.com/photo-1604273821384-a43e46c76191"
+      }
+    ]
+  },
+  {
+    "name": "Banjarmasin",
+    "country": "Indonesia",
+    "city": "Banjarmasin",
+    "continent": "Asia",
+    "description": "Dikenal sebagai 'Kota Seribu Sungai', terkenal dengan pasar terapung yang unik.",
+    "imageUrl": "https://images.unsplash.com/photo-1560965386-8a58e46938b8",
+    "images": [
+      "https://images.unsplash.com/photo-1519451241324-20b4ea2c4220",
+      "https://images.unsplash.com/photo-1583017706321-babfa2e89668"
+    ],
+    "rating": 4.4,
+    "reviewsCount": 600,
+    "averageBudget": 3000000,
+    "isPopular": true,
+    "tags": ["sungai", "budaya", "pasar", "kuliner"],
+    "popularActivities": [
+      {
+        "name": "Pasar Terapung Lok Baintan",
+        "description": "Pasar tradisional otentik di atas Sungai Martapura, di mana pedagang dan pembeli bertransaksi menggunakan perahu (jukung).",
+        "imageUrl": "https://images.unsplash.com/photo-1560965386-8a58e46938b8"
+      },
+      {
+        "name": "Pulau Kembang",
+        "description": "Delta di tengah Sungai Barito yang berfungsi sebagai hutan wisata dan habitat bagi kera ekor panjang serta bekantan.",
+        "imageUrl": "https://images.unsplash.com/photo-1519451241324-20b4ea2c4220"
+      },
+      {
+        "name": "Masjid Sabilal Muhtadin",
+        "description": "Masjid raya kebanggaan Banjarmasin, salah satu masjid terbesar di Indonesia dengan arsitektur modern yang megah.",
+        "imageUrl": "https://images.unsplash.com/photo-1678834633276-805193988636"
+      }
+    ]
+  },
+
+  {
+    "name": "Tokyo",
+    "country": "Jepang",
+    "city": "Tokyo",
+    "continent": "Asia",
+    "description": "Ibu kota Jepang yang dinamis, memadukan tradisi kuno dengan teknologi ultramodern.",
+    "imageUrl": "https://picsum.photos/seed/tokyo_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/tokyo1/800/600",
+      "https://picsum.photos/seed/tokyo2/800/600"
+    ],
+    "rating": 4.8,
+    "reviewsCount": 5200,
+    "averageBudget": 35000000,
+    "isPopular": true,
+    "tags": ["modern", "kuliner", "budaya", "teknologi"],
+    "popularActivities": [
+      {
+        "name": "Shibuya Crossing",
+        "description": "Persimpangan pejalan kaki paling sibuk di dunia, ikon modernitas Tokyo.",
+        "imageUrl": "https://picsum.photos/seed/shibuya/800/600"
+      },
+      {
+        "name": "Kuil Senso-ji",
+        "description": "Kuil Buddha kuno dan tertua di Tokyo, terletak di distrik Asakusa.",
+        "imageUrl": "https://picsum.photos/seed/sensoji/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Kyoto",
+    "country": "Jepang",
+    "city": "Kyoto",
+    "continent": "Asia",
+    "description": "Bekas ibu kota kekaisaran Jepang, terkenal dengan kuil-kuil klasik, taman, dan geisha.",
+    "imageUrl": "https://picsum.photos/seed/kyoto_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/kyoto1/800/600",
+      "https://picsum.photos/seed/kyoto2/800/600"
+    ],
+    "rating": 4.9,
+    "reviewsCount": 3800,
+    "averageBudget": 30000000,
+    "isPopular": true,
+    "tags": ["tradisional", "budaya", "kuil", "alam"],
+    "popularActivities": [
+      {
+        "name": "Kuil Fushimi Inari",
+        "description": "Terkenal dengan ribuan gerbang torii merah menyala yang berbaris di jalur pegunungan.",
+        "imageUrl": "https://picsum.photos/seed/fushimiinari/800/600"
+      },
+      {
+        "name": "Hutan Bambu Arashiyama",
+        "description": "Jalur setapak yang menenangkan dikelilingi oleh rumpun bambu yang menjulang tinggi.",
+        "imageUrl": "https://picsum.photos/seed/arashiyama/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Paris",
+    "country": "Prancis",
+    "city": "Paris",
+    "continent": "Eropa",
+    "description": "Kota Cinta, terkenal dengan seni, mode, gastronomi, dan budaya kafe.",
+    "imageUrl": "https://picsum.photos/seed/paris_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/paris1/800/600",
+      "https://picsum.photos/seed/paris2/800/600"
+    ],
+    "rating": 4.7,
+    "reviewsCount": 6500,
+    "averageBudget": 45000000,
+    "isPopular": true,
+    "tags": ["romantis", "seni", "mode", "ikonik"],
+    "popularActivities": [
+      {
+        "name": "Menara Eiffel",
+        "description": "Monumen besi tempa yang menjadi simbol global Prancis dan salah satu struktur paling dikenal di dunia.",
+        "imageUrl": "https://picsum.photos/seed/eiffel/800/600"
+      },
+      {
+        "name": "Museum Louvre",
+        "description": "Museum seni terbesar di dunia dan monumen bersejarah, rumah bagi lukisan Mona Lisa.",
+        "imageUrl": "https://picsum.photos/seed/louvre/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Nice",
+    "country": "Prancis",
+    "city": "Nice",
+    "continent": "Eropa",
+    "description": "Kota utama di French Riviera, terkenal dengan pantainya yang berbatu dan Promenade des Anglais.",
+    "imageUrl": "https://picsum.photos/seed/nice_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/nice1/800/600",
+      "https://picsum.photos/seed/nice2/800/600"
+    ],
+    "rating": 4.5,
+    "reviewsCount": 2100,
+    "averageBudget": 40000000,
+    "isPopular": true,
+    "tags": ["pantai", "riviera", "seni", "mewah"],
+    "popularActivities": [
+      {
+        "name": "Promenade des Anglais",
+        "description": "Jalan setapak ikonik di tepi Laut Mediterania, sempurna untuk berjalan santai.",
+        "imageUrl": "https://picsum.photos/seed/promenade/800/600"
+      },
+      {
+        "name": "Kota Tua (Vieux Nice)",
+        "description": "Jalan-jalan sempit berbatu dengan bangunan berwarna-warni, toko butik, dan pasar bunga.",
+        "imageUrl": "https://picsum.photos/seed/vieuxnice/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Roma",
+    "country": "Italia",
+    "city": "Roma",
+    "continent": "Eropa",
+    "description": "Kota Abadi, pusat sejarah Kekaisaran Romawi dan Gereja Katolik.",
+    "imageUrl": "https://picsum.photos/seed/roma_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/roma1/800/600",
+      "https://picsum.photos/seed/roma2/800/600"
+    ],
+    "rating": 4.8,
+    "reviewsCount": 5900,
+    "averageBudget": 40000000,
+    "isPopular": true,
+    "tags": ["sejarah", "kuno", "kuliner", "seni"],
+    "popularActivities": [
+      {
+        "name": "Colosseum",
+        "description": "Amfiteater elips terbesar yang pernah dibangun, simbol kekuatan Romawi kuno.",
+        "imageUrl": "https://picsum.photos/seed/colosseum/800/600"
+      },
+      {
+        "name": "Kota Vatikan",
+        "description": "Negara-kota independen yang menampung Basilika Santo Petrus, Museum Vatikan, dan Kapel Sistina.",
+        "imageUrl": "https://picsum.photos/seed/vatican/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Venesia",
+    "country": "Italia",
+    "city": "Venesia",
+    "continent": "Eropa",
+    "description": "Kota unik yang dibangun di atas air, terkenal dengan kanal-kanalnya, jembatan, dan gondola.",
+    "imageUrl": "https://picsum.photos/seed/venice_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/venice1/800/600",
+      "https://picsum.photos/seed/venice2/800/600"
+    ],
+    "rating": 4.6,
+    "reviewsCount": 4300,
+    "averageBudget": 42000000,
+    "isPopular": true,
+    "tags": ["kanal", "romantis", "gondola", "sejarah"],
+    "popularActivities": [
+      {
+        "name": "Grand Canal",
+        "description": "Jalur air utama Venesia, dipagari oleh istana-istana Renaisans dan Gotik.",
+        "imageUrl": "https://picsum.photos/seed/grandcanal/800/600"
+      },
+      {
+        "name": "Piazza San Marco",
+        "description": "Alun-alun utama Venesia, rumah bagi Basilika Santo Markus dan Istana Doge.",
+        "imageUrl": "https://picsum.photos/seed/sanmarco/800/600"
+      }
+    ]
+  },
+  {
+    "name": "New York City",
+    "country": "Amerika Serikat",
+    "city": "New York City",
+    "continent": "Amerika Utara",
+    "description": "Kota yang Tak Pernah Tidur, pusat global keuangan, budaya, dan hiburan.",
+    "imageUrl": "https://picsum.photos/seed/nyc_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/nyc1/800/600",
+      "https://picsum.photos/seed/nyc2/800/600"
+    ],
+    "rating": 4.7,
+    "reviewsCount": 8800,
+    "averageBudget": 50000000,
+    "isPopular": true,
+    "tags": ["metropolis", "ikonik", "teater", "sibuk"],
+    "popularActivities": [
+      {
+        "name": "Times Square",
+        "description": "Pusat komersial dan hiburan yang ramai, terkenal dengan papan reklame digitalnya yang cerah.",
+        "imageUrl": "https://picsum.photos/seed/timessquare/800/600"
+      },
+      {
+        "name": "Patung Liberty",
+        "description": "Simbol kebebasan dan demokrasi, hadiah dari Prancis, terletak di Pulau Liberty.",
+        "imageUrl": "https://picsum.photos/seed/liberty/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Los Angeles",
+    "country": "Amerika Serikat",
+    "city": "Los Angeles",
+    "continent": "Amerika Utara",
+    "description": "Pusat industri film dan televisi Amerika Serikat, terkenal dengan Hollywood dan pantainya.",
+    "imageUrl": "https://picsum.photos/seed/la_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/la1/800/600",
+      "https://picsum.photos/seed/la2/800/600"
+    ],
+    "rating": 4.4,
+    "reviewsCount": 4100,
+    "averageBudget": 48000000,
+    "isPopular": true,
+    "tags": ["hiburan", "hollywood", "pantai", "selebriti"],
+    "popularActivities": [
+      {
+        "name": "Hollywood Walk of Fame",
+        "description": "Trotoar yang menampilkan lebih dari 2.700 bintang teras tertanam nama-nama selebriti.",
+        "imageUrl": "https://picsum.photos/seed/walkoffame/800/600"
+      },
+      {
+        "name": "Dermaga Santa Monica",
+        "description": "Dermaga besar di ujung Route 66, dengan taman hiburan, restoran, dan pemandangan laut.",
+        "imageUrl": "https://picsum.photos/seed/santamonica/800/600"
+      }
+    ]
+  },
+  {
+    "name": "London",
+    "country": "Inggris",
+    "city": "London",
+    "continent": "Eropa",
+    "description": "Ibu kota Inggris yang bersejarah, rumah bagi keluarga kerajaan, museum kelas dunia, dan teater West End.",
+    "imageUrl": "https://picsum.photos/seed/london_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/london1/800/600",
+      "https://picsum.photos/seed/london2/800/600"
+    ],
+    "rating": 4.7,
+    "reviewsCount": 7200,
+    "averageBudget": 47000000,
+    "isPopular": true,
+    "tags": ["sejarah", "kerajaan", "museum", "teater"],
+    "popularActivities": [
+      {
+        "name": "London Eye",
+        "description": "Roda observasi kantilever raksasa di Tepi Selatan Sungai Thames.",
+        "imageUrl": "https://picsum.photos/seed/londoneye/800/600"
+      },
+      {
+        "name": "British Museum",
+        "description": "Museum publik yang didedikasikan untuk sejarah, seni, dan budaya manusia, dengan koleksi global.",
+        "imageUrl": "https://picsum.photos/seed/britishmuseum/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Edinburgh",
+    "country": "Skotlandia",
+    "city": "Edinburgh",
+    "continent": "Eropa",
+    "description": "Ibu kota Skotlandia yang berbukit-bukit, dikenal dengan Kota Tua abad pertengahan dan Kota Baru Georgia.",
+    "imageUrl": "https://picsum.photos/seed/edinburgh_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/edinburgh1/800/600",
+      "https://picsum.photos/seed/edinburgh2/800/600"
+    ],
+    "rating": 4.8,
+    "reviewsCount": 3100,
+    "averageBudget": 38000000,
+    "isPopular": true,
+    "tags": ["kastil", "sejarah", "festival", "arsitektur"],
+    "popularActivities": [
+      {
+        "name": "Kastil Edinburgh",
+        "description": "Benteng bersejarah yang mendominasi cakrawala kota dari posisinya di atas Castle Rock.",
+        "imageUrl": "https://picsum.photos/seed/edinburghcastle/800/600"
+      },
+      {
+        "name": "Royal Mile",
+        "description": "Rangkaian jalan yang membentuk arteri utama Kota Tua, menghubungkan Kastil Edinburgh dengan Istana Holyroodhouse.",
+        "imageUrl": "https://picsum.photos/seed/royalmile/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Sydney",
+    "country": "Australia",
+    "city": "Sydney",
+    "continent": "Australia",
+    "description": "Kota pelabuhan terbesar di Australia, terkenal dengan Gedung Opera Sydney dan Jembatan Pelabuhan.",
+    "imageUrl": "https://picsum.photos/seed/sydney_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/sydney1/800/600",
+      "https://picsum.photos/seed/sydney2/800/600"
+    ],
+    "rating": 4.6,
+    "reviewsCount": 4900,
+    "averageBudget": 43000000,
+    "isPopular": true,
+    "tags": ["pelabuhan", "ikonik", "pantai", "selancar"],
+    "popularActivities": [
+      {
+        "name": "Sydney Opera House",
+        "description": "Pusat seni pertunjukan multi-tempat dengan desain kulit kerang yang unik dan ikonik.",
+        "imageUrl": "https://picsum.photos/seed/operahouse/800/600"
+      },
+      {
+        "name": "Pantai Bondi",
+        "description": "Salah satu pantai paling terkenal di dunia, surga bagi para peselancar dan pencinta matahari.",
+        "imageUrl": "https://picsum.photos/seed/bondi/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Melbourne",
+    "country": "Australia",
+    "city": "Melbourne",
+    "continent": "Australia",
+    "description": "Ibu kota budaya Australia, terkenal dengan seni jalanan, kopi, dan jalur-jalur tersembunyi (laneways).",
+    "imageUrl": "https://picsum.photos/seed/melbourne_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/melbourne1/800/600",
+      "https://picsum.photos/seed/melbourne2/800/600"
+    ],
+    "rating": 4.7,
+    "reviewsCount": 3900,
+    "averageBudget": 41000000,
+    "isPopular": true,
+    "tags": ["budaya", "kopi", "seni", "olahraga"],
+    "popularActivities": [
+      {
+        "name": "Federation Square",
+        "description": "Tempat pertemuan utama kota, dengan arsitektur modern, museum, dan acara publik.",
+        "imageUrl": "https://picsum.photos/seed/fedsquare/800/600"
+      },
+      {
+        "name": "Hosier Lane",
+        "description": "Jalan sempit yang terkenal di dunia karena seni grafiti dan muralnya yang terus berubah.",
+        "imageUrl": "https://picsum.photos/seed/hosierlane/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Toronto",
+    "country": "Kanada",
+    "city": "Toronto",
+    "continent": "Amerika Utara",
+    "description": "Kota terbesar di Kanada, metropolis multikultural yang dinamis dengan cakrawala ikonik.",
+    "imageUrl": "https://picsum.photos/seed/toronto_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/toronto1/800/600",
+      "https://picsum.photos/seed/toronto2/800/600"
+    ],
+    "rating": 4.5,
+    "reviewsCount": 4200,
+    "averageBudget": 44000000,
+    "isPopular": true,
+    "tags": ["multikultural", "kuliner", "bisnis", "festival"],
+    "popularActivities": [
+      {
+        "name": "CN Tower",
+        "description": "Menara komunikasi dan observasi setinggi 553 meter, landmark utama Toronto.",
+        "imageUrl": "https://picsum.photos/seed/cntower/800/600"
+      },
+      {
+        "name": "Ripley's Aquarium of Canada",
+        "description": "Akuarium publik besar dengan terowongan bawah air yang menampilkan ribuan hewan laut.",
+        "imageUrl": "https://picsum.photos/seed/ripleys/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Vancouver",
+    "country": "Kanada",
+    "city": "Vancouver",
+    "continent": "Amerika Utara",
+    "description": "Kota pelabuhan di pesisir barat Kanada, dikelilingi oleh pegunungan dan alam yang indah.",
+    "imageUrl": "https://picsum.photos/seed/vancouver_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/vancouver1/800/600",
+      "https://picsum.photos/seed/vancouver2/800/600"
+    ],
+    "rating": 4.7,
+    "reviewsCount": 3600,
+    "averageBudget": 46000000,
+    "isPopular": true,
+    "tags": ["alam", "pegunungan", "luar ruangan", "film"],
+    "popularActivities": [
+      {
+        "name": "Stanley Park",
+        "description": "Taman kota perkotaan yang luas, dengan jalur seawall, hutan hujan, dan totem pole.",
+        "imageUrl": "https://picsum.photos/seed/stanleypark/800/600"
+      },
+      {
+        "name": "Pulau Granville",
+        "description": "Distrik perbelanjaan dan semenanjung, terkenal dengan pasar publik dan studio seninya.",
+        "imageUrl": "https://picsum.photos/seed/granville/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Barcelona",
+    "country": "Spanyol",
+    "city": "Barcelona",
+    "continent": "Eropa",
+    "description": "Ibu kota kosmopolitan wilayah Catalonia Spanyol, terkenal dengan seni dan arsitektur Antoni Gaudí.",
+    "imageUrl": "https://picsum.photos/seed/barcelona_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/barcelona1/800/600",
+      "https://picsum.photos/seed/barcelona2/800/600"
+    ],
+    "rating": 4.7,
+    "reviewsCount": 5300,
+    "averageBudget": 39000000,
+    "isPopular": true,
+    "tags": ["arsitektur", "gaudi", "pantai", "tapas"],
+    "popularActivities": [
+      {
+        "name": "La Sagrada Familia",
+        "description": "Basilika Katolik Roma besar yang belum selesai, mahakarya arsitektur Antoni Gaudí.",
+        "imageUrl": "https://picsum.photos/seed/sagrada/800/600"
+      },
+      {
+        "name": "Park Güell",
+        "description": "Sistem taman publik yang terdiri dari taman dan elemen arsitektur di bukit Carmel.",
+        "imageUrl": "https://picsum.photos/seed/parkguell/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Madrid",
+    "country": "Spanyol",
+    "city": "Madrid",
+    "continent": "Eropa",
+    "description": "Ibu kota Spanyol yang semarak, terkenal dengan museum seni, kehidupan malam, dan istana kerajaan.",
+    "imageUrl": "https://picsum.photos/seed/madrid_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/madrid1/800/600",
+      "https://picsum.photos/seed/madrid2/800/600"
+    ],
+    "rating": 4.6,
+    "reviewsCount": 4400,
+    "averageBudget": 37000000,
+    "isPopular": true,
+    "tags": ["seni", "budaya", "kehidupan malam", "kerajaan"],
+    "popularActivities": [
+      {
+        "name": "Istana Kerajaan Madrid",
+        "description": "Kediaman resmi keluarga kerajaan Spanyol, meskipun sekarang hanya digunakan untuk upacara kenegaraan.",
+        "imageUrl": "https://picsum.photos/seed/palacioreal/800/600"
+      },
+      {
+        "name": "Museum Prado",
+        "description": "Museum seni nasional utama Spanyol, menampung koleksi seni Eropa yang luas dari abad ke-12.",
+        "imageUrl": "https://picsum.photos/seed/prado/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Berlin",
+    "country": "Jerman",
+    "city": "Berlin",
+    "continent": "Eropa",
+    "description": "Ibu kota Jerman, dikenal dengan sejarah Perang Dingin, seni kontemporer, dan kehidupan malam.",
+    "imageUrl": "https://picsum.photos/seed/berlin_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/berlin1/800/600",
+      "https://picsum.photos/seed/berlin2/800/600"
+    ],
+    "rating": 4.5,
+    "reviewsCount": 4700,
+    "averageBudget": 36000000,
+    "isPopular": true,
+    "tags": ["sejarah", "seni", "kehidupan malam", "modern"],
+    "popularActivities": [
+      {
+        "name": "Gerbang Brandenburg",
+        "description": "Monumen neoklasik abad ke-18, simbol persatuan dan perdamaian Jerman.",
+        "imageUrl": "https://picsum.photos/seed/brandenburg/800/600"
+      },
+      {
+        "name": "East Side Gallery",
+        "description": "Bagian terpanjang dari Tembok Berlin yang masih tersisa, kini menjadi galeri seni luar ruangan.",
+        "imageUrl": "https://picsum.photos/seed/eastside/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Munich",
+    "country": "Jerman",
+    "city": "Munich",
+    "continent": "Eropa",
+    "description": "Ibu kota Bavaria, terkenal dengan Oktoberfest, museum, dan arsitektur barok.",
+    "imageUrl": "https://picsum.photos/seed/munich_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/munich1/800/600",
+      "https://picsum.photos/seed/munich2/800/600"
+    ],
+    "rating": 4.6,
+    "reviewsCount": 3300,
+    "averageBudget": 38000000,
+    "isPopular": true,
+    "tags": ["bir", "festival", "sejarah", "arsitektur"],
+    "popularActivities": [
+      {
+        "name": "Marienplatz",
+        "description": "Alun-alun pusat kota sejak 1158, menampilkan Balai Kota Baru (Neues Rathaus).",
+        "imageUrl": "https://picsum.photos/seed/marienplatz/800/600"
+      },
+      {
+        "name": "Kastil Neuschwanstein",
+        "description": "Istana dongeng abad ke-19 di atas bukit terjal dekat Munich, inspirasi untuk kastil Disney.",
+        "imageUrl": "https://picsum.photos/seed/neuschwanstein/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Rio de Janeiro",
+    "country": "Brasil",
+    "city": "Rio de Janeiro",
+    "continent": "Amerika Selatan",
+    "description": "Kota tepi laut yang luas di Brasil, terkenal dengan Karnaval, pantai Copacabana, dan patung Kristus Penebus.",
+    "imageUrl": "https://picsum.photos/seed/rio_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/rio1/800/600",
+      "https://picsum.photos/seed/rio2/800/600"
+    ],
+    "rating": 4.7,
+    "reviewsCount": 4800,
+    "averageBudget": 34000000,
+    "isPopular": true,
+    "tags": ["karnaval", "pantai", "samba", "alam"],
+    "popularActivities": [
+      {
+        "name": "Kristus Penebus (Christ the Redeemer)",
+        "description": "Patung Art Deco Yesus Kristus di puncak Gunung Corcovado, simbol Rio.",
+        "imageUrl": "https://picsum.photos/seed/christ/800/600"
+      },
+      {
+        "name": "Gunung Sugarloaf",
+        "description": "Puncak yang menjulang di muara Teluk Guanabara, dapat diakses dengan kereta gantung.",
+        "imageUrl": "https://picsum.photos/seed/sugarloaf/800/600"
+      }
+    ]
+  },
+  {
+    "name": "São Paulo",
+    "country": "Brasil",
+    "city": "São Paulo",
+    "continent": "Amerika Selatan",
+    "description": "Pusat keuangan Brasil, metropolis besar yang terkenal dengan arsitektur, kuliner, dan budaya.",
+    "imageUrl": "https://picsum.photos/seed/saopaulo_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/saopaulo1/800/600",
+      "https://picsum.photos/seed/saopaulo2/800/600"
+    ],
+    "rating": 4.4,
+    "reviewsCount": 3100,
+    "averageBudget": 33000000,
+    "isPopular": false,
+    "tags": ["bisnis", "kuliner", "seni", "metropolis"],
+    "popularActivities": [
+      {
+        "name": "Museum Seni São Paulo (MASP)",
+        "description": "Museum seni penting di Avenida Paulista, terkenal dengan arsitektur brutalistnya.",
+        "imageUrl": "https://picsum.photos/seed/masp/800/600"
+      },
+      {
+        "name": "Taman Ibirapuera",
+        "description": "Taman kota besar dengan ruang hijau, museum, dan area rekreasi.",
+        "imageUrl": "https://picsum.photos/seed/ibirapuera/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Bangkok",
+    "country": "Thailand",
+    "city": "Bangkok",
+    "continent": "Asia",
+    "description": "Ibu kota Thailand yang ramai, terkenal dengan kuil-kuil megah dan kehidupan jalanan yang semarak.",
+    "imageUrl": "https://picsum.photos/seed/bangkok_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/bangkok1/800/600",
+      "https://picsum.photos/seed/bangkok2/800/600"
+    ],
+    "rating": 4.7,
+    "reviewsCount": 6100,
+    "averageBudget": 25000000,
+    "isPopular": true,
+    "tags": ["kuil", "kuliner", "pasar", "kehidupan malam"],
+    "popularActivities": [
+      {
+        "name": "Grand Palace",
+        "description": "Kompleks istana raja-raja Siam, arsitektur yang menakjubkan dan rumah bagi Wat Phra Kaew.",
+        "imageUrl": "https://picsum.photos/seed/grandpalace/800/600"
+      },
+      {
+        "name": "Pasar Akhir Pekan Chatuchak",
+        "description": "Salah satu pasar akhir pekan terbesar di dunia, menjual segala sesuatu dari pakaian hingga hewan peliharaan.",
+        "imageUrl": "https://picsum.photos/seed/chatuchak/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Chiang Mai",
+    "country": "Thailand",
+    "city": "Chiang Mai",
+    "continent": "Asia",
+    "description": "Kota di pegunungan utara Thailand, pusat budaya Lanna dan kuil-kuil kuno.",
+    "imageUrl": "https://picsum.photos/seed/chiangmai_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/chiangmai1/800/600",
+      "https://picsum.photos/seed/chiangmai2/800/600"
+    ],
+    "rating": 4.8,
+    "reviewsCount": 3400,
+    "averageBudget": 22000000,
+    "isPopular": true,
+    "tags": ["alam", "pegunungan", "kuil", "santai"],
+    "popularActivities": [
+      {
+        "name": "Wat Phra That Doi Suthep",
+        "description": "Kuil suci di puncak gunung dengan pemandangan panorama kota Chiang Mai.",
+        "imageUrl": "https://picsum.photos/seed/doisuthep/800/600"
+      },
+      {
+        "name": "Elephant Nature Park",
+        "description": "Suaka penyelamatan dan rehabilitasi gajah di mana pengunjung dapat berinteraksi secara etis.",
+        "imageUrl": "https://picsum.photos/seed/elephantpark/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Kairo",
+    "country": "Mesir",
+    "city": "Kairo",
+    "continent": "Afrika",
+    "description": "Ibu kota Mesir yang padat, berlokasi di tepi Sungai Nil dan rumah bagi peninggalan kuno.",
+    "imageUrl": "https://picsum.photos/seed/cairo_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/cairo1/800/600",
+      "https://picsum.photos/seed/cairo2/800/600"
+    ],
+    "rating": 4.5,
+    "reviewsCount": 4300,
+    "averageBudget": 30000000,
+    "isPopular": true,
+    "tags": ["kuno", "sejarah", "piramida", "museum"],
+    "popularActivities": [
+      {
+        "name": "Kompleks Piramida Giza",
+        "description": "Satu-satunya dari Tujuh Keajaiban Dunia Kuno yang masih utuh, dijaga oleh Sphinx Agung.",
+        "imageUrl": "https://picsum.photos/seed/giza/800/600"
+      },
+      {
+        "name": "Museum Mesir",
+        "description": "Rumah bagi koleksi besar artefak Mesir kuno, termasuk harta karun Raja Tutankhamun.",
+        "imageUrl": "https://picsum.photos/seed/egyptmuseum/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Luxor",
+    "country": "Mesir",
+    "city": "Luxor",
+    "continent": "Afrika",
+    "description": "Dikenal sebagai 'museum terbuka terbesar di dunia', berisi reruntuhan kuil Karnak dan Luxor.",
+    "imageUrl": "https://picsum.photos/seed/luxor_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/luxor1/800/600",
+      "https://picsum.photos/seed/luxor2/800/600"
+    ],
+    "rating": 4.7,
+    "reviewsCount": 2900,
+    "averageBudget": 28000000,
+    "isPopular": true,
+    "tags": ["sejarah", "arkeologi", "kuil", "lembah raja"],
+    "popularActivities": [
+      {
+        "name": "Lembah Para Raja (Valley of the Kings)",
+        "description": "Situs pemakaman firaun dan bangsawan Kerajaan Baru, termasuk makam Tutankhamun.",
+        "imageUrl": "https://picsum.photos/seed/valleykings/800/600"
+      },
+      {
+        "name": "Kuil Karnak",
+        "description": "Kompleks kuil besar yang didedikasikan untuk dewa Amun, Mut, dan Khonsu.",
+        "imageUrl": "https://picsum.photos/seed/karnak/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Istanbul",
+    "country": "Turki",
+    "city": "Istanbul",
+    "continent": "Eropa/Asia",
+    "description": "Kota yang membentang di dua benua, kaya akan sejarah Bizantium dan Ottoman.",
+    "imageUrl": "https://picsum.photos/seed/istanbul_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/istanbul1/800/600",
+      "https://picsum.photos/seed/istanbul2/800/600"
+    ],
+    "rating": 4.8,
+    "reviewsCount": 5500,
+    "averageBudget": 33000000,
+    "isPopular": true,
+    "tags": ["sejarah", "budaya", "arsitektur", "dua benua"],
+    "popularActivities": [
+      {
+        "name": "Hagia Sophia",
+        "description": "Ikon arsitektur global, bekas gereja, lalu masjid, museum, dan kini kembali menjadi masjid.",
+        "imageUrl": "https://picsum.photos/seed/hagiasophia/800/600"
+      },
+      {
+        "name": "Masjid Biru (Sultan Ahmed Mosque)",
+        "description": "Masjid era Ottoman yang bersejarah, terkenal dengan interior ubin Iznik birunya.",
+        "imageUrl": "https://picsum.photos/seed/bluemosque/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Cappadocia",
+    "country": "Turki",
+    "city": "Cappadocia",
+    "continent": "Asia",
+    "description": "Wilayah di Anatolia tengah yang terkenal dengan 'cerobong peri' dan kota bawah tanah.",
+    "imageUrl": "https://picsum.photos/seed/cappadocia_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/cappadocia1/800/600",
+      "https://picsum.photos/seed/cappadocia2/800/600"
+    ],
+    "rating": 4.9,
+    "reviewsCount": 4100,
+    "averageBudget": 35000000,
+    "isPopular": true,
+    "tags": ["alam", "unik", "balon udara", "gua"],
+    "popularActivities": [
+      {
+        "name": "Naik Balon Udara Panas",
+        "description": "Pengalaman ikonik melihat formasi batuan unik dan 'cerobong peri' dari atas saat matahari terbit.",
+        "imageUrl": "https://picsum.photos/seed/hotairballoon/800/600"
+      },
+      {
+        "name": "Museum Terbuka Göreme",
+        "description": "Kompleks biara yang dipahat di batu dengan gereja-gereja gua berfresko indah.",
+        "imageUrl": "https://picsum.photos/seed/goreme/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Athena",
+    "country": "Yunani",
+    "city": "Athena",
+    "continent": "Eropa",
+    "description": "Ibu kota Yunani dan jantung peradaban kuno, didominasi oleh Acropolis.",
+    "imageUrl": "https://picsum.photos/seed/athens_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/athens1/800/600",
+      "https://picsum.photos/seed/athens2/800/600"
+    ],
+    "rating": 4.6,
+    "reviewsCount": 4800,
+    "averageBudget": 37000000,
+    "isPopular": true,
+    "tags": ["kuno", "sejarah", "filsafat", "mitologi"],
+    "popularActivities": [
+      {
+        "name": "Acropolis dan Parthenon",
+        "description": "Benteng kuno di atas bukit yang menampung kuil Parthenon, simbol demokrasi Yunani kuno.",
+        "imageUrl": "https://picsum.photos/seed/parthenon/800/600"
+      },
+      {
+        "name": "Distrik Plaka",
+        "description": "Distrik bersejarah di bawah Acropolis dengan jalan-jalan sempit berbatu, toko, dan taverna.",
+        "imageUrl": "https://picsum.photos/seed/plaka/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Santorini",
+    "country": "Yunani",
+    "city": "Santorini",
+    "continent": "Eropa",
+    "description": "Pulau di Laut Aegea, terkenal dengan bangunan bercat putih, kubah biru, dan pemandangan matahari terbenam.",
+    "imageUrl": "https://picsum.photos/seed/santorini_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/santorini1/800/600",
+      "https://picsum.photos/seed/santorini2/800/600"
+    ],
+    "rating": 4.9,
+    "reviewsCount": 5200,
+    "averageBudget": 55000000,
+    "isPopular": true,
+    "tags": ["pulau", "romantis", "matahari terbenam", "vulkanik"],
+    "popularActivities": [
+      {
+        "name": "Menonton Matahari Terbenam di Oia",
+        "description": "Desa indah di tebing yang terkenal di dunia sebagai lokasi terbaik melihat matahari terbenam.",
+        "imageUrl": "https://picsum.photos/seed/oia/800/600"
+      },
+      {
+        "name": "Pantai Merah (Red Beach)",
+        "description": "Pantai unik dengan pasir vulkanik berwarna merah dan tebing curam di belakangnya.",
+        "imageUrl": "https://picsum.photos/seed/redbeach/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Mexico City",
+    "country": "Meksiko",
+    "city": "Mexico City",
+    "continent": "Amerika Utara",
+    "description": "Ibu kota Meksiko yang padat dan berdataran tinggi, pusat budaya Aztec dan kolonial Spanyol.",
+    "imageUrl": "https://picsum.photos/seed/mexicocity_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/mexicocity1/800/600",
+      "https://picsum.photos/seed/mexicocity2/800/600"
+    ],
+    "rating": 4.6,
+    "reviewsCount": 4500,
+    "averageBudget": 31000000,
+    "isPopular": true,
+    "tags": ["budaya", "sejarah", "kuliner", "seni"],
+    "popularActivities": [
+      {
+        "name": "Zócalo (Plaza de la Constitución)",
+        "description": "Alun-alun utama kota, dikelilingi oleh Katedral Metropolitan dan Istana Nasional.",
+        "imageUrl": "https://picsum.photos/seed/zocalo/800/600"
+      },
+      {
+        "name": "Museum Frida Kahlo (Casa Azul)",
+        "description": "Rumah biru ikonik tempat pelukis Frida Kahlo lahir, tinggal, dan meninggal dunia.",
+        "imageUrl": "https://picsum.photos/seed/casaazul/800/600"
+      }
+    ]
+  },
+  {
+    "name": "Cancun",
+    "country": "Meksiko",
+    "city": "Cancun",
+    "continent": "Amerika Utara",
+    "description": "Kota di Semenanjung Yucatán yang terkenal dengan pantai berpasir putih, resor, dan kehidupan malam.",
+    "imageUrl": "https://picsum.photos/seed/cancun_main/800/600",
+    "images": [
+      "https://picsum.photos/seed/cancun1/800/600",
+      "https://picsum.photos/seed/cancun2/800/600"
+    ],
+    "rating": 4.4,
+    "reviewsCount": 3900,
+    "averageBudget": 50000000,
+    "isPopular": true,
+    "tags": ["pantai", "resor", "kehidupan malam", "maya"],
+    "popularActivities": [
+      {
+        "name": "Chichen Itza",
+        "description": "Reruntuhan kota Maya kuno yang megah, salah satu Keajaiban Dunia Baru, dapat diakses sebagai tur harian.",
+        "imageUrl": "https://picsum.photos/seed/chichenitza/800/600"
+      },
+      {
+        "name": "Zona Hotelera (Hotel Zone)",
+        "description": "Garis pantai berbentuk angka '7' yang dipenuhi resor all-inclusive, pantai, dan klub malam.",
+        "imageUrl": "https://picsum.photos/seed/hotelzone/800/600"
+      }
+    ]
+  }
+]
