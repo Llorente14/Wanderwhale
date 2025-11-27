@@ -1,18 +1,38 @@
 // lib/providers/providers.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
+
 import '../services/api_service.dart';
+import '../services/location_service.dart';
 import '../models/user_model.dart';
 import '../models/trip_model.dart';
 import '../models/booking_model.dart';
-// --- PERBAIKAN 1 ---
-// Nama model yang benar dari file kita adalah 'DestinationMasterModel'
 import '../models/destination_master_model.dart';
 
 // ==================== API SERVICE PROVIDER ====================
 
 final apiServiceProvider = Provider<ApiService>((ref) {
   return ApiService();
+});
+
+// ==================== LOCATION SERVICE & PROVIDERS ====================
+
+final locationServiceProvider = Provider<LocationService>((ref) {
+  return LocationService();
+});
+
+/// Mengambil posisi GPS user (lat, long)
+final userLocationProvider = FutureProvider<Position>((ref) async {
+  final service = ref.watch(locationServiceProvider);
+  return service.getCurrentPosition();
+});
+
+/// Mengubah posisi GPS menjadi teks alamat yang ramah untuk ditampilkan
+final userLocationTextProvider = FutureProvider<String>((ref) async {
+  final service = ref.watch(locationServiceProvider);
+  final position = await ref.watch(userLocationProvider.future);
+  return service.getReadableAddress(position);
 });
 
 // ==================== USER PROVIDER ====================
@@ -48,8 +68,6 @@ final upcomingTripsProvider = Provider<AsyncValue<List<TripModel>>>((ref) {
 
 // ==================== DESTINATIONS PROVIDER ====================
 
-// --- PERBAIKAN 2 ---
-// Mengganti 'DestinationModel' dengan 'DestinationMasterModel'
 final popularDestinationsProvider =
     FutureProvider<List<DestinationMasterModel>>((ref) async {
       final api = ref.watch(apiServiceProvider);
@@ -62,8 +80,6 @@ final popularDestinationsProvider =
 final searchQueryProvider = StateProvider<String>((ref) => '');
 
 // Provider untuk search results (destinations)
-// --- PERBAIKAN 3 ---
-// Mengganti 'DestinationModel' dengan 'DestinationMasterModel'
 final destinationSearchProvider = FutureProvider<List<DestinationMasterModel>>((
   ref,
 ) async {
@@ -99,7 +115,6 @@ final hotelLocationSearchProvider = FutureProvider<List<dynamic>>((ref) async {
 
 // ==================== BOOKINGS PROVIDER ====================
 
-// --- 2. TAMBAHKAN PROVIDER INI ---
 final upcomingFlightsProvider = FutureProvider<List<BookingModel>>((ref) async {
   final api = ref.watch(apiServiceProvider);
   // Ambil booking tipe 'flight'
@@ -109,6 +124,14 @@ final upcomingFlightsProvider = FutureProvider<List<BookingModel>>((ref) async {
   final now = DateTime.now();
   // Asumsi 'bookingDate' adalah tanggal penerbangan (ganti jika Anda punya 'departureDate')
   return bookings.where((booking) => booking.bookingDate.isAfter(now)).toList();
+});
+
+// ==================== WISHLIST PROVIDERS ====================
+
+/// Mengecek apakah suatu destinasi sudah ada di wishlist user
+final wishlistStatusProvider = FutureProvider.family<bool, String>((ref, destinationId) async {
+  final api = ref.watch(apiServiceProvider);
+  return api.checkWishlistStatus(destinationId);
 });
 
 // ==================== BOTTOM NAV INDEX PROVIDER ====================

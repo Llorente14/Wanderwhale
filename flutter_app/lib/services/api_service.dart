@@ -7,7 +7,6 @@ import 'package:flutter_app/models/user_model.dart';
 import 'package:flutter_app/models/trip_model.dart';
 import 'package:flutter_app/models/booking_model.dart';
 import 'package:flutter_app/models/destination_master_model.dart';
-import 'package:flutter_app/models/trip_destination_model.dart';
 // (Tambahkan model lain seperti HotelModel, FlightModel jika Anda membuatnya)
 
 class ApiService {
@@ -119,6 +118,12 @@ class ApiService {
 
   Future<List<TripModel>> getTrips() async {
     try {
+      // Jika user belum login, jangan panggil API supaya tidak error 401.
+      final user = _auth.currentUser;
+      if (user == null) {
+        return [];
+      }
+
       final response = await _dio.get(ApiConstants.trips);
       // 'data' dari backend kita adalah { success, message, data, count }
       // Kita perlu mem-parsing 'data' di dalamnya
@@ -309,6 +314,55 @@ class ApiService {
       return [];
     } catch (e) {
       rethrow;
+    }
+  }
+
+  // ==================== WISHLIST ====================
+
+  /// Mengecek apakah destinasi tertentu sudah ada di wishlist user.
+  Future<bool> checkWishlistStatus(String destinationId) async {
+    try {
+      final response = await _dio.get(
+        ApiConstants.wishlistCheck(destinationId),
+      );
+
+      if (response.data != null &&
+          response.data['data'] != null &&
+          response.data['data']['isWishlisted'] is bool) {
+        return response.data['data']['isWishlisted'] as bool;
+      }
+
+      return false;
+    } catch (e) {
+      // Jika terjadi error (misal network), jangan crash UI, anggap belum di-wishlist
+      return false;
+    }
+  }
+
+  /// Toggle wishlist (tambah jika belum ada, hapus jika sudah ada).
+  /// Mengembalikan `true` jika setelah toggle status menjadi di-wishlist.
+  Future<bool> toggleWishlist(String destinationId) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.wishlistToggle,
+        data: {'destinationId': destinationId},
+      );
+
+      if (response.data != null && response.data['data'] != null) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        if (data['isWishlisted'] is bool) {
+          return data['isWishlisted'] as bool;
+        }
+      }
+
+      return false;
+    } on DioException {
+      rethrow;
+    } catch (e) {
+      throw DioException(
+        requestOptions: RequestOptions(path: ApiConstants.wishlistToggle),
+        message: e.toString(),
+      );
     }
   }
 }

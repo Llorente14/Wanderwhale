@@ -18,9 +18,15 @@ class UpcomingTripCard extends StatelessWidget {
       width: 280, // Lebar sesuai desain
       margin: const EdgeInsets.only(right: 16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.gray1.withOpacity(0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -54,12 +60,20 @@ class UpcomingTripCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    trip.tripName, // Ganti dengan nama destinasi utama jika ada
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    trip.tripName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      color: AppColors.gray5,
+                    ),
                   ),
-                  Text(
+                  const SizedBox(height: 2),
+                  const Text(
                     "Indonesia, Bali", // TODO: Ganti dengan data asli
-                    style: TextStyle(color: AppColors.gray3, fontSize: 12),
+                    style: TextStyle(
+                      color: AppColors.gray3,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -67,7 +81,7 @@ class UpcomingTripCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // Bagian Tengah (Garis Lokasi) - Sesuai Desain
+          // Bagian Tengah (Garis Lokasi)
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -78,8 +92,11 @@ class UpcomingTripCard extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               const Text(
-                "Starting",
-                style: TextStyle(color: AppColors.gray3, fontSize: 12),
+                "Mulai",
+                style: TextStyle(
+                  color: AppColors.gray3,
+                  fontSize: 12,
+                ),
               ),
               Expanded(
                 child: Padding(
@@ -90,8 +107,11 @@ class UpcomingTripCard extends StatelessWidget {
               const Icon(Icons.location_on, color: AppColors.error, size: 14),
               const SizedBox(width: 4),
               const Text(
-                "Destination",
-                style: TextStyle(color: AppColors.gray3, fontSize: 12),
+                "Tujuan",
+                style: TextStyle(
+                  color: AppColors.gray3,
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
@@ -101,37 +121,57 @@ class UpcomingTripCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Chip(
-                label: Text(
-                  formattedDate,
-                  style: const TextStyle(fontSize: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
                 ),
-                backgroundColor: AppColors.primary.withOpacity(0.1),
-                padding: EdgeInsets.zero,
-                labelStyle: const TextStyle(color: AppColors.primaryDark1),
-                side: BorderSide.none,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.calendar_today,
+                      size: 12,
+                      color: AppColors.primaryDark1,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      formattedDate,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.primaryDark1,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               ElevatedButton(
                 onPressed: () {
                   // TODO: Navigasi ke Detail Trip
                   // Navigator.push(... TripDetailScreen(tripId: trip.tripId) ...)
                 },
-                child: const Text("Details"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.gray5,
-                  foregroundColor: AppColors.white,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
+                    horizontal: 22,
                     vertical: 10,
                   ),
                   textStyle: const TextStyle(
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                     fontSize: 12,
                   ),
                 ),
+                child: const Text("Detail"),
               ),
             ],
           ),

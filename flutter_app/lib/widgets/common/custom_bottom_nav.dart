@@ -11,6 +11,33 @@ class CustomBottomNav extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(bottomNavIndexProvider);
+    const navItems = [
+      _NavItemData(
+        icon: Icons.home_outlined,
+        activeIcon: Icons.home_rounded,
+        label: 'Home',
+      ),
+      _NavItemData(
+        icon: Icons.favorite_border,
+        activeIcon: Icons.favorite,
+        label: 'Favorite',
+      ),
+      _NavItemData(
+        icon: Icons.add_circle_outline_outlined,
+        activeIcon: Icons.add_circle_outline,
+        label: 'Trip',
+      ),
+      _NavItemData(
+        icon: Icons.chat_bubble_outline,
+        activeIcon: Icons.chat_bubble,
+        label: 'AI Chat',
+      ),
+      _NavItemData(
+        icon: Icons.settings_outlined,
+        activeIcon: Icons.settings,
+        label: 'Settings',
+      ),
+    ];
 
     return Container(
       height: 70,
@@ -24,60 +51,51 @@ class CustomBottomNav extends ConsumerWidget {
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _NavItem(
-            icon: Icons.home_outlined,
-            activeIcon: Icons.home_rounded,
-            label: 'Home',
-            index: 0,
-            currentIndex: currentIndex,
-            onTap: () {
-              ref.read(bottomNavIndexProvider.notifier).state = 0;
-            },
-          ),
-          _NavItem(
-            icon: Icons.favorite_border,
-            activeIcon: Icons.favorite,
-            label: 'Favorite',
-            index: 1,
-            currentIndex: currentIndex,
-            onTap: () {
-              ref.read(bottomNavIndexProvider.notifier).state = 1;
-            },
-          ),
-          _NavItem(
-            icon: Icons.add_circle_outline_outlined,
-            activeIcon: Icons.add_circle_outline,
-            label: 'Trip',
-            index: 2,
-            currentIndex: currentIndex,
-            onTap: () {
-              ref.read(bottomNavIndexProvider.notifier).state = 2;
-            },
-          ),
-          _NavItem(
-            icon: Icons.chat_bubble_outline,
-            activeIcon: Icons.chat_bubble,
-            label: 'AI Chat',
-            index: 3,
-            currentIndex: currentIndex,
-            onTap: () {
-              ref.read(bottomNavIndexProvider.notifier).state = 3;
-            },
-          ),
-          _NavItem(
-            icon: Icons.settings_outlined,
-            activeIcon: Icons.settings,
-            label: 'Settings',
-            index: 4,
-            currentIndex: currentIndex,
-            onTap: () {
-              ref.read(bottomNavIndexProvider.notifier).state = 4;
-            },
-          ),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final itemWidth = constraints.maxWidth / navItems.length;
+          final indicatorWidth = itemWidth * 0.45;
+          final indicatorLeft =
+              currentIndex * itemWidth + (itemWidth - indicatorWidth) / 2;
+
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeOutQuad,
+                left: indicatorLeft,
+                bottom: 6,
+                child: Container(
+                  width: indicatorWidth,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  for (var i = 0; i < navItems.length; i++)
+                    SizedBox(
+                      width: itemWidth,
+                      child: _NavItem(
+                        icon: navItems[i].icon,
+                        activeIcon: navItems[i].activeIcon,
+                        label: navItems[i].label,
+                        index: i,
+                        currentIndex: currentIndex,
+                        onTap: () {
+                          ref.read(bottomNavIndexProvider.notifier).state = i;
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -132,4 +150,16 @@ class _NavItem extends StatelessWidget {
       ),
     );
   }
+}
+
+class _NavItemData {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+
+  const _NavItemData({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+  });
 }

@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/theme/app_colors.dart';
-import '../../providers/providers.dart';
 
 class QuickMenu extends ConsumerWidget {
   const QuickMenu({Key? key}) : super(key: key);
@@ -11,32 +11,32 @@ class QuickMenu extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 60),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _QuickMenuItem(
-            icon: Icons.flight,
-            label: 'Home',
-            color: AppColors.primaryLight2,
+            icon: Icons.flight_takeoff,
+            label: 'Trip',
+            color: AppColors.primary,
             onTap: () {
-              ref.read(bottomNavIndexProvider.notifier).state = 0;
+              // TODO: Navigasi ke halaman daftar penerbangan / trip
+            },
+          ),
+          _QuickMenuItem(
+            icon: Icons.hotel,
+            label: 'Hotel',
+            color: AppColors.primaryLight1,
+            onTap: () {
+              // TODO: Navigasi ke halaman pencarian hotel
             },
           ),
           _QuickMenuItem(
             icon: Icons.favorite,
-            label: 'Favorite',
-            color: AppColors.primary,
-            onTap: () {
-              ref.read(bottomNavIndexProvider.notifier).state = 1;
-            },
-          ),
-          _QuickMenuItem(
-            icon: Icons.add_circle,
-            label: 'Planning',
+            label: 'Wishlist',
             color: AppColors.primaryDark1,
             onTap: () {
-              ref.read(bottomNavIndexProvider.notifier).state = 2;
+              // TODO: Navigasi ke halaman wishlist
             },
           ),
         ],
@@ -66,21 +66,28 @@ class _QuickMenuItem extends StatelessWidget {
         onTap: onTap,
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 6),
-          padding: const EdgeInsets.symmetric(vertical: 20),
+          padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 8),
+
           decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: color.withOpacity(0.3), width: 1),
+            color: color,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.35),
+                blurRadius: 18,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: color, size: 32),
+              Icon(icon, color: Colors.white, size: 26),
               const SizedBox(height: 8),
               Text(
                 label,
-                style: TextStyle(
-                  color: color,
+                style: const TextStyle(
+                  color: Colors.white,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),

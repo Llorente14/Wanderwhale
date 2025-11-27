@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../core/theme/app_colors.dart';
 import '../../providers/providers.dart';
 
@@ -12,6 +13,7 @@ class HomeHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(userProvider);
+    final locationAsync = ref.watch(userLocationTextProvider);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
@@ -90,7 +92,7 @@ class HomeHeader extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const Text(
-                  'Location',
+                  'Lokasi',
                   style: TextStyle(fontSize: 12, color: AppColors.gray3),
                 ),
                 const SizedBox(height: 2),
@@ -106,14 +108,34 @@ class HomeHeader extends ConsumerWidget {
                       size: 16,
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      'Jakarta, NY 112',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.gray5,
+                    locationAsync.when(
+                      data: (locationText) => Text(
+                        locationText,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.gray5,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      overflow: TextOverflow.ellipsis,
+                      loading: () => const Text(
+                        'Mencari lokasi...',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.gray5,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      error: (_, __) => const Text(
+                        'Lokasi tidak tersedia',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.gray5,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
