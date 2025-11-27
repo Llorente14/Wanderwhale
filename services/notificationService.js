@@ -18,6 +18,7 @@ const NOTIFICATION_TYPES = {
   HOTEL_ADDED: "hotel_added",
   REMINDER: "reminder",
   WELCOME: "welcome",
+  WISHLIST_ADDED: "wishlist_added",
 };
 
 // ============================================================================
