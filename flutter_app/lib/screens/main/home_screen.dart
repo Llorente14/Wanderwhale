@@ -4,6 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_app/core/theme/app_colors.dart';
 import 'package:flutter_app/widgets/common/custom_bottom_nav.dart';
 
+import '../discount/discount_page.dart';
+import '../explore/search_page.dart';
+import '../tips/tipstravel.dart';
+
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -43,6 +47,12 @@ class HomeScreen extends ConsumerWidget {
                 const _RecommendedFlightsSection(),
                 const SizedBox(height: 24),
                 const _DestinationByCountrySection(),
+                const SizedBox(height: 24),
+                const _TravelTipsCarouselSection(),
+                const SizedBox(height: 24),
+                const _DiscountCarouselSection(),
+                const SizedBox(height: 24),
+                const _ExploreCarouselSection(),
                 const SizedBox(height: 24),
               ],
             ),
@@ -967,30 +977,76 @@ class _DestinationByCountrySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final data = <String, List<String>>{
-      'Indonesia': ['Bali', 'Lombok', 'Yogyakarta'],
-      'Japan': ['Tokyo', 'Osaka', 'Kyoto'],
-      'Italy': ['Rome', 'Venice', 'Florence'],
+    final highlightsByCountry = {
+      'Indonesia': const [
+        _DestinationHighlight(
+          title: 'Sunrise Resort',
+          city: 'Bali',
+          country: 'Indonesia',
+          imageUrl:
+              'https://images.unsplash.com/photo-1501117716987-c8e1ecb210cc?auto=format&fit=crop&w=800&q=80',
+        ),
+        _DestinationHighlight(
+          title: 'Hidden Bay Villa',
+          city: 'Lombok',
+          country: 'Indonesia',
+          imageUrl:
+              'https://images.unsplash.com/photo-1470246973918-29a93221c455?auto=format&fit=crop&w=800&q=80',
+        ),
+      ],
+      'Japan': const [
+        _DestinationHighlight(
+          title: 'City Lights Hotel',
+          city: 'Tokyo',
+          country: 'Japan',
+          imageUrl:
+              'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+        ),
+        _DestinationHighlight(
+          title: 'Osaka Sky Suites',
+          city: 'Osaka',
+          country: 'Japan',
+          imageUrl:
+              'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=800&q=80',
+        ),
+      ],
+      'Italy': const [
+        _DestinationHighlight(
+          title: 'Venetian Escape',
+          city: 'Venice',
+          country: 'Italy',
+          imageUrl:
+              'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80',
+        ),
+        _DestinationHighlight(
+          title: 'Tuscan Dreams',
+          city: 'Florence',
+          country: 'Italy',
+          imageUrl:
+              'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=800&q=80',
+        ),
+      ],
     };
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Destinasi per Negara',
+          'Destinasi Pilihan',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
             color: AppColors.gray5,
           ),
         ),
-        const SizedBox(height: 12),
-        ...data.entries.map(
+        const SizedBox(height: 14),
+        const SizedBox(height: 14),
+        ...highlightsByCountry.entries.map(
           (entry) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _CountryDestinationsRow(
+            padding: const EdgeInsets.only(bottom: 18),
+            child: _CountryHighlightColumn(
               country: entry.key,
-              cities: entry.value,
+              highlights: entry.value,
             ),
           ),
         ),
@@ -999,82 +1055,312 @@ class _DestinationByCountrySection extends StatelessWidget {
   }
 }
 
-class _CountryDestinationsRow extends StatelessWidget {
+class _CountryHighlightColumn extends StatelessWidget {
   final String country;
-  final List<String> cities;
+  final List<_DestinationHighlight> highlights;
 
-  const _CountryDestinationsRow({required this.country, required this.cities});
+  const _CountryHighlightColumn({
+    required this.country,
+    required this.highlights,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          country,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.gray5,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Column(
+          children: highlights
+              .map(
+                (highlight) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _DestinationHighlightCard(data: highlight),
+                ),
+              )
+              .toList(),
+        ),
+      ],
+    );
+  }
+}
+
+class _DestinationHighlight {
+  final String title;
+  final String city;
+  final String country;
+  final String imageUrl;
+
+  const _DestinationHighlight({
+    required this.title,
+    required this.city,
+    required this.country,
+    required this.imageUrl,
+  });
+}
+
+class _DestinationHighlightCard extends StatelessWidget {
+  final _DestinationHighlight data;
+
+  const _DestinationHighlightCard({required this.data});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      width: double.infinity,
+      height: 150,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 14,
-            offset: const Offset(0, 8),
+            color: Colors.black.withOpacity(0.12),
+            blurRadius: 20,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                colors: [AppColors.primaryLight1, AppColors.primary],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.network(
+              data.imageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                color: AppColors.gray1,
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.image_not_supported_outlined,
+                  color: AppColors.gray3,
+                  size: 32,
+                ),
               ),
             ),
-            child: const Icon(Icons.public, size: 20, color: Colors.white),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  country,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.gray5,
-                  ),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.05),
+                    Colors.black.withOpacity(0.75),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: -4,
-                  children: cities
-                      .map(
-                        (city) => Chip(
-                          label: Text(
-                            city,
-                            style: const TextStyle(fontSize: 11),
-                          ),
-                          backgroundColor: AppColors.primaryLight3,
-                          padding: EdgeInsets.zero,
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: const VisualDensity(
-                            horizontal: 0,
-                            vertical: -2,
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    data.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${data.city}, ${data.country}',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.85),
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+}
+
+// ================= CAROUSEL ACTION SECTIONS =================
+
+class _ActionCardData {
+  final String title;
+  final String description;
+  final Widget Function() destinationBuilder;
+  final List<Color> gradientColors;
+
+  const _ActionCardData({
+    required this.title,
+    required this.description,
+    required this.destinationBuilder,
+    this.gradientColors = const [
+      AppColors.primaryLight1,
+      AppColors.primaryDark2,
+    ],
+  });
+}
+
+class _GradientActionCarousel extends StatelessWidget {
+  final String title;
+  final List<_ActionCardData> cards;
+
+  const _GradientActionCarousel({required this.title, required this.cards});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppColors.gray5,
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 150,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: cards.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 16),
+            itemBuilder: (context, index) {
+              final card = cards[index];
+              return GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => card.destinationBuilder(),
+                    ),
+                  );
+                },
+                child: Container(
+                  width: 260,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: LinearGradient(
+                      colors: card.gradientColors,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: card.gradientColors.last.withOpacity(0.35),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        card.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        card.description,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TravelTipsCarouselSection extends StatelessWidget {
+  const _TravelTipsCarouselSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final cards = [
+      _ActionCardData(
+        title: 'Travel Tips',
+        description: 'Packing hacks & itinerary ideas untuk liburanmu.',
+        destinationBuilder: () => const TipsTravelPage(),
+      ),
+      _ActionCardData(
+        title: 'Solo Traveler Guide',
+        description: 'Belajar cara eksplor dunia dengan aman & seru.',
+        destinationBuilder: () => const TipsTravelPage(),
+      ),
+    ];
+
+    return _GradientActionCarousel(title: 'Travel Tips Carousel', cards: cards);
+  }
+}
+
+class _DiscountCarouselSection extends StatelessWidget {
+  const _DiscountCarouselSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final cards = [
+      _ActionCardData(
+        title: 'Diskon Hotel 30%',
+        description: 'Klaim voucher akomodasi favoritmu sekarang.',
+        destinationBuilder: () => const DiscountPage(),
+        gradientColors: const [Color(0xFF4FACFE), Color(0xFF00F2FE)],
+      ),
+      _ActionCardData(
+        title: 'Flash Sale Flight',
+        description: 'Terbang murah ke kota impian setiap weekend.',
+        destinationBuilder: () => const DiscountPage(),
+        gradientColors: const [Color(0xFFFFA948), Color(0xFFFF5F6D)],
+      ),
+    ];
+
+    return _GradientActionCarousel(title: 'Diskon & Voucher', cards: cards);
+  }
+}
+
+class _ExploreCarouselSection extends StatelessWidget {
+  const _ExploreCarouselSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final cards = [
+      _ActionCardData(
+        title: 'Explore Your Journey',
+        description: 'Cari destinasi baru dan buat rencana perjalanan.',
+        destinationBuilder: () => const SearchPage(),
+        gradientColors: const [Color(0xFF43E97B), Color(0xFF38F9D7)],
+      ),
+      _ActionCardData(
+        title: 'Inspire Me',
+        description: 'Temukan rekomendasi unik dari WanderWhale.',
+        destinationBuilder: () => const SearchPage(),
+        gradientColors: const [Color(0xFFFA8BFF), Color(0xFF2BD2FF)],
+      ),
+    ];
+
+    return _GradientActionCarousel(title: 'Explore Lebih Jauh', cards: cards);
   }
 }
 
