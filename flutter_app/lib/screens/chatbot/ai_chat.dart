@@ -28,7 +28,7 @@ class _AiChatState extends State<AiChat> with SingleTickerProviderStateMixin {
 
   // Using Groq API - free tier with generous limits
   // Get your free API key at: https://console.groq.com/
-  static const String _groqApiKey = "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"; // Replace with your free API key
+  static const String _groqApiKey = ""; // Replace with your free API key
   static const String _groqApiUrl = "https://api.groq.com/openai/v1/chat/completions";
   
   @override
