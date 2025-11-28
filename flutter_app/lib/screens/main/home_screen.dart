@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_app/screens/wishlist/wishlist_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -645,7 +646,12 @@ class _QuickMenuRow extends StatelessWidget {
         icon: Icons.favorite,
         label: 'Wishlist',
         gradient: const [Color(0xFF6A4CFF), Color(0xFF9D7CFF)],
-        onTap: null,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const WishlistScreen()),
+          );
+        },
       ),
       _MenuItemData(
         icon: Icons.explore,
