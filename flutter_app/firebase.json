@@ -1,0 +1,25 @@
+{
+    "flutter": {
+        "platforms": {
+            "android": {
+                "default": {
+                    "projectId": "travexel-4b250",
+                    "appId": "1:842006569127:android:fdfcdfb9253c51dd853b82",
+                    "fileOutput": "android/app/google-services.json"
+                }
+            },
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "travexel-4b250",
+                    "configurations": {
+                        "android": "1:842006569127:android:fdfcdfb9253c51dd853b82",
+                        "ios": "1:842006569127:ios:e5cbed300dc636ea853b82",
+                        "macos": "1:842006569127:ios:e5cbed300dc636ea853b82",
+                        "web": "1:842006569127:web:3bba87989009193c853b82",
+                        "windows": "1:842006569127:web:82ba3619fc02c2a1853b82"
+                    }
+                }
+            }
+        }
+    }
+}

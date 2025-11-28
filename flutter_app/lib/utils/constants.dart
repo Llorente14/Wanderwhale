@@ -49,6 +49,8 @@ class ApiConstants {
   static const String hotelBookings = "/bookings/hotels"; // POST
   static const String flightBookings = "/flights/bookings"; // POST
   static const String myBookings = "/bookings"; // GET
+  static const String hotelBookingsList = "/hotels/bookings"; // GET
+  static const String flightBookingsList = "/flights/bookings"; // GET
 
   // === WISHLIST ===
   static const String wishlist = "/wishlist"; // GET, POST

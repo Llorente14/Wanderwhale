@@ -31,6 +31,30 @@
 
   <title>flutter_app</title>
   <link rel="manifest" href="manifest.json">
+  <!--
+    Google Sign-In (Web) requires a Web OAuth Client ID. Replace the placeholder
+    below with your OAuth Client ID (format: xxxxx.apps.googleusercontent.com).
+    Create it in Google Cloud Console / Firebase Console (Auth -> Sign-in method).
+  -->
+  <meta name="google-signin-client_id" content="REPLACE_WITH_GOOGLE_CLIENT_ID.apps.googleusercontent.com" />
+
+  <!--
+    Facebook SDK (optional for web). If you use Facebook sign-in on web,
+    replace FB_APP_ID in the snippet below with your Facebook App ID.
+    The SDK is loaded and initialized so `flutter_facebook_auth` can use it.
+  -->
+  <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
+  <script>
+    // Replace 'REPLACE_WITH_FB_APP_ID' with your Facebook App ID
+    window.fbAsyncInit = function() {
+      FB.init({
+        appId      : 'REPLACE_WITH_FB_APP_ID',
+        cookie     : true,
+        xfbml      : true,
+        version    : 'v17.0'
+      });
+    };
+  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

@@ -2,13 +2,19 @@
 
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_app/utils/constants.dart';
-import 'package:flutter_app/models/user_model.dart';
-import 'package:flutter_app/models/trip_model.dart';
 import 'package:flutter_app/models/booking_model.dart';
 import 'package:flutter_app/models/destination_master_model.dart';
+import 'package:flutter_app/models/flight_booking_model.dart';
+import 'package:flutter_app/models/flight_offer_model.dart';
+import 'package:flutter_app/models/hotel_booking_model.dart';
+import 'package:flutter_app/models/hotel_offer_model.dart';
+import 'package:flutter_app/models/notification_model.dart';
 import 'package:flutter_app/models/trip_destination_model.dart';
-// (Tambahkan model lain seperti HotelModel, FlightModel jika Anda membuatnya)
+import 'package:flutter_app/models/trip_hotel_model.dart';
+import 'package:flutter_app/models/trip_model.dart';
+import 'package:flutter_app/models/user_model.dart';
+import 'package:flutter_app/models/wishlist_model.dart';
+import 'package:flutter_app/utils/constants.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
@@ -16,6 +22,7 @@ class ApiService {
 
   late Dio _dio;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  void Function()? _onUnauthorized;
 
   ApiService._internal() {
     _dio = Dio(
@@ -44,13 +51,23 @@ class ApiService {
         onError: (error, handler) {
           // Handle 401 Unauthorized (misal: token dicabut)
           if (error.response?.statusCode == 401) {
-            // TODO: Panggil AuthProvider untuk logout & redirect ke login
+            // Panggil callback jika terdaftar (AuthProvider akan mendaftarkan)
+            try {
+              _onUnauthorized?.call();
+            } catch (e) {
+              // ignore errors from callback
+            }
             print("Token tidak valid. Harap login ulang.");
           }
           return handler.next(error);
         },
       ),
     );
+  }
+
+  /// Register callback yang dipanggil saat API mengembalikan 401 Unauthorized
+  void setOnUnauthorizedCallback(void Function()? callback) {
+    _onUnauthorized = callback;
   }
 
   // === Helper untuk parsing respons ===
@@ -115,10 +132,25 @@ class ApiService {
     }
   }
 
+  /// Update /users/fcm-token (PUT) - menyimpan FCM token device
+  Future<void> updateFcmToken(String fcmToken) async {
+    try {
+      await _dio.put(ApiConstants.userFcmToken, data: {'fcmToken': fcmToken});
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   // ==================== TRIPS (Internal) ====================
 
   Future<List<TripModel>> getTrips() async {
     try {
+      // Jika user belum login, jangan panggil API supaya tidak error 401.
+      final user = _auth.currentUser;
+      if (user == null) {
+        return [];
+      }
+
       final response = await _dio.get(ApiConstants.trips);
       // 'data' dari backend kita adalah { success, message, data, count }
       // Kita perlu mem-parsing 'data' di dalamnya
@@ -137,7 +169,174 @@ class ApiService {
     }
   }
 
-  // (Tambahkan createTrip, addTripDestination, dll. di sini)
+  Future<TripModel> createTrip(Map<String, dynamic> payload) async {
+    try {
+      final response = await _dio.post(ApiConstants.trips, data: payload);
+      return _parseResponse(response, (json) => TripModel.fromJson(json));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<TripModel> updateTrip(
+    String tripId,
+    Map<String, dynamic> payload,
+  ) async {
+    try {
+      final response = await _dio.put(
+        ApiConstants.tripDetail(tripId),
+        data: payload,
+      );
+      return _parseResponse(response, (json) => TripModel.fromJson(json));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteTrip(String tripId) async {
+    try {
+      await _dio.delete(ApiConstants.tripDetail(tripId));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<TripModel> updateTripStatus(String tripId, String status) async {
+    try {
+      final response = await _dio.patch(
+        ApiConstants.tripStatus(tripId),
+        data: {'status': status},
+      );
+      return _parseResponse(response, (json) => TripModel.fromJson(json));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<TripDestinationModel>> getTripDestinations(
+    String tripId, {
+    String? sortBy,
+  }) async {
+    try {
+      final response = await _dio.get(
+        ApiConstants.tripDestinations(tripId),
+        queryParameters: {if (sortBy != null) 'sortBy': sortBy},
+      );
+      return _parseResponseList(
+        response,
+        (json) => TripDestinationModel.fromJson(json),
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<TripDestinationModel> createTripDestination(
+    String tripId,
+    Map<String, dynamic> payload,
+  ) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.tripDestinations(tripId),
+        data: payload,
+      );
+      return _parseResponse(
+        response,
+        (json) => TripDestinationModel.fromJson(json),
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<TripDestinationModel> updateTripDestination(
+    String tripId,
+    String destinationId,
+    Map<String, dynamic> payload,
+  ) async {
+    try {
+      final response = await _dio.put(
+        ApiConstants.tripDestinationDetail(tripId, destinationId),
+        data: payload,
+      );
+      return _parseResponse(
+        response,
+        (json) => TripDestinationModel.fromJson(json),
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteTripDestination(
+    String tripId,
+    String destinationId,
+  ) async {
+    try {
+      await _dio.delete(
+        ApiConstants.tripDestinationDetail(tripId, destinationId),
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<TripHotelModel>> getTripHotels(
+    String tripId, {
+    String? sortBy,
+  }) async {
+    try {
+      final response = await _dio.get(
+        ApiConstants.tripHotels(tripId),
+        queryParameters: {if (sortBy != null) 'sortBy': sortBy},
+      );
+      return _parseResponseList(
+        response,
+        (json) => TripHotelModel.fromJson(json),
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<TripHotelModel> createTripHotel(
+    String tripId,
+    Map<String, dynamic> payload,
+  ) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.tripHotels(tripId),
+        data: payload,
+      );
+      return _parseResponse(response, (json) => TripHotelModel.fromJson(json));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<TripHotelModel> updateTripHotel(
+    String tripId,
+    String hotelId,
+    Map<String, dynamic> payload,
+  ) async {
+    try {
+      final response = await _dio.put(
+        ApiConstants.tripHotelDetail(tripId, hotelId),
+        data: payload,
+      );
+      return _parseResponse(response, (json) => TripHotelModel.fromJson(json));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteTripHotel(String tripId, String hotelId) async {
+    try {
+      await _dio.delete(ApiConstants.tripHotelDetail(tripId, hotelId));
+    } catch (e) {
+      rethrow;
+    }
+  }
 
   // ==================== DESTINATIONS (Publik) ====================
 
@@ -208,7 +407,7 @@ class ApiService {
 
   // ==================== HOTEL OFFERS (Amadeus Step 2) ====================
 
-  Future<List<dynamic>> getHotelOffers({
+  Future<List<HotelOfferGroup>> getHotelOffers({
     required List<String> hotelIds,
     required String checkInDate,
     required String checkOutDate,
@@ -224,16 +423,19 @@ class ApiService {
           'adults': adults,
         },
       );
-      return _parseResponseList(response, (json) => json);
+      return _parseResponseList(
+        response,
+        (json) => HotelOfferGroup.fromJson(json),
+      );
     } catch (e) {
       rethrow;
     }
   }
 
-  Future<dynamic> getHotelOfferPricing(String offerId) async {
+  Future<HotelOffer> getHotelOfferPricing(String offerId) async {
     try {
       final response = await _dio.get(ApiConstants.hotelOfferDetail(offerId));
-      return _parseResponse(response, (json) => json); // Mengembalikan 1 objek
+      return _parseResponse(response, (json) => HotelOffer.fromJson(json));
     } catch (e) {
       rethrow;
     }
@@ -243,14 +445,19 @@ class ApiService {
 
   // (searchFlightLocations mirip dengan searchLocationsByKeyword)
 
-  Future<List<dynamic>> searchFlightOffers(Map<String, dynamic> body) async {
+  Future<List<FlightOfferModel>> searchFlightOffers(
+    Map<String, dynamic> body,
+  ) async {
     try {
       // Ingat, Flight Search kita adalah POST, bukan GET
       final response = await _dio.post(
         ApiConstants.searchFlightOffers,
         data: body,
       );
-      return _parseResponseList(response, (json) => json);
+      return _parseResponseList(
+        response,
+        (json) => FlightOfferModel.fromJson(json),
+      );
     } catch (e) {
       rethrow;
     }
@@ -270,19 +477,27 @@ class ApiService {
 
   // ==================== BOOKING (Dummy Step 3) ====================
 
-  Future<dynamic> storeHotelBooking(Map<String, dynamic> body) async {
+  Future<HotelBookingModel> storeHotelBooking(Map<String, dynamic> body) async {
     try {
       final response = await _dio.post(ApiConstants.hotelBookings, data: body);
-      return _parseResponse(response, (json) => json);
+      return _parseResponse(
+        response,
+        (json) => HotelBookingModel.fromJson(json),
+      );
     } catch (e) {
       rethrow;
     }
   }
 
-  Future<dynamic> storeFlightBooking(Map<String, dynamic> body) async {
+  Future<FlightBookingModel> storeFlightBooking(
+    Map<String, dynamic> body,
+  ) async {
     try {
       final response = await _dio.post(ApiConstants.flightBookings, data: body);
-      return _parseResponse(response, (json) => json);
+      return _parseResponse(
+        response,
+        (json) => FlightBookingModel.fromJson(json),
+      );
     } catch (e) {
       rethrow;
     }
@@ -307,6 +522,160 @@ class ApiService {
             .toList();
       }
       return [];
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<HotelBookingModel>> getHotelBookings({
+    String? tripId,
+    String? status,
+    int? page,
+    int? limit,
+  }) async {
+    try {
+      final response = await _dio.get(
+        ApiConstants.hotelBookingsList,
+        queryParameters: {
+          if (tripId != null) 'tripId': tripId,
+          if (status != null) 'status': status,
+          if (page != null) 'page': page,
+          if (limit != null) 'limit': limit,
+        },
+      );
+      return _parseResponseList(
+        response,
+        (json) => HotelBookingModel.fromJson(json),
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<FlightBookingModel>> getFlightBookings({
+    String? tripId,
+    String? status,
+    int? page,
+    int? limit,
+  }) async {
+    try {
+      final response = await _dio.get(
+        ApiConstants.flightBookingsList,
+        queryParameters: {
+          if (tripId != null) 'tripId': tripId,
+          if (status != null) 'status': status,
+          if (page != null) 'page': page,
+          if (limit != null) 'limit': limit,
+        },
+      );
+      return _parseResponseList(
+        response,
+        (json) => FlightBookingModel.fromJson(json),
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // ==================== WISHLIST ====================
+
+  /// Mengecek apakah destinasi tertentu sudah ada di wishlist user.
+  Future<bool> checkWishlistStatus(String destinationId) async {
+    try {
+      final response = await _dio.get(
+        ApiConstants.wishlistCheck(destinationId),
+      );
+
+      if (response.data != null &&
+          response.data['data'] != null &&
+          response.data['data']['isWishlisted'] is bool) {
+        return response.data['data']['isWishlisted'] as bool;
+      }
+
+      return false;
+    } catch (e) {
+      // Jika terjadi error (misal network), jangan crash UI, anggap belum di-wishlist
+      return false;
+    }
+  }
+
+  /// Toggle wishlist (tambah jika belum ada, hapus jika sudah ada).
+  /// Mengembalikan `true` jika setelah toggle status menjadi di-wishlist.
+  Future<bool> toggleWishlist(String destinationId) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.wishlistToggle,
+        data: {'destinationId': destinationId},
+      );
+
+      if (response.data != null && response.data['data'] != null) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        if (data['isWishlisted'] is bool) {
+          return data['isWishlisted'] as bool;
+        }
+      }
+
+      return false;
+    } on DioException {
+      rethrow;
+    } catch (e) {
+      throw DioException(
+        requestOptions: RequestOptions(path: ApiConstants.wishlistToggle),
+        message: e.toString(),
+      );
+    }
+  }
+
+  Future<List<WishlistModel>> getWishlistItems() async {
+    try {
+      final response = await _dio.get(ApiConstants.wishlist);
+      return _parseResponseList(
+        response,
+        (json) => WishlistModel.fromJson(json),
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteWishlistItem(String wishlistId) async {
+    try {
+      await _dio.delete(ApiConstants.wishlistDetail(wishlistId));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // ==================== NOTIFICATIONS ====================
+
+  Future<List<NotificationModel>> getNotifications({
+    bool unreadOnly = false,
+  }) async {
+    try {
+      final response = await _dio.get(
+        ApiConstants.notifications,
+        queryParameters: {if (unreadOnly) 'unreadOnly': unreadOnly},
+      );
+      return _parseResponseList(
+        response,
+        (json) => NotificationModel.fromJson(json['id'] ?? '', json),
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> markNotificationRead(String notificationId) async {
+    try {
+      await _dio.patch(ApiConstants.notificationMarkRead(notificationId));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> markAllNotificationsRead() async {
+    try {
+      await _dio.patch(ApiConstants.notificationMarkAllRead);
     } catch (e) {
       rethrow;
     }

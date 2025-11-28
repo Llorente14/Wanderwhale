@@ -1,14 +1,18 @@
-// lib/main.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'screens/main/home_screen.dart';
-import '../../core/theme/app_colors.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
+import 'screens/main/welcome_screen.dart';
+import 'core/theme/app_colors.dart';
+import 'firebase_options.dart';
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions
+        .currentPlatform, // if you have firebase_options.dart
+  );
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -67,7 +71,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const HomeScreen(),
+      home: const WelcomeScreen(),
     );
   }
 }
