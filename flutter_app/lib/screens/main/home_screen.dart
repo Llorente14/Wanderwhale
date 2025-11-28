@@ -7,6 +7,8 @@ import 'package:flutter_app/widgets/common/custom_bottom_nav.dart';
 import '../discount/discount_page.dart';
 import '../explore/search_page.dart';
 import '../tips/tipstravel.dart';
+import '../flight/flight_recommendation.dart';
+import '../hotel/hotel_recommendations.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -196,7 +198,6 @@ class _SearchBar extends StatelessWidget {
 }
 
 // ================= HERO SUMMARY BANNER =================
-
 class _HeroSummaryBanner extends StatelessWidget {
   const _HeroSummaryBanner();
 
@@ -208,15 +209,15 @@ class _HeroSummaryBanner extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
         gradient: const LinearGradient(
+          colors: [Color(0xFF0F6DC2), Color(0xFF0BC5EA)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.primaryLight1, AppColors.primaryDark1],
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryDark1.withOpacity(0.35),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+            color: const Color(0xFF0F6DC2).withOpacity(0.35),
+            blurRadius: 24,
+            offset: const Offset(0, 14),
           ),
         ],
       ),
@@ -225,7 +226,7 @@ class _HeroSummaryBanner extends StatelessWidget {
         children: [
           Row(
             children: const [
-              Icon(Icons.flight_takeoff, color: Colors.white, size: 22),
+              Icon(Icons.flight_takeoff, color: Colors.white70, size: 22),
               SizedBox(width: 8),
               Text(
                 'Rencana Penerbanganmu',
@@ -242,7 +243,7 @@ class _HeroSummaryBanner extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
               _FlightPoint(code: 'DPS', city: 'Bali'),
-              Icon(Icons.flight, color: Colors.white70, size: 18),
+              Icon(Icons.flight, color: Colors.white, size: 26),
               _FlightPoint(code: 'CGK', city: 'Jakarta'),
             ],
           ),
@@ -292,117 +293,126 @@ class _FlightPoint extends StatelessWidget {
 }
 
 // ================= QUICK MENU =================
-
 class _QuickMenuRow extends StatelessWidget {
   const _QuickMenuRow();
 
   @override
   Widget build(BuildContext context) {
-    const menus = [
-      _QuickMenuItemData(
-        icon: Icons.flight,
+    final items = [
+      _MenuItemData(
+        icon: Icons.flight_takeoff,
         label: 'Flight',
-        gradientColors: [AppColors.primaryLight2, AppColors.primaryLight1],
+        gradient: const [Color(0xFF0F6DC2), Color(0xFF00B2FF)],
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const FlightRecommendation(),
+            ),
+          );
+        },
       ),
-
-      // 2. HOTEL (Medium)
-      _QuickMenuItemData(
+      _MenuItemData(
         icon: Icons.hotel,
         label: 'Hotel',
-        gradientColors: [AppColors.primaryLight1, AppColors.primary],
+        gradient: const [Color(0xFF0BB5D4), Color(0xFF00E0B6)],
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const HotelRecommendations(),
+            ),
+          );
+        },
       ),
-
-      // 3. WISHLIST (Aksen Merah/Pink tapi soft)
-      // Khusus wishlist biasanya tetap butuh warna kemerahan/pink
-      _QuickMenuItemData(
+      _MenuItemData(
         icon: Icons.favorite,
         label: 'Wishlist',
-        gradientColors: [
-          AppColors.primary,
-          AppColors.primaryDark1,
-        ], // Soft Pink Material
+        gradient: const [Color(0xFF6A4CFF), Color(0xFF9D7CFF)],
+        onTap: null,
       ),
-
-      // 4. TRIP (Gelap/Dalam)
-      _QuickMenuItemData(
-        icon: Icons.travel_explore,
+      _MenuItemData(
+        icon: Icons.explore,
         label: 'Trip',
-        gradientColors: [AppColors.primaryDark1, AppColors.primaryDark2],
+        gradient: const [Color(0xFF005C97), Color(0xFF363795)],
+        onTap: null,
       ),
     ];
 
     return Row(
-      children: [
-        for (int i = 0; i < menus.length; i++) ...[
-          Expanded(
-            child: _QuickMenuItem(
-              icon: menus[i].icon,
-              label: menus[i].label,
-              gradientColors: menus[i].gradientColors,
+      children: items
+          .map(
+            (item) => Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: _QuickMenuItem(data: item),
+              ),
             ),
-          ),
-          if (i != menus.length - 1) const SizedBox(width: 12),
-        ],
-      ],
+          )
+          .toList(),
     );
   }
 }
 
-class _QuickMenuItemData {
+class _MenuItemData {
   final IconData icon;
   final String label;
-  final List<Color> gradientColors;
+  final List<Color> gradient;
+  final VoidCallback? onTap;
 
-  const _QuickMenuItemData({
+  const _MenuItemData({
     required this.icon,
     required this.label,
-    required this.gradientColors,
+    required this.gradient,
+    this.onTap,
   });
 }
 
 class _QuickMenuItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final List<Color> gradientColors;
+  final _MenuItemData data;
 
-  const _QuickMenuItem({
-    required this.icon,
-    required this.label,
-    required this.gradientColors,
-  });
+  const _QuickMenuItem({required this.data});
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 78,
+    return GestureDetector(
+      onTap: data.onTap,
       child: Container(
+        height: 82,
         decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
           gradient: LinearGradient(
+            colors: data.gradient,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: gradientColors,
           ),
-          borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: gradientColors.last.withOpacity(0.35),
-              blurRadius: 16,
-              offset: const Offset(0, 10),
+              color: data.gradient.last.withOpacity(0.3),
+              blurRadius: 14,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white, size: 22),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(data.icon, color: Colors.white, size: 20),
+            ),
             const SizedBox(height: 6),
             Text(
-              label,
+              data.label,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                letterSpacing: 0.2,
               ),
             ),
           ],
