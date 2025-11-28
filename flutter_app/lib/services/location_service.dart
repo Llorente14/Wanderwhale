@@ -3,6 +3,9 @@ import 'package:geolocator/geolocator.dart';
 
 /// Service sederhana untuk mengelola izin dan pengambilan lokasi user.
 class LocationService {
+  double? lat;
+  double? lng;
+
   /// Memastikan permission lokasi sudah diberikan, lalu mengembalikan posisi terkini.
   Future<Position> getCurrentPosition() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -25,9 +28,12 @@ class LocationService {
       );
     }
 
-    return Geolocator.getCurrentPosition(
+    final position = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.best,
     );
+    lat = position.latitude;
+    lng = position.longitude;
+    return position;
   }
 
   /// Mengubah posisi GPS menjadi teks yang lebih manusiawi, misalnya:
