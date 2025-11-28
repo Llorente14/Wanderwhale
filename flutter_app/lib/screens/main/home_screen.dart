@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -12,6 +14,7 @@ import 'package:flutter_app/models/wishlist_model.dart';
 import 'package:flutter_app/providers/flight_providers.dart';
 import 'package:flutter_app/providers/hotel_providers.dart';
 import 'package:flutter_app/providers/providers.dart';
+import 'package:flutter_app/providers/wishlist_providers.dart';
 import 'package:flutter_app/utils/formatters.dart';
 import 'package:flutter_app/widgets/common/custom_bottom_nav.dart';
 
@@ -2327,13 +2330,68 @@ class _TravelTipsCarouselSection extends StatelessWidget {
   }
 }
 
-class _RecommendationCard extends StatelessWidget {
+class _RecommendationCard extends ConsumerStatefulWidget {
   const _RecommendationCard({required this.destination});
 
   final DestinationMasterModel destination;
 
   @override
+  ConsumerState<_RecommendationCard> createState() =>
+      _RecommendationCardState();
+}
+
+class _RecommendationCardState extends ConsumerState<_RecommendationCard> {
+  bool _isToggling = false;
+
+  Future<void> _handleToggle() async {
+    if (_isToggling) return;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Silakan login terlebih dahulu untuk menggunakan wishlist.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isToggling = true);
+    final manager = ref.read(wishlistManagerProvider);
+    try {
+      await manager.toggle(widget.destination.destinationId);
+      ref.invalidate(wishlistItemsProvider);
+      ref.invalidate(wishlistStatusProvider(widget.destination.destinationId));
+      ref.invalidate(wishlistStatusProvider(widget.destination.destinationId));
+    } on DioException catch (error) {
+      if (!mounted) return;
+      final status = error.response?.statusCode;
+      final message = status == 401
+          ? 'Sesi kamu berakhir. Silakan login ulang.'
+          : 'Gagal mengubah wishlist: ${error.message}';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal mengubah wishlist: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isToggling = false);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final statusAsync = ref.watch(
+      wishlistStatusProvider(widget.destination.destinationId),
+    );
+
     return Container(
       width: 160,
       decoration: BoxDecoration(
@@ -2352,7 +2410,7 @@ class _RecommendationCard extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             Image.network(
-              destination.imageUrl,
+              widget.destination.imageUrl,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
                 return Container(
@@ -2385,7 +2443,7 @@ class _RecommendationCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Text(
-                    destination.name,
+                    widget.destination.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -2396,7 +2454,7 @@ class _RecommendationCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${destination.city}, ${destination.country}',
+                    '${widget.destination.city}, ${widget.destination.country}',
                     style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                 ],
@@ -2405,17 +2463,61 @@ class _RecommendationCard extends StatelessWidget {
             Positioned(
               top: 10,
               right: 10,
-              child: Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.8),
-                  shape: BoxShape.circle,
+              child: statusAsync.when(
+                data: (isWishlisted) => Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isWishlisted
+                        ? const Color(0xFFFF4D6A).withOpacity(0.85)
+                        : Colors.white.withOpacity(0.2),
+                    border: Border.all(
+                      color: isWishlisted
+                          ? const Color(0xFFFF4D6A)
+                          : Colors.white70,
+                    ),
+                  ),
+                  child: IconButton(
+                    iconSize: 18,
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    onPressed: _isToggling ? null : _handleToggle,
+                    icon: Icon(
+                      isWishlisted ? Icons.favorite : Icons.favorite_border,
+                      color: isWishlisted ? Colors.white : Colors.white,
+                    ),
+                  ),
                 ),
-                child: const Icon(
-                  Icons.favorite_border,
-                  size: 16,
-                  color: AppColors.error,
+                loading: () => Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.15),
+                    border: Border.all(color: Colors.white38),
+                  ),
+                  padding: const EdgeInsets.all(8),
+                  child: const CircularProgressIndicator(strokeWidth: 2),
+                ),
+                error: (_, __) => Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.2),
+                    border: Border.all(color: Colors.white54),
+                  ),
+                  child: IconButton(
+                    iconSize: 18,
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: _isToggling ? null : _handleToggle,
+                    icon: const Icon(
+                      Icons.favorite_border,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ),
             ),
