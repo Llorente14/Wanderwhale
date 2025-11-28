@@ -169,4 +169,3 @@ const List<Map<String, dynamic>> _mockFlightOffers = [
     ],
   },
 ];
-

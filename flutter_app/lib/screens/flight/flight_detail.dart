@@ -771,4 +771,3 @@ const Map<String, String> _airlineNames = {
   'GA': 'Garuda Indonesia',
   'SQ': 'Singapore Airlines',
 };
-

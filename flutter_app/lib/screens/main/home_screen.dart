@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flutter_app/core/theme/app_colors.dart';
 import 'package:flutter_app/widgets/common/custom_bottom_nav.dart';
+import 'package:flutter_app/screens/flight/flight_recommendation.dart';
+import 'package:flutter_app/screens/hotel/hotel_recommendations.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -63,74 +65,76 @@ class _HeaderSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        // Avatar
         Container(
-          width: 46,
-          height: 46,
+          width: 50,
+          height: 50,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: AppColors.white,
+            gradient: const LinearGradient(
+              colors: [AppColors.primaryLight1, AppColors.primary],
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 14,
-                offset: const Offset(0, 6),
+                color: AppColors.primary.withOpacity(0.25),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
           child: const CircleAvatar(
+            backgroundColor: Colors.transparent,
             backgroundImage: AssetImage('assets/images/avatar_placeholder.png'),
           ),
         ),
-        const SizedBox(width: 12),
-        // Greeting & location
+        const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
+            children: [
+              const Text(
                 'Hello, Traveler',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 22,
                   fontWeight: FontWeight.w700,
                   color: AppColors.gray5,
                 ),
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 6),
               Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+                children: const [
                   Icon(Icons.location_on, size: 16, color: AppColors.primary),
                   SizedBox(width: 4),
                   Text(
                     'Jakarta, Indonesia',
-                    style: TextStyle(fontSize: 12, color: AppColors.gray3),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.gray3,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
             ],
           ),
         ),
-        const SizedBox(width: 12),
-        // Notification button
         Container(
-          width: 40,
-          height: 40,
+          width: 44,
+          height: 44,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
             color: AppColors.white,
+            shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.08),
-                blurRadius: 14,
+                blurRadius: 16,
                 offset: const Offset(0, 6),
               ),
             ],
           ),
           child: IconButton(
-            icon: const Icon(Icons.notifications_none),
-            color: AppColors.gray5,
             onPressed: () {},
+            icon: const Icon(Icons.notifications_none),
+            color: AppColors.primary,
           ),
         ),
       ],
@@ -157,29 +161,35 @@ class _SearchBar extends StatelessWidget {
           ),
         ],
       ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         children: [
-          const SizedBox(width: 16),
           const Icon(Icons.search, color: AppColors.gray3),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           const Expanded(
             child: TextField(
               decoration: InputDecoration(
                 hintText: 'Mau jalan ke mana?',
+                hintStyle: TextStyle(
+                  color: AppColors.gray3,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
                 border: InputBorder.none,
               ),
             ),
           ),
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
+              gradient: const LinearGradient(
+                colors: [AppColors.primaryLight1, AppColors.primaryDark1],
+              ),
             ),
             child: IconButton(
-              icon: const Icon(Icons.tune, size: 20, color: Colors.white),
+              icon: const Icon(Icons.tune, color: Colors.white, size: 22),
               onPressed: () {},
             ),
           ),
@@ -202,15 +212,15 @@ class _HeroSummaryBanner extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
         gradient: const LinearGradient(
+          colors: [Color(0xFF0F6DC2), Color(0xFF0BC5EA)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.primaryLight1, AppColors.primaryDark1],
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryDark1.withOpacity(0.35),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+            color: const Color(0xFF0F6DC2).withOpacity(0.35),
+            blurRadius: 24,
+            offset: const Offset(0, 14),
           ),
         ],
       ),
@@ -219,7 +229,7 @@ class _HeroSummaryBanner extends StatelessWidget {
         children: [
           Row(
             children: const [
-              Icon(Icons.flight_takeoff, color: Colors.white, size: 22),
+              Icon(Icons.flight_takeoff, color: Colors.white70, size: 22),
               SizedBox(width: 8),
               Text(
                 'Rencana Penerbanganmu',
@@ -236,7 +246,7 @@ class _HeroSummaryBanner extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
               _FlightPoint(code: 'DPS', city: 'Bali'),
-              Icon(Icons.flight, color: Colors.white70, size: 18),
+              Icon(Icons.flight, color: Colors.white, size: 26),
               _FlightPoint(code: 'CGK', city: 'Jakarta'),
             ],
           ),
@@ -292,68 +302,98 @@ class _QuickMenuRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final totalWidth =
-        MediaQuery.of(context).size.width - 40; // padding horizontal 20+20
-    final itemWidth = (totalWidth - 2 * 12) / 3; // 3 item, 2 gap @12
+    final items = [
+      _MenuItemData(
+        icon: Icons.flight_takeoff,
+        label: 'Flight',
+        gradient: const [Color(0xFF0F6DC2), Color(0xFF00B2FF)],
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const FlightRecommendation(),
+            ),
+          );
+        },
+      ),
+      _MenuItemData(
+        icon: Icons.hotel,
+        label: 'Hotel',
+        gradient: const [Color(0xFF0BB5D4), Color(0xFF00E0B6)],
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const HotelRecommendationScreen(),
+            ),
+          );
+        },
+      ),
+      _MenuItemData(
+        icon: Icons.favorite,
+        label: 'Wishlist',
+        gradient: const [Color(0xFF6A4CFF), Color(0xFF9D7CFF)],
+        onTap: null,
+      ),
+      _MenuItemData(
+        icon: Icons.explore,
+        label: 'Trip',
+        gradient: const [Color(0xFF005C97), Color(0xFF363795)],
+        onTap: null,
+      ),
+    ];
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: itemWidth,
-          child: const _QuickMenuItem(
-            icon: Icons.flight_takeoff,
-            label: 'Trip',
-            color: AppColors.primary,
-          ),
-        ),
-        const SizedBox(width: 12),
-        SizedBox(
-          width: itemWidth,
-          child: const _QuickMenuItem(
-            icon: Icons.hotel,
-            label: 'Hotel',
-            color: AppColors.primaryLight1,
-          ),
-        ),
-        const SizedBox(width: 12),
-        SizedBox(
-          width: itemWidth,
-          child: const _QuickMenuItem(
-            icon: Icons.favorite,
-            label: 'Wishlist',
-            color: AppColors.primaryDark1,
-          ),
-        ),
-      ],
+      children: items
+          .map(
+            (item) => Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: _QuickMenuItem(data: item),
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 }
 
-class _QuickMenuItem extends StatelessWidget {
+class _MenuItemData {
   final IconData icon;
   final String label;
-  final Color color;
+  final List<Color> gradient;
+  final VoidCallback? onTap;
 
-  const _QuickMenuItem({
+  const _MenuItemData({
     required this.icon,
     required this.label,
-    required this.color,
+    required this.gradient,
+    this.onTap,
   });
+}
+
+class _QuickMenuItem extends StatelessWidget {
+  final _MenuItemData data;
+
+  const _QuickMenuItem({required this.data});
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 72,
+    return GestureDetector(
+      onTap: data.onTap,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 2),
+        height: 82,
         decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            colors: data.gradient,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 16,
+              color: data.gradient.last.withOpacity(0.3),
+              blurRadius: 14,
               offset: const Offset(0, 8),
             ),
           ],
@@ -361,13 +401,21 @@ class _QuickMenuItem extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white, size: 22),
-            const SizedBox(height: 4),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(data.icon, color: Colors.white, size: 20),
+            ),
+            const SizedBox(height: 6),
             Text(
-              label,
+              data.label,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
             ),
