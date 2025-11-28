@@ -50,10 +50,6 @@ class HomeScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
                 const _TravelTipsCarouselSection(),
                 const SizedBox(height: 24),
-                const _DiscountCarouselSection(),
-                const SizedBox(height: 24),
-                const _ExploreCarouselSection(),
-                const SizedBox(height: 24),
               ],
             ),
           ),
@@ -302,69 +298,96 @@ class _QuickMenuRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final totalWidth =
-        MediaQuery.of(context).size.width - 40; // padding horizontal 20+20
-    final itemWidth = (totalWidth - 2 * 12) / 3; // 3 item, 2 gap @12
+    const menus = [
+      _QuickMenuItemData(
+        icon: Icons.flight,
+        label: 'Flight',
+        gradientColors: [AppColors.primaryLight2, AppColors.primaryLight1],
+      ),
+
+      // 2. HOTEL (Medium)
+      _QuickMenuItemData(
+        icon: Icons.hotel,
+        label: 'Hotel',
+        gradientColors: [AppColors.primaryLight1, AppColors.primary],
+      ),
+
+      // 3. WISHLIST (Aksen Merah/Pink tapi soft)
+      // Khusus wishlist biasanya tetap butuh warna kemerahan/pink
+      _QuickMenuItemData(
+        icon: Icons.favorite,
+        label: 'Wishlist',
+        gradientColors: [
+          AppColors.primary,
+          AppColors.primaryDark1,
+        ], // Soft Pink Material
+      ),
+
+      // 4. TRIP (Gelap/Dalam)
+      _QuickMenuItemData(
+        icon: Icons.travel_explore,
+        label: 'Trip',
+        gradientColors: [AppColors.primaryDark1, AppColors.primaryDark2],
+      ),
+    ];
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        SizedBox(
-          width: itemWidth,
-          child: const _QuickMenuItem(
-            icon: Icons.flight_takeoff,
-            label: 'Trip',
-            color: AppColors.primary,
+        for (int i = 0; i < menus.length; i++) ...[
+          Expanded(
+            child: _QuickMenuItem(
+              icon: menus[i].icon,
+              label: menus[i].label,
+              gradientColors: menus[i].gradientColors,
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        SizedBox(
-          width: itemWidth,
-          child: const _QuickMenuItem(
-            icon: Icons.hotel,
-            label: 'Hotel',
-            color: AppColors.primaryLight1,
-          ),
-        ),
-        const SizedBox(width: 12),
-        SizedBox(
-          width: itemWidth,
-          child: const _QuickMenuItem(
-            icon: Icons.favorite,
-            label: 'Wishlist',
-            color: AppColors.primaryDark1,
-          ),
-        ),
+          if (i != menus.length - 1) const SizedBox(width: 12),
+        ],
       ],
     );
   }
 }
 
+class _QuickMenuItemData {
+  final IconData icon;
+  final String label;
+  final List<Color> gradientColors;
+
+  const _QuickMenuItemData({
+    required this.icon,
+    required this.label,
+    required this.gradientColors,
+  });
+}
+
 class _QuickMenuItem extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Color color;
+  final List<Color> gradientColors;
 
   const _QuickMenuItem({
     required this.icon,
     required this.label,
-    required this.color,
+    required this.gradientColors,
   });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 72,
+      height: 78,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 2),
         decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: gradientColors,
+          ),
+          borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.3),
+              color: gradientColors.last.withOpacity(0.35),
               blurRadius: 16,
-              offset: const Offset(0, 8),
+              offset: const Offset(0, 10),
             ),
           ],
         ),
@@ -372,13 +395,14 @@ class _QuickMenuItem extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, color: Colors.white, size: 22),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
               label,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
               ),
             ),
           ],
@@ -820,23 +844,75 @@ class _TopRecommendationSection extends StatelessWidget {
 
 // ================= RECOMMENDED FLIGHTS =================
 
-class _RecommendedFlightsSection extends StatelessWidget {
+class _RecommendedFlightsSection extends StatefulWidget {
   const _RecommendedFlightsSection();
+
+  @override
+  State<_RecommendedFlightsSection> createState() =>
+      _RecommendedFlightsSectionState();
+}
+
+class _RecommendedFlightsSectionState
+    extends State<_RecommendedFlightsSection> {
+  late final PageController _pageController;
+  double _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(viewportFraction: 0.9);
+    _pageController.addListener(_handleScroll);
+  }
+
+  void _handleScroll() {
+    final page = _pageController.page ?? 0;
+    if ((page - _currentPage).abs() > 0.01) {
+      setState(() => _currentPage = page);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController.removeListener(_handleScroll);
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final flights = [
-      const _RecommendedFlightCard(
-        route: 'CGK → DPS',
-        airline: 'Garuda Indonesia',
-        priceText: 'IDR 1.500.000',
-        chipText: 'Direct • 1h 50m',
+      const _FlightTicketData(
+        airline: 'Turkish Airlines',
+        travelClass: 'Economy Class',
+        dateText: 'Tue, 31 Oct 2023',
+        priceText: '\$285',
+        durationText: '15h 43m',
+        fromCode: 'LAS',
+        toCode: 'HND',
+        departureTime: '07:47',
+        arrivalTime: '16:30',
       ),
-      const _RecommendedFlightCard(
-        route: 'CGK → NRT',
+      const _FlightTicketData(
         airline: 'Japan Airlines',
-        priceText: 'IDR 7.200.000',
-        chipText: '1 stop • 10h 30m',
+        travelClass: 'Business Class',
+        dateText: 'Fri, 12 Jan 2024',
+        priceText: 'IDR 12.300.000',
+        durationText: '10h 10m',
+        fromCode: 'CGK',
+        toCode: 'HND',
+        departureTime: '09:15',
+        arrivalTime: '18:25',
+      ),
+      const _FlightTicketData(
+        airline: 'Garuda Indonesia',
+        travelClass: 'Economy Flex',
+        dateText: 'Sun, 21 Jan 2024',
+        priceText: 'IDR 1.580.000',
+        durationText: '1h 55m',
+        fromCode: 'CGK',
+        toCode: 'DPS',
+        departureTime: '13:45',
+        arrivalTime: '15:40',
       ),
     ];
 
@@ -853,12 +929,412 @@ class _RecommendedFlightsSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 150,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
+          height: 250,
+          child: PageView.builder(
+            controller: _pageController,
+            physics: const BouncingScrollPhysics(),
             itemCount: flights.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 16),
-            itemBuilder: (context, index) => flights[index],
+            itemBuilder: (context, index) {
+              final data = flights[index];
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index == flights.length - 1 ? 0 : 16,
+                  left: index == 0 ? 4 : 0,
+                ),
+                child: _OceanTicketCard(
+                  data: data,
+                  onDetailTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => FlightDetailPage(ticket: data),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 14),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(flights.length, (index) {
+            final isActive = (index - _currentPage).abs() < 0.5;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              height: 8,
+              width: isActive ? 20 : 8,
+              decoration: BoxDecoration(
+                color: isActive
+                    ? const Color(0xFF0F7EC8)
+                    : AppColors.gray3.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(999),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+}
+
+class _FlightTicketData {
+  final String airline;
+  final String travelClass;
+  final String dateText;
+  final String priceText;
+  final String durationText;
+  final String fromCode;
+  final String toCode;
+  final String departureTime;
+  final String arrivalTime;
+
+  const _FlightTicketData({
+    required this.airline,
+    required this.travelClass,
+    required this.dateText,
+    required this.priceText,
+    required this.durationText,
+    required this.fromCode,
+    required this.toCode,
+    required this.departureTime,
+    required this.arrivalTime,
+  });
+}
+
+class _OceanTicketCard extends StatelessWidget {
+  final _FlightTicketData data;
+  final VoidCallback onDetailTap;
+
+  const _OceanTicketCard({required this.data, required this.onDetailTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final scaffoldColor = Theme.of(context).scaffoldBackgroundColor;
+
+    return Container(
+      width: 320,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0B8BD9).withOpacity(0.08),
+            blurRadius: 40,
+            offset: const Offset(0, 10),
+            spreadRadius: 0,
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Section
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF0B8BD9), Color(0xFF0F7EC8)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.flight_takeoff,
+                        size: 20,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            data.airline,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1E293B),
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            data.dateText,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: const Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0B8BD9).withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        data.travelClass,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF0B8BD9),
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Flight Route Section
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _TicketCityCode(
+                      code: data.fromCode,
+                      label: '${data.departureTime} • Depart',
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.airplanemode_active,
+                              color: Color(0xFF64748B),
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            data.durationText,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    _TicketCityCode(
+                      code: data.toCode,
+                      label: '${data.arrivalTime} • Arrive',
+                      alignRight: true,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+
+                // Dashed Line
+                const _TicketDashedLine(),
+                const SizedBox(height: 18),
+
+                // Footer Section
+                Row(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Total Harga',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: const Color(0xFF64748B),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          data.priceText,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF1E293B),
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF0B8BD9), Color(0xFF0F7EC8)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF0B8BD9).withOpacity(0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: onDetailTap,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            child: const Text(
+                              'Detail Flight',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Circle Notches
+          Positioned(
+            left: -14,
+            top: 95,
+            child: _TicketCircleNotch(color: scaffoldColor),
+          ),
+          Positioned(
+            right: -14,
+            top: 95,
+            child: _TicketCircleNotch(color: scaffoldColor),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TicketCircleNotch extends StatelessWidget {
+  final Color color;
+
+  const _TicketCircleNotch({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TicketDashedLine extends StatelessWidget {
+  const _TicketDashedLine();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const dashWidth = 8.0;
+        const dashSpace = 6.0;
+        final dashCount = (constraints.maxWidth / (dashWidth + dashSpace))
+            .floor();
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: List.generate(dashCount, (_) {
+            return Container(
+              width: dashWidth,
+              height: 2.5,
+              decoration: BoxDecoration(
+                color: const Color(0xFFCBD5E1),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
+}
+
+class _TicketCityCode extends StatelessWidget {
+  final String code;
+  final String label;
+  final bool alignRight;
+
+  const _TicketCityCode({
+    required this.code,
+    required this.label,
+    this.alignRight = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final alignment = alignRight
+        ? CrossAxisAlignment.end
+        : CrossAxisAlignment.start;
+    return Column(
+      crossAxisAlignment: alignment,
+      children: [
+        Text(
+          code,
+          style: const TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF1E293B),
+            letterSpacing: -1,
+            height: 1.1,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: Color(0xFF64748B),
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
@@ -866,110 +1342,53 @@ class _RecommendedFlightsSection extends StatelessWidget {
   }
 }
 
-class _RecommendedFlightCard extends StatelessWidget {
-  final String route;
-  final String airline;
-  final String priceText;
-  final String chipText;
+class FlightDetailPage extends StatelessWidget {
+  final _FlightTicketData ticket;
 
-  const _RecommendedFlightCard({
-    required this.route,
-    required this.airline,
-    required this.priceText,
-    required this.chipText,
-  });
+  const FlightDetailPage({super.key, required this.ticket});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 210,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.07),
-            blurRadius: 16,
-            offset: const Offset(0, 10),
-          ),
-        ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Flight Detail'),
+        backgroundColor: const Color(0xFF0B8BD9),
       ),
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.flight_takeoff,
-                  size: 18,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  route,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.gray5,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            airline,
-            style: const TextStyle(fontSize: 12, color: AppColors.gray3),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight3,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Text(
-                  chipText,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.primaryDark1,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              Text(
-                priceText,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.gray5,
-                ),
-              ),
-            ],
-          ),
-        ],
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              ticket.airline,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '${ticket.fromCode} → ${ticket.toCode}',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${ticket.departureTime} - ${ticket.arrivalTime}',
+              style: const TextStyle(color: AppColors.gray4),
+            ),
+            const Divider(height: 32),
+            Text(
+              'Harga Tiket: ${ticket.priceText}',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Detail lengkap penerbangan akan ditampilkan di sini.',
+              style: TextStyle(color: AppColors.gray4),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
-
 // ================= DESTINATIONS BY COUNTRY =================
 
 class _DestinationByCountrySection extends StatelessWidget {
@@ -1208,19 +1627,52 @@ class _ActionCardData {
   });
 }
 
-class _GradientActionCarousel extends StatelessWidget {
+class _GradientActionCarousel extends StatefulWidget {
   final String title;
   final List<_ActionCardData> cards;
 
   const _GradientActionCarousel({required this.title, required this.cards});
 
   @override
+  State<_GradientActionCarousel> createState() =>
+      _GradientActionCarouselState();
+}
+
+class _GradientActionCarouselState extends State<_GradientActionCarousel> {
+  late final PageController _pageController;
+  double _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(viewportFraction: 0.78);
+    _pageController.addListener(_handlePageScroll);
+  }
+
+  void _handlePageScroll() {
+    final page = _pageController.page ?? 0;
+    if ((page - _currentPage).abs() > 0.01) {
+      setState(() {
+        _currentPage = page;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController.removeListener(_handlePageScroll);
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final cards = widget.cards;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          title,
+          widget.title,
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -1229,65 +1681,90 @@ class _GradientActionCarousel extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 150,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
+          height: 170,
+          child: PageView.builder(
+            controller: _pageController,
+            physics: const BouncingScrollPhysics(),
             itemCount: cards.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 16),
             itemBuilder: (context, index) {
               final card = cards[index];
-              return GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => card.destinationBuilder(),
-                    ),
-                  );
-                },
-                child: Container(
-                  width: 260,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    gradient: LinearGradient(
-                      colors: card.gradientColors,
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: card.gradientColors.last.withOpacity(0.35),
-                        blurRadius: 16,
-                        offset: const Offset(0, 8),
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index == cards.length - 1 ? 0 : 16,
+                  left: index == 0 ? 4 : 0,
+                ),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => card.destinationBuilder(),
                       ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        card.title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      gradient: LinearGradient(
+                        colors: card.gradientColors,
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: card.gradientColors.last.withOpacity(0.35),
+                          blurRadius: 16,
+                          offset: const Offset(0, 8),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        card.description,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          card.title,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 8),
+                        Text(
+                          card.description,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
             },
           ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(cards.length, (index) {
+            final isActive = (index - _currentPage).abs() < 0.5;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOut,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: isActive ? 18 : 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: isActive
+                    ? cards[index].gradientColors.first
+                    : AppColors.gray3.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(999),
+              ),
+            );
+          }),
         ),
       ],
     );
@@ -1306,23 +1783,6 @@ class _TravelTipsCarouselSection extends StatelessWidget {
         destinationBuilder: () => const TipsTravelPage(),
       ),
       _ActionCardData(
-        title: 'Solo Traveler Guide',
-        description: 'Belajar cara eksplor dunia dengan aman & seru.',
-        destinationBuilder: () => const TipsTravelPage(),
-      ),
-    ];
-
-    return _GradientActionCarousel(title: 'Travel Tips Carousel', cards: cards);
-  }
-}
-
-class _DiscountCarouselSection extends StatelessWidget {
-  const _DiscountCarouselSection();
-
-  @override
-  Widget build(BuildContext context) {
-    final cards = [
-      _ActionCardData(
         title: 'Diskon Hotel 30%',
         description: 'Klaim voucher akomodasi favoritmu sekarang.',
         destinationBuilder: () => const DiscountPage(),
@@ -1334,33 +1794,15 @@ class _DiscountCarouselSection extends StatelessWidget {
         destinationBuilder: () => const DiscountPage(),
         gradientColors: const [Color(0xFFFFA948), Color(0xFFFF5F6D)],
       ),
-    ];
-
-    return _GradientActionCarousel(title: 'Diskon & Voucher', cards: cards);
-  }
-}
-
-class _ExploreCarouselSection extends StatelessWidget {
-  const _ExploreCarouselSection();
-
-  @override
-  Widget build(BuildContext context) {
-    final cards = [
       _ActionCardData(
         title: 'Explore Your Journey',
         description: 'Cari destinasi baru dan buat rencana perjalanan.',
         destinationBuilder: () => const SearchPage(),
         gradientColors: const [Color(0xFF43E97B), Color(0xFF38F9D7)],
       ),
-      _ActionCardData(
-        title: 'Inspire Me',
-        description: 'Temukan rekomendasi unik dari WanderWhale.',
-        destinationBuilder: () => const SearchPage(),
-        gradientColors: const [Color(0xFFFA8BFF), Color(0xFF2BD2FF)],
-      ),
     ];
 
-    return _GradientActionCarousel(title: 'Explore Lebih Jauh', cards: cards);
+    return _GradientActionCarousel(title: 'Sekedar info', cards: cards);
   }
 }
 

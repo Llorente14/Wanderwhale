@@ -53,7 +53,7 @@ dependencies:
   cached_network_image: ^3.4.1
 
   # Date Formatting
-  intl: ^0.18.1
+  intl: ^0.20.2
 
   # Shimmer Loading
   shimmer: ^3.0.0
