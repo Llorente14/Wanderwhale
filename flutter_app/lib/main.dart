@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'screens/chatbot/ai_chat.dart';
+import 'screens/trip/trip_list.dart';
 
 void main() {
   runApp(const MyApp());
@@ -117,6 +119,80 @@ class _MyHomePageState extends State<MyHomePage> {
         tooltip: 'Increment',
         child: const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
+      bottomNavigationBar: _buildBottomNavigationBar(),
+    );
+  }
+
+  Widget _buildBottomNavigationBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Container(
+          height: 70,
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(Icons.home, 'Home', true),
+              _buildNavItem(Icons.flight_takeoff, 'Trips', false),
+              _buildNavItem(Icons.star_border, 'AI Chat', false),
+              _buildNavItem(Icons.settings_outlined, 'Settings', false),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(IconData icon, String label, bool isActive) {
+    final Color activeColor = Color(0xFF2196F3);
+    final Color inactiveColor = Colors.black;
+    
+    return GestureDetector(
+      onTap: () {
+        if (label == 'AI Chat' && !isActive) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AiChat()),
+          );
+        } else if (label == 'Trips' && !isActive) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const TripList()),
+          );
+        } else if (label == 'Home' && !isActive) {
+          // Already on home page, do nothing
+        }
+        // Add navigation for other items (Favorite, Settings) as needed
+      },
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            color: isActive ? activeColor : inactiveColor,
+            size: 24,
+          ),
+          SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: isActive ? activeColor : inactiveColor,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
