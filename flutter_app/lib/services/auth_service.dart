@@ -1,8 +1,6 @@
 // lib/services/auth_service.dart
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:flutter_app/models/user_model.dart';
 import 'package:flutter_app/services/api_service.dart';
 
@@ -59,35 +57,6 @@ class AuthService {
     // add their signOut logic as well.
     await _auth.signOut();
   }
-
-  /// Google sign-in implementation using `google_sign_in` package.
-  Future<UserCredential?> signInWithGoogle() async {
-    final google = GoogleSignIn();
-    final account = await google.signIn();
-    if (account == null) return null; // cancelled by user
-
-    final auth = await account.authentication;
-    final credential = GoogleAuthProvider.credential(
-      accessToken: auth.accessToken,
-      idToken: auth.idToken,
-    );
-
-    return await _auth.signInWithCredential(credential);
-  }
-
-  /// Facebook sign-in implementation using `flutter_facebook_auth`.
-  Future<UserCredential?> signInWithFacebook() async {
-    final result = await FacebookAuth.instance.login();
-    if (result.status != LoginStatus.success) return null;
-
-    final accessToken = result.accessToken?.token;
-    if (accessToken == null) return null;
-
-    final credential = FacebookAuthProvider.credential(accessToken);
-    return await _auth.signInWithCredential(credential);
-  }
-
-  // Apple Sign In removed — social buttons are decorative only.
 
   // ------------------ Backend related helpers ------------------
   /// Panggil backend untuk membuat profil setelah registrasi

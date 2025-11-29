@@ -80,36 +80,6 @@ class AuthController {
     } catch (_) {}
   }
 
-  Future<void> signInWithGoogle() async {
-    final cred = await _authService.signInWithGoogle();
-    if (cred == null) throw Exception('Google sign-in cancelled');
-
-    ref.invalidate(userProvider);
-
-    try {
-      final fcmService = ref.read(fcmServiceProvider);
-      final token = await fcmService.getDeviceToken();
-      if (token != null && token.isNotEmpty) {
-        await sendFcmToken(token);
-      }
-    } catch (_) {}
-  }
-
-  Future<void> signInWithFacebook() async {
-    final cred = await _authService.signInWithFacebook();
-    if (cred == null) throw Exception('Facebook sign-in cancelled');
-
-    ref.invalidate(userProvider);
-
-    try {
-      final fcmService = ref.read(fcmServiceProvider);
-      final token = await fcmService.getDeviceToken();
-      if (token != null && token.isNotEmpty) {
-        await sendFcmToken(token);
-      }
-    } catch (_) {}
-  }
-
   Future<void> signOut() async {
     await _authService.signOut();
     ref.invalidate(userProvider);

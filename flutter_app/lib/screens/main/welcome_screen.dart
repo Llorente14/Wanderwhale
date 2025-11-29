@@ -1,17 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
-import '../auth/login_screen.dart'; // Arah ke Login
-import '../auth/register_screen.dart'; // Arah ke Register
+import '../auth/login_screen.dart';
+import '../auth/register_screen.dart';
 import '../../widgets/common/social_button.dart';
+import '../../providers/auth_screen_provider.dart';
 
-class WelcomeScreen extends StatelessWidget {
+class WelcomeScreen extends ConsumerWidget {
   const WelcomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authScreenType = ref.watch(authScreenProvider);
     final size = MediaQuery.of(context).size;
 
+    // Conditional rendering berdasarkan authScreenType
+    if (authScreenType == AuthScreenType.login) {
+      return const LoginScreen();
+    }
+    if (authScreenType == AuthScreenType.register) {
+      return const RegisterScreen();
+    }
+
+    // Default: tampilkan welcome screen
     return Scaffold(
       backgroundColor: AppColors.primaryLight3,
       body: SingleChildScrollView(
@@ -49,17 +61,9 @@ class WelcomeScreen extends StatelessWidget {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          PageRouteBuilder(
-                            transitionDuration: const Duration(
-                              milliseconds: 800,
-                            ),
-                            pageBuilder: (_, __, ___) => const LoginScreen(),
-                            transitionsBuilder: (_, a, __, c) =>
-                                FadeTransition(opacity: a, child: c),
-                          ),
-                        );
+                        // Ubah state untuk menampilkan LoginScreen
+                        ref.read(authScreenProvider.notifier).state =
+                            AuthScreenType.login;
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
@@ -85,17 +89,9 @@ class WelcomeScreen extends StatelessWidget {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          PageRouteBuilder(
-                            transitionDuration: const Duration(
-                              milliseconds: 800,
-                            ),
-                            pageBuilder: (_, __, ___) => const RegisterScreen(),
-                            transitionsBuilder: (_, a, __, c) =>
-                                FadeTransition(opacity: a, child: c),
-                          ),
-                        );
+                        // Ubah state untuk menampilkan RegisterScreen
+                        ref.read(authScreenProvider.notifier).state =
+                            AuthScreenType.register;
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryLight2,

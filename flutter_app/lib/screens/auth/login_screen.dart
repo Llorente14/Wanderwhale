@@ -4,10 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../providers/auth_provider.dart';
+import '../../providers/auth_screen_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
-import 'register_screen.dart'; // Import Register (Satu folder)
-import '../main/home_screen.dart';
 import '../../widgets/common/glass_text_field.dart';
 import '../../widgets/common/social_button.dart';
 
@@ -84,6 +83,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     padding: const EdgeInsets.all(24.0),
                     child: Column(
                       children: [
+                        // Tombol kembali ke welcome screen
+                        Align(
+                          alignment: Alignment.topLeft,
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.arrow_back,
+                              color: AppColors.white,
+                            ),
+                            onPressed: () {
+                              ref.read(authScreenProvider.notifier).state =
+                                  AuthScreenType.welcome;
+                            },
+                          ),
+                        ),
                         Text(
                           "WELCOME",
                           style: AppTextStyles.headingXL.copyWith(
@@ -137,23 +150,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                         ),
                                       );
 
-                                      // Navigate to Home after successful login
-                                      Navigator.pushReplacement(
-                                        context,
-                                        PageRouteBuilder(
-                                          transitionDuration: const Duration(
-                                            milliseconds: 600,
-                                          ),
-                                          pageBuilder: (_, __, ___) =>
-                                              const HomeScreen(),
-                                          transitionsBuilder:
-                                              (_, animation, __, child) =>
-                                                  FadeTransition(
-                                                    opacity: animation,
-                                                    child: child,
-                                                  ),
-                                        ),
-                                      );
+                                      // Tidak perlu Navigator, AuthWrapper akan otomatis
+                                      // menampilkan HomeScreen ketika auth state berubah
                                     } catch (e) {
                                       if (e is FirebaseAuthException) {
                                         ScaffoldMessenger.of(
@@ -218,19 +216,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             ),
                             GestureDetector(
                               onTap: () {
-                                // PINDAH KE REGISTER SCREEN
-                                Navigator.pushReplacement(
-                                  context,
-                                  PageRouteBuilder(
-                                    transitionDuration: const Duration(
-                                      milliseconds: 800,
-                                    ),
-                                    pageBuilder: (_, __, ___) =>
-                                        const RegisterScreen(),
-                                    transitionsBuilder: (_, a, __, c) =>
-                                        FadeTransition(opacity: a, child: c),
-                                  ),
-                                );
+                                // Ubah state untuk menampilkan RegisterScreen
+                                ref.read(authScreenProvider.notifier).state =
+                                    AuthScreenType.register;
                               },
                               child: Text(
                                 "Create Account",

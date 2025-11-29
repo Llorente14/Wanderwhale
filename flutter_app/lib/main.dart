@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'screens/main/home_screen.dart';
-import 'screens/flight/checkout_flight.dart';
+import 'widgets/auth/auth_wrapper.dart';
 import 'core/theme/app_colors.dart';
 import 'firebase_options.dart';
 
@@ -71,7 +70,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const CheckoutFlightScreen(),
+      home: const AuthWrapper(),
     );
   }
 }
