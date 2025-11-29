@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-
 import 'package:flutter_app/core/theme/app_colors.dart';
 import 'package:flutter_app/widgets/common/custom_bottom_nav.dart';
 import 'package:flutter_app/screens/flight/flight_recommendation.dart';
@@ -9,12 +8,10 @@ import 'package:flutter_app/screens/hotel/hotel_recommendations.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
-  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: AppColors.white,
       backgroundColor: AppColors.white,
       body: SafeArea(
         child: Container(
@@ -939,42 +936,7 @@ class _RecommendedFlightCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.flight_takeoff,
-                  size: 18,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  route,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.gray5,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            airline,
-            style: const TextStyle(fontSize: 12, color: AppColors.gray3),
-          ),
           Row(
             children: [
               Container(
@@ -1040,37 +1002,6 @@ class _RecommendedFlightCard extends StatelessWidget {
               ),
             ],
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight3,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Text(
-                  chipText,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.primaryDark1,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              Text(
-                priceText,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.gray5,
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -1190,172 +1121,9 @@ class _CountryDestinationsRow extends StatelessWidget {
             ),
           ),
         ],
-}
-
-// ================= DESTINATIONS BY COUNTRY =================
-
-class _DestinationByCountrySection extends StatelessWidget {
-  const _DestinationByCountrySection();
-
-  @override
-  Widget build(BuildContext context) {
-    final data = <String, List<String>>{
-      'Indonesia': ['Bali', 'Lombok', 'Yogyakarta'],
-      'Japan': ['Tokyo', 'Osaka', 'Kyoto'],
-      'Italy': ['Rome', 'Venice', 'Florence'],
-    };
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Destinasi per Negara',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.gray5,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...data.entries.map(
-          (entry) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _CountryDestinationsRow(
-              country: entry.key,
-              cities: entry.value,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _CountryDestinationsRow extends StatelessWidget {
-  final String country;
-  final List<String> cities;
-
-  const _CountryDestinationsRow({required this.country, required this.cities});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 14,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                colors: [AppColors.primaryLight1, AppColors.primary],
-              ),
-            ),
-            child: const Icon(Icons.public, size: 20, color: Colors.white),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  country,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.gray5,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: -4,
-                  children: cities
-                      .map(
-                        (city) => Chip(
-                          label: Text(
-                            city,
-                            style: const TextStyle(fontSize: 11),
-                          ),
-                          backgroundColor: AppColors.primaryLight3,
-                          padding: EdgeInsets.zero,
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: const VisualDensity(
-                            horizontal: 0,
-                            vertical: -2,
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
-}
-
-class _RecommendationCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final String imageUrl;
-
-  const _RecommendationCard({
-    required this.title,
-    required this.subtitle,
-    required this.imageUrl,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 160,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.18),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.network(
-              imageUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: AppColors.gray1,
-                  alignment: Alignment.center,
-                  child: const Icon(
-                    Icons.image_not_supported_outlined,
-                    color: AppColors.gray3,
-                    size: 32,
-                  ),
-                );
-              },
-            ),
-            Container(
 }
 
 class _RecommendationCard extends StatelessWidget {
@@ -1405,60 +1173,6 @@ class _RecommendationCard extends StatelessWidget {
             ),
             Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.1),
-                    Colors.black.withOpacity(0.7),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              top: 10,
-              right: 10,
-              child: Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.8),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.favorite_border,
-                  size: 16,
-                  color: AppColors.error,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
