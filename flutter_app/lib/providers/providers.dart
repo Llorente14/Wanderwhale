@@ -8,4 +8,8 @@ export 'hotel_providers.dart';
 export 'flight_providers.dart';
 export 'wishlist_providers.dart';
 export 'notification_providers.dart';
+<<<<<<< HEAD
+=======
+export 'booking_providers.dart';
+>>>>>>> andrean
 
