@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../../providers/app_providers.dart';
-import '../../widgets/common/custom_bottom_nav.dart';
 
 class AiChat extends ConsumerStatefulWidget {
   const AiChat({super.key});
@@ -49,9 +47,10 @@ class _AiChatState extends ConsumerState<AiChat>
     _addBotMessage(
       "Hello! I'm your AI travel assistant. How can I help you plan your trip today?",
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(bottomNavIndexProvider.notifier).state = 3;
-    });
+    // Bottom nav index diatur oleh MainNavigationScreen
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   ref.read(bottomNavIndexProvider.notifier).state = 3;
+    // });
   }
 
   @override
@@ -153,7 +152,6 @@ class _AiChatState extends ConsumerState<AiChat>
           _buildInputArea(),
         ],
       ),
-      bottomNavigationBar: const CustomBottomNav(),
     );
   }
 

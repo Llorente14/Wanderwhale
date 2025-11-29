@@ -5,6 +5,8 @@ import '../../core/theme/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/app_providers.dart';
 import '../main/welcome_screen.dart';
+import '../user/edit_profile.dart';
+import '../notification/notification_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -14,17 +16,32 @@ class SettingsScreen extends ConsumerWidget {
     final userAsync = ref.watch(userProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: userAsync.when(
-        data: (user) => ListView(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0F6DC2), Color(0xFF0BC5EA)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              const _SettingsHeader(),
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(28),
+                      topRight: Radius.circular(28),
+                    ),
+                  ),
+                  child: userAsync.when(
+        data: (user) => SingleChildScrollView(
           padding: const EdgeInsets.all(20),
-          children: [
+          child: Column(
+            children: [
             // Profile Section
             Container(
               padding: const EdgeInsets.all(20),
@@ -46,8 +63,14 @@ class SettingsScreen extends ConsumerWidget {
                     backgroundColor: AppColors.gray1,
                     backgroundImage: user.photoURL != null
                         ? NetworkImage(user.photoURL!)
-                        : const AssetImage('assets/images/avatar_placeholder.png')
-                            as ImageProvider,
+                        : null,
+                    child: user.photoURL == null
+                        ? Icon(
+                            Icons.person,
+                            size: 40,
+                            color: AppColors.gray3,
+                          )
+                        : null,
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -85,9 +108,11 @@ class SettingsScreen extends ConsumerWidget {
                   icon: Icons.person_outline,
                   title: 'Edit Profile',
                   onTap: () {
-                    // TODO: Navigate to edit profile
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Edit Profile - Coming Soon')),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const EditProfileScreen(),
+                      ),
                     );
                   },
                 ),
@@ -95,9 +120,11 @@ class SettingsScreen extends ConsumerWidget {
                   icon: Icons.notifications_outlined,
                   title: 'Notifications',
                   onTap: () {
-                    // TODO: Navigate to notification settings
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Notification Settings - Coming Soon')),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const NotificationScreen(),
+                      ),
                     );
                   },
                 ),
@@ -108,34 +135,17 @@ class SettingsScreen extends ConsumerWidget {
               title: 'General',
               items: [
                 _SettingsItem(
-                  icon: Icons.language_outlined,
-                  title: 'Language',
-                  trailing: const Text('Bahasa Indonesia'),
-                  onTap: () {
-                    // TODO: Language settings
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Language Settings - Coming Soon')),
-                    );
-                  },
-                ),
-                _SettingsItem(
                   icon: Icons.help_outline,
                   title: 'Help & Support',
                   onTap: () {
-                    // TODO: Help & Support
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Help & Support - Coming Soon')),
-                    );
+                    _showHelpSupportDialog(context);
                   },
                 ),
                 _SettingsItem(
                   icon: Icons.info_outline,
                   title: 'About',
                   onTap: () {
-                    // TODO: About
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('About - Coming Soon')),
-                    );
+                    _showAboutDialog(context);
                   },
                 ),
               ],
@@ -170,7 +180,8 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
             ),
-          ],
+            ],
+          ),
         ),
         loading: () => const Center(
           child: CircularProgressIndicator(),
@@ -194,6 +205,12 @@ class SettingsScreen extends ConsumerWidget {
                 error.toString(),
                 style: const TextStyle(color: AppColors.gray3),
                 textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -263,6 +280,223 @@ class SettingsScreen extends ConsumerWidget {
       }
     }
   }
+
+  void _showHelpSupportDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Text('Help & Support'),
+        content: const SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Butuh bantuan?',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.gray5,
+                ),
+              ),
+              SizedBox(height: 12),
+              Text(
+                'Kami siap membantu Anda!',
+                style: TextStyle(color: AppColors.gray4),
+              ),
+              SizedBox(height: 16),
+              _HelpItem(
+                icon: Icons.email_outlined,
+                title: 'Email Support',
+                subtitle: 'support@wanderwhale.com',
+              ),
+              SizedBox(height: 12),
+              _HelpItem(
+                icon: Icons.phone_outlined,
+                title: 'Phone Support',
+                subtitle: '+62 812-3456-7890',
+              ),
+              SizedBox(height: 12),
+              _HelpItem(
+                icon: Icons.chat_bubble_outline,
+                title: 'Live Chat',
+                subtitle: 'Tersedia 24/7',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAboutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Text('Tentang Aplikasi'),
+        content: const SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Wanderwhale',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Versi 1.0.0',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.gray3,
+                ),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Aplikasi travel companion yang membantu Anda merencanakan perjalanan impian dengan mudah.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.gray4,
+                ),
+              ),
+              SizedBox(height: 16),
+              Text(
+                '© 2024 Wanderwhale. All rights reserved.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.gray3,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HelpItem extends StatelessWidget {
+  const _HelpItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: AppColors.primary),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.gray5,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.gray3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SettingsHeader extends StatelessWidget {
+  const _SettingsHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+      child: Row(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              onPressed: () => Navigator.of(context).maybePop(),
+              icon: const Icon(
+                Icons.arrow_back_ios_new,
+                color: Colors.white,
+                size: 20,
+              ),
+              padding: const EdgeInsets.all(8),
+              constraints: const BoxConstraints(),
+            ),
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Settings',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Pengaturan akun dan aplikasi',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _SettingsSection extends StatelessWidget {
@@ -316,13 +550,11 @@ class _SettingsItem extends StatelessWidget {
   const _SettingsItem({
     required this.icon,
     required this.title,
-    this.trailing,
     required this.onTap,
   });
 
   final IconData icon;
   final String title;
-  final Widget? trailing;
   final VoidCallback onTap;
 
   @override
@@ -355,10 +587,6 @@ class _SettingsItem extends StatelessWidget {
                   ),
                 ),
               ),
-              if (trailing != null) ...[
-                const SizedBox(width: 8),
-                trailing!,
-              ],
               const SizedBox(width: 8),
               const Icon(
                 Icons.chevron_right,

@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/trip_model.dart';
-import '../../providers/app_providers.dart';
-import '../../widgets/common/custom_bottom_nav.dart';
 import '../../widgets/trip_card.dart';
+import '../../widgets/common/custom_bottom_nav.dart';
+import '../../providers/providers.dart';
 import 'create_trip.dart';
 import 'trip_detail.dart';
 
@@ -23,6 +23,7 @@ class _TripListState extends ConsumerState<TripList> {
   @override
   void initState() {
     super.initState();
+    // Set bottom nav index ke 2 (Trip) ketika halaman ini ditampilkan
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(bottomNavIndexProvider.notifier).state = 2;
     });
@@ -145,7 +146,6 @@ class _TripListState extends ConsumerState<TripList> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
       ),
-      bottomNavigationBar: const CustomBottomNav(),
     );
   }
 

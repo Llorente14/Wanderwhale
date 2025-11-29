@@ -221,6 +221,18 @@ class ApiService {
     }
   }
 
+  Future<UserModel> updateUserProfile(Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.put(
+        ApiConstants.userProfile,
+        data: data,
+      );
+      return _parseResponse(response, (json) => UserModel.fromJson(json));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<UserModel> getUserProfile() async {
     try {
       // Jika user belum login, jangan panggil API supaya tidak error 401.

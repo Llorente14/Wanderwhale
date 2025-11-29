@@ -55,8 +55,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     final screens = [
       const HomeScreen(),
       const WishlistScreen(),
-      const TripListScreen(),
-      const AIChatScreen(),
+      const TripList(),
+      const AiChat(),
       const SettingsScreen(),
     ];
 

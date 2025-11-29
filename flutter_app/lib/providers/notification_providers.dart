@@ -8,8 +8,9 @@ import '../services/api_service.dart';
 import 'app_providers.dart';
 import 'auth_provider.dart';
 
-final notificationsProvider =
-    FutureProvider.autoDispose<List<NotificationModel>>((ref) async {
+final notificationsProvider = FutureProvider.autoDispose<List<NotificationModel>>((
+  ref,
+) async {
   // Check auth state first
   final authState = ref.watch(authStateProvider);
   final user = authState.valueOrNull;
@@ -43,30 +44,29 @@ final notificationsProvider =
 
 final unreadNotificationsProvider =
     FutureProvider.autoDispose<List<NotificationModel>>((ref) async {
-  // Check auth state first
-  final authState = ref.watch(authStateProvider);
-  final user = authState.valueOrNull;
+      // Check auth state first
+      final authState = ref.watch(authStateProvider);
+      final user = authState.valueOrNull;
 
-  if (user == null) {
-    // User belum login, return empty list untuk unread (tidak perlu error)
-    return [];
-  }
+      if (user == null) {
+        // User belum login, return empty list untuk unread (tidak perlu error)
+        return [];
+      }
 
-  try {
-    final api = ref.watch(apiServiceProvider);
-    return await api.getNotifications(unreadOnly: true);
-  } on DioException catch (e) {
-    // Handle 404 atau 500 - return empty list
-    if (e.response?.statusCode == 404 || e.response?.statusCode == 500) {
-      return [];
-    }
-    // Re-throw error lainnya (401, dll)
-    rethrow;
-  }
-});
+      try {
+        final api = ref.watch(apiServiceProvider);
+        return await api.getNotifications(unreadOnly: true);
+      } on DioException catch (e) {
+        // Handle 404 atau 500 - return empty list
+        if (e.response?.statusCode == 404 || e.response?.statusCode == 500) {
+          return [];
+        }
+        // Re-throw error lainnya (401, dll)
+        rethrow;
+      }
+    });
 
-final notificationControllerProvider =
-    Provider<NotificationController>((ref) {
+final notificationControllerProvider = Provider<NotificationController>((ref) {
   final api = ref.watch(apiServiceProvider);
   return NotificationController(api);
 });
@@ -88,4 +88,3 @@ class NotificationController {
     return _api.deleteNotification(notificationId);
   }
 }
-
