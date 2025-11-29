@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../models/user_profile.dart';
 import '../../widgets/common/custom_bottom_nav.dart';
 import '../main/home_screen.dart';
+import '../main/settings_screen.dart';
 import 'edit_profile.dart';
 
 /// Static profile screen that mimics the provided wireframe.
@@ -126,6 +127,18 @@ class _ProfileHeroSection extends StatelessWidget {
                       color: AppColors.gray5,
                       fontWeight: FontWeight.w600,
                     ),
+              ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.settings_outlined, color: AppColors.gray5),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsScreen(),
+                    ),
+                  );
+                },
               ),
             ],
           ),

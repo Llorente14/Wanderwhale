@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../user/edit_profile.dart';
+import 'about_us_screen.dart';
+import 'privacy_notice_screen.dart';
+import 'terms_and_conditions_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -74,21 +77,36 @@ class SettingsScreen extends ConsumerWidget {
               context,
               title: 'Terms & Conditions',
               onTap: () {
-                // TODO: Show Terms
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const TermsAndConditionsScreen(),
+                  ),
+                );
               },
             ),
             _buildSettingsTile(
               context,
               title: 'Privacy Notice',
               onTap: () {
-                // TODO: Show Privacy Notice
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PrivacyNoticeScreen(),
+                  ),
+                );
               },
             ),
             _buildSettingsTile(
               context,
               title: 'About Us',
               onTap: () {
-                // TODO: Show About Us
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AboutUsScreen(),
+                  ),
+                );
               },
             ),
             const SizedBox(height: 24),
