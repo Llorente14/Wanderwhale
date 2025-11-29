@@ -5,6 +5,7 @@ import 'package:lottie/lottie.dart';
 import '../core/theme/app_colors.dart';
 import '../providers/auth_provider.dart';
 import '../providers/auth_screen_provider.dart';
+import '../providers/providers.dart';
 import 'main/main_navigation_screen.dart';
 import 'main/welcome_screen.dart';
 
@@ -55,6 +56,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         );
       } else {
         // User sudah login, redirect ke main navigation
+        // Pastikan index bottom nav diatur ke 0 (Home) sebelum navigasi
+        ref.read(bottomNavIndexProvider.notifier).state = 0;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const MainNavigationScreen()),

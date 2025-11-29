@@ -21,6 +21,15 @@ class MainNavigationScreen extends ConsumerStatefulWidget {
 class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   DateTime? _lastBackPressed;
 
+  @override
+  void initState() {
+    super.initState();
+    // Pastikan index bottom nav selalu 0 (Home) saat pertama kali dimuat
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(bottomNavIndexProvider.notifier).state = 0;
+    });
+  }
+
   Future<bool> _onWillPop() async {
     final currentIndex = ref.read(bottomNavIndexProvider);
 
