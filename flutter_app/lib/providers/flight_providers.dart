@@ -1,5 +1,6 @@
 // lib/providers/flight_providers.dart
 
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -39,22 +40,25 @@ final latestFlightFromTripsProvider = FutureProvider.autoDispose<FlightBookingMo
   final api = ref.watch(apiServiceProvider);
 
   try {
-    print('🔍 latestFlightFromTripsProvider: Starting to fetch flights...');
+    debugPrint('🔍 latestFlightFromTripsProvider: Starting to fetch flights...');
 
     // Ambil semua trips
     final trips = await api.getTrips();
-    print('🔍 latestFlightFromTripsProvider: Found ${trips.length} trips');
+    debugPrint('🔍 latestFlightFromTripsProvider: Found ${trips.length} trips');
 
     if (trips.isEmpty) {
-      print('⚠️ latestFlightFromTripsProvider: No trips found');
+      debugPrint('⚠️ latestFlightFromTripsProvider: No trips found');
       return null;
     }
 
     // Ambil semua flight bookings dari semua trips
     final allFlights = <FlightBookingModel>[];
+    int successCount = 0;
+    int errorCount = 0;
+
     for (final trip in trips) {
       try {
-        print(
+        debugPrint(
           '🔍 latestFlightFromTripsProvider: Fetching flights for trip ${trip.tripId} (${trip.tripName})',
         );
         final flights = await api.getFlightBookings(
@@ -62,52 +66,82 @@ final latestFlightFromTripsProvider = FutureProvider.autoDispose<FlightBookingMo
           status: null, // Tidak filter status, ambil semua
           limit: 10,
         );
-        print(
+        debugPrint(
           '🔍 latestFlightFromTripsProvider: Found ${flights.length} flights for trip ${trip.tripId}',
         );
         if (flights.isNotEmpty) {
-          print(
+          debugPrint(
             '🔍 First flight: ${flights.first.airline} ${flights.first.flightNumber} (${flights.first.origin} → ${flights.first.destination})',
           );
+          allFlights.addAll(flights);
+          successCount++;
         }
-        allFlights.addAll(flights);
       } catch (e) {
-        print(
-          '❌ latestFlightFromTripsProvider: Error fetching flights for trip ${trip.tripId}: $e',
+        errorCount++;
+        debugPrint(
+          '⚠️ latestFlightFromTripsProvider: Error fetching flights for trip ${trip.tripId}: $e',
         );
         // Skip jika error, lanjut ke trip berikutnya
         continue;
       }
     }
 
-    print(
-      '🔍 latestFlightFromTripsProvider: Total flights collected: ${allFlights.length}',
+    debugPrint(
+      '🔍 latestFlightFromTripsProvider: Total flights collected: ${allFlights.length} (Success: $successCount, Errors: $errorCount)',
     );
 
     if (allFlights.isEmpty) {
-      print('⚠️ latestFlightFromTripsProvider: No flights found in any trip');
+      debugPrint('⚠️ latestFlightFromTripsProvider: No flights found in any trip');
+      return null;
+    }
+
+    // Filter flights yang memiliki departureDate atau createdAt yang valid
+    // createdAt tidak bisa null karena required di model, jadi cukup cek departureDate
+    final validFlights = allFlights.where((flight) {
+      return flight.departureDate != null;
+    }).toList();
+    
+    // Jika tidak ada yang punya departureDate, gunakan semua flights (sort by createdAt)
+    final flightsToSort = validFlights.isNotEmpty ? validFlights : allFlights;
+
+    if (flightsToSort.isEmpty) {
+      debugPrint('⚠️ latestFlightFromTripsProvider: No valid flights with dates found');
       return null;
     }
 
     // Sort berdasarkan departureDate (terbaru dulu), jika null sort berdasarkan createdAt
-    allFlights.sort((a, b) {
+    flightsToSort.sort((a, b) {
       final aDate = a.departureDate ?? a.createdAt;
       final bDate = b.departureDate ?? b.createdAt;
+      // Sort descending (terbaru dulu)
       return bDate.compareTo(aDate);
     });
 
     // Return yang pertama (terbaru)
-    final latestFlight = allFlights.first;
-    print('✅ latestFlightFromTripsProvider: Latest flight selected:');
-    print('   - Airline: ${latestFlight.airline}');
-    print('   - Flight Number: ${latestFlight.flightNumber}');
-    print('   - Route: ${latestFlight.origin} → ${latestFlight.destination}');
-    print('   - Departure: ${latestFlight.departureDate}');
-    print('   - Created: ${latestFlight.createdAt}');
+    final latestFlight = flightsToSort.first;
+    debugPrint('✅ latestFlightFromTripsProvider: Latest flight selected:');
+    debugPrint('   - Airline: ${latestFlight.airline}');
+    debugPrint('   - Flight Number: ${latestFlight.flightNumber}');
+    debugPrint('   - Route: ${latestFlight.origin} → ${latestFlight.destination}');
+    debugPrint('   - Departure: ${latestFlight.departureDate}');
+    debugPrint('   - Created: ${latestFlight.createdAt}');
 
     return latestFlight;
-  } catch (e) {
-    print('❌ latestFlightFromTripsProvider: Error - $e');
+  } on DioException catch (e) {
+    // Handle specific DioException
+    if (e.response?.statusCode == 404) {
+      debugPrint('⚠️ latestFlightFromTripsProvider: 404 - No trips or flights found');
+      return null;
+    }
+    if (e.response?.statusCode == 401) {
+      debugPrint('⚠️ latestFlightFromTripsProvider: 401 - User not authenticated');
+      return null;
+    }
+    debugPrint('❌ latestFlightFromTripsProvider: DioException - ${e.message}');
+    return null;
+  } catch (e, stackTrace) {
+    debugPrint('❌ latestFlightFromTripsProvider: Error - $e');
+    debugPrint('❌ Stack trace: $stackTrace');
     return null;
   }
 });

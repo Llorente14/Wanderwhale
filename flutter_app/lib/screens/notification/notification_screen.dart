@@ -10,11 +10,20 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/login_required_popup.dart';
 import '../auth/login_screen.dart';
 
-class NotificationScreen extends ConsumerWidget {
+class NotificationScreen extends ConsumerStatefulWidget {
   const NotificationScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NotificationScreen> createState() =>
+      _NotificationScreenState();
+}
+
+class _NotificationScreenState extends ConsumerState<NotificationScreen> {
+  // Track notifications yang sedang dihapus untuk optimistic update
+  final Set<String> _deletingIds = {};
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
     final notificationsAsync = ref.watch(notificationsProvider);
 
@@ -52,6 +61,11 @@ class NotificationScreen extends ConsumerWidget {
                           if (items.isEmpty) {
                             return const _EmptyState();
                           }
+                          // Filter out notifications yang sedang dihapus
+                          final visibleItems = items
+                              .where((item) => !_deletingIds.contains(item.id))
+                              .toList();
+
                           return RefreshIndicator(
                             color: AppColors.primary,
                             onRefresh: () async {
@@ -60,13 +74,14 @@ class NotificationScreen extends ConsumerWidget {
                             },
                             child: ListView.separated(
                               padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
-                              itemCount: items.length,
+                              itemCount: visibleItems.length,
                               separatorBuilder: (_, __) =>
                                   const SizedBox(height: 16),
                               itemBuilder: (context, index) {
-                                final notification = items[index];
-                                return _NotificationCard(
+                                final notification = visibleItems[index];
+                                return _NotificationCardWithDelete(
                                   notification: notification,
+                                  onDelete: () => _handleDelete(notification.id),
                                 );
                               },
                             ),
@@ -116,6 +131,55 @@ class NotificationScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _handleDelete(String notificationId) async {
+    // Optimistic update: hapus dari UI dulu
+    setState(() {
+      _deletingIds.add(notificationId);
+    });
+
+    try {
+      final controller = ref.read(notificationControllerProvider);
+      await controller.delete(notificationId);
+
+      // Refresh notifications setelah delete berhasil
+      ref.invalidate(notificationsProvider);
+      ref.invalidate(unreadNotificationsProvider);
+
+      // Hapus dari deletingIds setelah berhasil
+      if (mounted) {
+        setState(() {
+          _deletingIds.remove(notificationId);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Notifikasi dihapus'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      // Jika gagal, kembalikan item ke UI
+      if (mounted) {
+        setState(() {
+          _deletingIds.remove(notificationId);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menghapus notifikasi: $e'),
+            backgroundColor: AppColors.error,
+            action: SnackBarAction(
+              label: 'Coba Lagi',
+              textColor: Colors.white,
+              onPressed: () => _handleDelete(notificationId),
+            ),
+          ),
+        );
+        // Refresh untuk memastikan data terbaru
+        ref.invalidate(notificationsProvider);
+      }
+    }
   }
 }
 
@@ -172,6 +236,48 @@ class _NotificationHeader extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _NotificationCardWithDelete extends StatelessWidget {
+  const _NotificationCardWithDelete({
+    required this.notification,
+    required this.onDelete,
+  });
+
+  final NotificationModel notification;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dismissible(
+      key: Key(notification.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: AppColors.error,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        child: const Icon(
+          Icons.delete_outline,
+          color: Colors.white,
+          size: 28,
+        ),
+      ),
+      confirmDismiss: (direction) async {
+        // Optional: Tampilkan konfirmasi sebelum hapus
+        // Untuk sekarang langsung hapus saat swipe
+        return true;
+      },
+      onDismissed: (direction) {
+        // Panggil onDelete setelah dismiss
+        onDelete();
+      },
+      child: _NotificationCard(notification: notification),
     );
   }
 }

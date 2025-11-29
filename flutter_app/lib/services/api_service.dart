@@ -904,4 +904,12 @@ class ApiService {
       rethrow;
     }
   }
+
+  Future<void> deleteNotification(String notificationId) async {
+    try {
+      await _dio.delete(ApiConstants.notificationDelete(notificationId));
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

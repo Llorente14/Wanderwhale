@@ -83,5 +83,9 @@ class NotificationController {
   Future<void> markAllRead() {
     return _api.markAllNotificationsRead();
   }
+
+  Future<void> delete(String notificationId) {
+    return _api.deleteNotification(notificationId);
+  }
 }
 

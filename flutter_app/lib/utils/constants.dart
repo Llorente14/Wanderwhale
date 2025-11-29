@@ -64,6 +64,8 @@ class ApiConstants {
       "/notifications/$id/read"; // PATCH
   static const String notificationMarkAllRead =
       "/notifications/read-all"; // PATCH
+  static String notificationDelete(String id) =>
+      "/notifications/$id"; // DELETE
 }
 
 // StorageKeys TIDAK DIPERLUKAN

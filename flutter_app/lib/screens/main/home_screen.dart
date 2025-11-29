@@ -665,30 +665,30 @@ class _HeroSummaryBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final flightsAsync = ref.watch(
-      flightBookingsProvider(_homeFlightBookingFilter),
-    );
+    final latestFlightAsync = ref.watch(latestFlightFromTripsProvider);
 
-    return flightsAsync.when(
-      data: (flights) {
+    return latestFlightAsync.when(
+      data: (flight) {
         // Debug: Print untuk troubleshooting
-        debugPrint('🔍 Flight bookings count: ${flights.length}');
-        if (flights.isNotEmpty) {
+        debugPrint(
+          '🔍 Latest flight from trips: ${flight != null ? "Found" : "null"}',
+        );
+        if (flight != null) {
           debugPrint(
-            '🔍 First flight: ${flights.first.airline} - ${flights.first.flightNumber}',
+            '🔍 Flight: ${flight.airline} - ${flight.flightNumber} (${flight.origin} → ${flight.destination})',
           );
+          debugPrint('🔍 Departure: ${flight.departureDate}');
         }
 
-        if (flights.isEmpty) {
+        if (flight == null) {
           return const _HeroSummaryEmptyState();
         }
-        final booking = flights.first;
-        return _HeroSummaryContent(booking: booking);
+        return _HeroSummaryContent(booking: flight);
       },
       loading: () => const _HeroSummaryShimmer(),
       error: (error, stack) {
         // Debug: Print error untuk troubleshooting
-        debugPrint('❌ Flight bookings error: $error');
+        debugPrint('❌ Latest flight from trips error: $error');
         // Jika error, tampilkan empty state
         return const _HeroSummaryEmptyState();
       },
