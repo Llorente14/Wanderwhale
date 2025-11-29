@@ -4,15 +4,15 @@ import 'package:flutter_app/utils/formatters.dart';
 
 import 'hotel_rooms.dart';
 
-class HotelRecommendationScreen extends StatefulWidget {
-  const HotelRecommendationScreen({super.key});
+class HotelRecommendations extends StatefulWidget {
+  const HotelRecommendations({super.key});
 
   @override
-  State<HotelRecommendationScreen> createState() =>
-      _HotelRecommendationScreenState();
+  State<HotelRecommendations> createState() =>
+      _HotelRecommendationsState();
 }
 
-class _HotelRecommendationScreenState extends State<HotelRecommendationScreen> {
+class _HotelRecommendationsState extends State<HotelRecommendations> {
   bool isNational = true;
   late String selectedCity;
 
@@ -285,7 +285,7 @@ class _HotelRecommendationScreenState extends State<HotelRecommendationScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => HotelRoomsScreen(
+            builder: (_) => HotelRooms(
               hotelGroup: group,
               imageUrl: imageUrl,
             ),
@@ -423,7 +423,7 @@ class _HotelRecommendationScreenState extends State<HotelRecommendationScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => HotelRoomsScreen(
+            builder: (_) => HotelRooms(
               hotelGroup: group,
               imageUrl: imageUrl,
             ),
@@ -558,7 +558,7 @@ class _HotelRecommendationScreenState extends State<HotelRecommendationScreen> {
 
 }
 
-const List<Map<String, dynamic>> _mockHotelOfferGroups = [
+final List<Map<String, dynamic>> _mockHotelOfferGroups = [
   {
     'hotel': {
       'hotelId': 'JKT001',
@@ -580,8 +580,8 @@ const List<Map<String, dynamic>> _mockHotelOfferGroups = [
     'offers': [
       {
         'id': 'JKT001-OFFER1',
-        'checkInDate': '2025-01-18',
-        'checkOutDate': '2025-01-20',
+        'checkInDate': DateTime.now().add(const Duration(days: 7)).toIso8601String().split('T')[0],
+        'checkOutDate': DateTime.now().add(const Duration(days: 9)).toIso8601String().split('T')[0],
         'room': {
           'type': 'Superior Twin',
           'description': {'text': 'Paket populer termasuk sarapan'},
@@ -604,8 +604,8 @@ const List<Map<String, dynamic>> _mockHotelOfferGroups = [
       },
       {
         'id': 'JKT001-OFFER2',
-        'checkInDate': '2025-01-18',
-        'checkOutDate': '2025-01-21',
+        'checkInDate': DateTime.now().add(const Duration(days: 7)).toIso8601String().split('T')[0],
+        'checkOutDate': DateTime.now().add(const Duration(days: 10)).toIso8601String().split('T')[0],
         'room': {
           'type': 'Deluxe King',
           'description': {'text': 'Kamar luas dengan city view'},
@@ -646,8 +646,8 @@ const List<Map<String, dynamic>> _mockHotelOfferGroups = [
     'offers': [
       {
         'id': 'JKT002-OFFER1',
-        'checkInDate': '2025-02-02',
-        'checkOutDate': '2025-02-04',
+        'checkInDate': DateTime.now().add(const Duration(days: 14)).toIso8601String().split('T')[0],
+        'checkOutDate': DateTime.now().add(const Duration(days: 16)).toIso8601String().split('T')[0],
         'room': {
           'type': 'Executive Suite',
           'description': {'text': 'Termasuk akses lounge eksklusif'},
@@ -670,8 +670,8 @@ const List<Map<String, dynamic>> _mockHotelOfferGroups = [
       },
       {
         'id': 'JKT002-OFFER2',
-        'checkInDate': '2025-02-02',
-        'checkOutDate': '2025-02-05',
+        'checkInDate': DateTime.now().add(const Duration(days: 14)).toIso8601String().split('T')[0],
+        'checkOutDate': DateTime.now().add(const Duration(days: 17)).toIso8601String().split('T')[0],
         'room': {
           'type': 'Premier Twin',
           'description': {'text': 'Pilihan favorit pebisnis'},
@@ -711,8 +711,8 @@ const List<Map<String, dynamic>> _mockHotelOfferGroups = [
     'offers': [
       {
         'id': 'DPS001-OFFER1',
-        'checkInDate': '2025-03-10',
-        'checkOutDate': '2025-03-13',
+        'checkInDate': DateTime.now().add(const Duration(days: 21)).toIso8601String().split('T')[0],
+        'checkOutDate': DateTime.now().add(const Duration(days: 24)).toIso8601String().split('T')[0],
         'room': {
           'type': 'Ocean View Villa',
           'description': {'text': 'Vila privat dengan pemandangan laut'},
@@ -735,8 +735,8 @@ const List<Map<String, dynamic>> _mockHotelOfferGroups = [
       },
       {
         'id': 'DPS001-OFFER2',
-        'checkInDate': '2025-03-10',
-        'checkOutDate': '2025-03-14',
+        'checkInDate': DateTime.now().add(const Duration(days: 21)).toIso8601String().split('T')[0],
+        'checkOutDate': DateTime.now().add(const Duration(days: 25)).toIso8601String().split('T')[0],
         'room': {
           'type': 'Family Villa',
           'description': {'text': 'Pilihan terbaik untuk keluarga'},

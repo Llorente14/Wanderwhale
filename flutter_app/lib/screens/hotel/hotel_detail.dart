@@ -3,8 +3,8 @@ import 'package:flutter_app/models/hotel_booking_model.dart';
 import 'package:flutter_app/models/hotel_offer_model.dart';
 import 'package:flutter_app/utils/formatters.dart';
 
-class HotelDetailScreen extends StatelessWidget {
-  const HotelDetailScreen({
+class HotelDetail extends StatelessWidget {
+  const HotelDetail({
     super.key,
     required this.hotelGroup,
     required this.offer,

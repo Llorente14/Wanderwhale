@@ -4,7 +4,7 @@ final List<FlightOfferModel> demoFlightOffers = _mockFlightOffers
     .map((json) => FlightOfferModel.fromJson(json))
     .toList();
 
-const List<Map<String, dynamic>> _mockFlightOffers = [
+final List<Map<String, dynamic>> _mockFlightOffers = [
   {
     'id': 'GA870',
     'source': 'WANDERWHALE',
@@ -17,12 +17,12 @@ const List<Map<String, dynamic>> _mockFlightOffers = [
             'departure': {
               'iataCode': 'CGK',
               'terminal': '3',
-              'at': '2025-01-18T09:00:00'
+              'at': DateTime.now().add(const Duration(days: 7)).toIso8601String()
             },
             'arrival': {
               'iataCode': 'HND',
               'terminal': '2',
-              'at': '2025-01-18T18:00:00'
+              'at': DateTime.now().add(const Duration(days: 7, hours: 9)).toIso8601String()
             },
             'aircraft': {'code': '332'},
             'duration': 'PT7H',
@@ -70,12 +70,12 @@ const List<Map<String, dynamic>> _mockFlightOffers = [
             'departure': {
               'iataCode': 'CGK',
               'terminal': '3',
-              'at': '2025-02-05T13:30:00'
+              'at': DateTime.now().add(const Duration(days: 14)).toIso8601String()
             },
             'arrival': {
               'iataCode': 'SIN',
               'terminal': '1',
-              'at': '2025-02-05T16:15:00'
+              'at': DateTime.now().add(const Duration(days: 14, hours: 3)).toIso8601String()
             },
             'aircraft': {'code': '359'},
             'duration': 'PT1H45M',
@@ -128,12 +128,12 @@ const List<Map<String, dynamic>> _mockFlightOffers = [
             'departure': {
               'iataCode': 'CGK',
               'terminal': '3',
-              'at': '2025-01-25T07:15:00'
+              'at': DateTime.now().add(const Duration(days: 21)).toIso8601String()
             },
             'arrival': {
               'iataCode': 'DPS',
               'terminal': '1',
-              'at': '2025-01-25T10:05:00'
+              'at': DateTime.now().add(const Duration(days: 21, hours: 3)).toIso8601String()
             },
             'aircraft': {'code': '738'},
             'duration': 'PT1H50M',

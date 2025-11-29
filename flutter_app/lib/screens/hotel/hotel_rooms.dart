@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_app/models/hotel_offer_model.dart';
 import 'package:flutter_app/utils/formatters.dart';
 
-import 'hotel_detail.dart';
+import 'hotel_booking_details.dart';
 
-class HotelRoomsScreen extends StatelessWidget {
-  const HotelRoomsScreen({
+class HotelRooms extends StatelessWidget {
+  const HotelRooms({
     super.key,
     required this.hotelGroup,
     required this.imageUrl,
@@ -42,8 +42,7 @@ class HotelRoomsScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  HotelDetailScreen(
+                              builder: (_) => HotelBookingDetailsScreen(
                                 hotelGroup: hotelGroup,
                                 offer: room,
                                 imageUrl: imageUrl,

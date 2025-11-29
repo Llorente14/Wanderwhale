@@ -3,7 +3,7 @@ import 'package:flutter_app/models/flight_offer_model.dart';
 import 'package:flutter_app/utils/formatters.dart';
 import 'package:intl/intl.dart';
 
-import 'flight_detail.dart';
+import 'flight_booking_details.dart';
 
 class FlightsCardScreen extends StatelessWidget {
   const FlightsCardScreen({super.key, required this.offers});
@@ -35,7 +35,7 @@ class FlightsCardScreen extends StatelessWidget {
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) =>
-                                      FlightDetailScreen(offer: offer),
+                                  FlightBookingDetailsScreen(offer: offer),
                                 ),
                               );
                             },

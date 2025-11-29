@@ -3,9 +3,9 @@ import 'package:flutter_app/models/flight_offer_model.dart';
 import 'package:flutter_app/utils/formatters.dart';
 import 'package:intl/intl.dart';
 
+import 'flight_booking_details.dart';
 import 'flight_card.dart';
 import 'flight_data.dart';
-import 'flight_detail.dart';
 
 class FlightRecommendation extends StatefulWidget {
   const FlightRecommendation({super.key});
@@ -294,7 +294,7 @@ class _FlightRecommendationScreenState
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => FlightDetailScreen(offer: offer),
+            builder: (_) => FlightBookingDetailsScreen(offer: offer),
           ),
         );
       },
@@ -439,7 +439,7 @@ class _FlightRecommendationScreenState
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => FlightDetailScreen(offer: offer),
+            builder: (_) => FlightBookingDetailsScreen(offer: offer),
           ),
         );
       },
