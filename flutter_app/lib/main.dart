@@ -1,5 +1,3 @@
-// lib/main.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,7 +12,12 @@ import 'core/theme/app_colors.dart';
 import 'firebase_options.dart';
 
 void main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions
+        .currentPlatform, // if you have firebase_options.dart
+  );
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions
         .currentPlatform, // if you have firebase_options.dart

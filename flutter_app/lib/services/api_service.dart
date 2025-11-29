@@ -22,6 +22,7 @@ class ApiService {
 
   late Dio _dio;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  void Function()? _onUnauthorized;
 
   ApiService._internal() {
     _dio = Dio(
@@ -50,13 +51,23 @@ class ApiService {
         onError: (error, handler) {
           // Handle 401 Unauthorized (misal: token dicabut)
           if (error.response?.statusCode == 401) {
-            // TODO: Panggil AuthProvider untuk logout & redirect ke login
+            // Panggil callback jika terdaftar (AuthProvider akan mendaftarkan)
+            try {
+              _onUnauthorized?.call();
+            } catch (e) {
+              // ignore errors from callback
+            }
             print("Token tidak valid. Harap login ulang.");
           }
           return handler.next(error);
         },
       ),
     );
+  }
+
+  /// Register callback yang dipanggil saat API mengembalikan 401 Unauthorized
+  void setOnUnauthorizedCallback(void Function()? callback) {
+    _onUnauthorized = callback;
   }
 
   // === Helper untuk parsing respons ===
@@ -121,6 +132,30 @@ class ApiService {
     }
   }
 
+  /// Update /users/fcm-token (PUT) - menyimpan FCM token device
+  Future<void> updateFcmToken(String fcmToken) async {
+    try {
+      await _dio.put(ApiConstants.userFcmToken, data: {'fcmToken': fcmToken});
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Verify OAuth ID token at backend and auto-register/login user there.
+  /// Endpoint: POST /auth/oauth { idToken: string, fcmToken?: string }
+  Future<void> verifyOAuth(String idToken, {String? fcmToken}) async {
+    try {
+      final payload = {'idToken': idToken};
+      if (fcmToken != null && fcmToken.isNotEmpty)
+        payload['fcmToken'] = fcmToken;
+
+      await _dio.post(ApiConstants.authOAuth, data: payload);
+    } catch (e) {
+      // bubble up error to caller
+      rethrow;
+    }
+  }
+
   // ==================== TRIPS (Internal) ====================
 
   Future<List<TripModel>> getTrips() async {
@@ -163,8 +198,10 @@ class ApiService {
     Map<String, dynamic> payload,
   ) async {
     try {
-      final response =
-          await _dio.patch(ApiConstants.tripDetail(tripId), data: payload);
+      final response = await _dio.put(
+        ApiConstants.tripDetail(tripId),
+        data: payload,
+      );
       return _parseResponse(response, (json) => TripModel.fromJson(json));
     } catch (e) {
       rethrow;
@@ -198,9 +235,7 @@ class ApiService {
     try {
       final response = await _dio.get(
         ApiConstants.tripDestinations(tripId),
-        queryParameters: {
-          if (sortBy != null) 'sortBy': sortBy,
-        },
+        queryParameters: {if (sortBy != null) 'sortBy': sortBy},
       );
       return _parseResponseList(
         response,
@@ -220,7 +255,10 @@ class ApiService {
         ApiConstants.tripDestinations(tripId),
         data: payload,
       );
-      return _parseResponse(response, (json) => TripDestinationModel.fromJson(json));
+      return _parseResponse(
+        response,
+        (json) => TripDestinationModel.fromJson(json),
+      );
     } catch (e) {
       rethrow;
     }
@@ -236,13 +274,19 @@ class ApiService {
         ApiConstants.tripDestinationDetail(tripId, destinationId),
         data: payload,
       );
-      return _parseResponse(response, (json) => TripDestinationModel.fromJson(json));
+      return _parseResponse(
+        response,
+        (json) => TripDestinationModel.fromJson(json),
+      );
     } catch (e) {
       rethrow;
     }
   }
 
-  Future<void> deleteTripDestination(String tripId, String destinationId) async {
+  Future<void> deleteTripDestination(
+    String tripId,
+    String destinationId,
+  ) async {
     try {
       await _dio.delete(
         ApiConstants.tripDestinationDetail(tripId, destinationId),
@@ -259,9 +303,7 @@ class ApiService {
     try {
       final response = await _dio.get(
         ApiConstants.tripHotels(tripId),
-        queryParameters: {
-          if (sortBy != null) 'sortBy': sortBy,
-        },
+        queryParameters: {if (sortBy != null) 'sortBy': sortBy},
       );
       return _parseResponseList(
         response,
@@ -408,10 +450,7 @@ class ApiService {
   Future<HotelOffer> getHotelOfferPricing(String offerId) async {
     try {
       final response = await _dio.get(ApiConstants.hotelOfferDetail(offerId));
-      return _parseResponse(
-        response,
-        (json) => HotelOffer.fromJson(json),
-      );
+      return _parseResponse(response, (json) => HotelOffer.fromJson(json));
     } catch (e) {
       rethrow;
     }
@@ -453,9 +492,7 @@ class ApiService {
 
   // ==================== BOOKING (Dummy Step 3) ====================
 
-  Future<HotelBookingModel> storeHotelBooking(
-    Map<String, dynamic> body,
-  ) async {
+  Future<HotelBookingModel> storeHotelBooking(Map<String, dynamic> body) async {
     try {
       final response = await _dio.post(ApiConstants.hotelBookings, data: body);
       return _parseResponse(
@@ -632,9 +669,7 @@ class ApiService {
     try {
       final response = await _dio.get(
         ApiConstants.notifications,
-        queryParameters: {
-          if (unreadOnly) 'unreadOnly': unreadOnly,
-        },
+        queryParameters: {if (unreadOnly) 'unreadOnly': unreadOnly},
       );
       return _parseResponseList(
         response,
