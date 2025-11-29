@@ -18,6 +18,7 @@ import 'package:flutter_app/providers/hotel_providers.dart';
 import 'package:flutter_app/providers/providers.dart';
 import 'package:flutter_app/providers/wishlist_providers.dart';
 import 'package:flutter_app/utils/formatters.dart';
+import 'package:flutter_app/widgets/login_required_popup.dart';
 
 import '../discount/discount_page.dart';
 import '../explore/search_page.dart';
@@ -195,9 +196,16 @@ void _showErrorFeedback(BuildContext context, Object? error) {
       errorMessage.contains('login') ||
       errorMessage.contains('Unauthorized');
 
-  final message = isAuthError
-      ? 'Silakan login terlebih dahulu untuk mengakses fitur ini'
-      : 'Terjadi kesalahan: ${errorMessage.length > 50 ? errorMessage.substring(0, 50) + "..." : errorMessage}';
+  if (isAuthError) {
+    LoginRequiredPopup.show(
+      context,
+      message: 'Silakan login terlebih dahulu untuk mengakses fitur ini',
+    );
+    return;
+  }
+
+  final message =
+      'Terjadi kesalahan: ${errorMessage.length > 50 ? errorMessage.substring(0, 50) + "..." : errorMessage}';
 
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
@@ -2514,12 +2522,9 @@ class _RecommendationCardState extends ConsumerState<_RecommendationCard> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Silakan login terlebih dahulu untuk menggunakan wishlist.',
-          ),
-        ),
+      LoginRequiredPopup.show(
+        context,
+        message: 'Silakan login terlebih dahulu untuk menggunakan wishlist.',
       );
       return;
     }

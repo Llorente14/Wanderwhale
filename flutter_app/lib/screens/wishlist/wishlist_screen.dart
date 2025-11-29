@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/wishlist_model.dart';
 import '../../providers/wishlist_providers.dart';
+import '../../widgets/login_required_popup.dart';
 import '../explore/search_page.dart';
 
 // ============================================================================
@@ -210,13 +211,9 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Silakan login terlebih dahulu untuk menggunakan wishlist.',
-            ),
-            backgroundColor: AppColors.error,
-          ),
+        LoginRequiredPopup.show(
+          context,
+          message: 'Silakan login terlebih dahulu untuk menggunakan wishlist.',
         );
       }
       return;

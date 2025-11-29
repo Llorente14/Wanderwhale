@@ -7,6 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../models/destination_master_model.dart';
 import '../../providers/app_providers.dart';
 import '../../providers/wishlist_providers.dart';
+import '../../widgets/login_required_popup.dart';
 import '../destination/destination_detail.dart';
 
 class SearchPage extends ConsumerStatefulWidget {
@@ -343,12 +344,9 @@ class _SearchResultCardState extends ConsumerState<_SearchResultCard> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Silakan login terlebih dahulu untuk menggunakan wishlist.',
-          ),
-        ),
+      LoginRequiredPopup.show(
+        context,
+        message: 'Silakan login terlebih dahulu untuk menggunakan wishlist.',
       );
       return;
     }
