@@ -1,4 +1,5 @@
 // lib/providers/app_providers.dart
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -37,7 +38,17 @@ final userLocationTextProvider = FutureProvider<String>((ref) async {
 // ==================== USER PROVIDER ====================
 final userProvider = FutureProvider<UserModel>((ref) async {
   final api = ref.watch(apiServiceProvider);
-  return api.getUserProfile();
+  try {
+    return await api.getUserProfile();
+  } on DioException catch (e) {
+    // Jika 401 (user tidak login), throw error yang bisa ditangani UI
+    if (e.response?.statusCode == 401) {
+      throw Exception(
+        "User tidak terautentikasi. Silakan login terlebih dahulu.",
+      );
+    }
+    rethrow;
+  }
 });
 
 // ==================== TRIPS PROVIDER ====================
@@ -51,8 +62,9 @@ final upcomingTripsProvider = Provider<AsyncValue<List<TripModel>>>((ref) {
 
   return tripsAsync.when(
     data: (trips) {
-      final upcoming =
-          trips.where((trip) => trip.isUpcoming || trip.isOngoing).toList();
+      final upcoming = trips
+          .where((trip) => trip.isUpcoming || trip.isOngoing)
+          .toList();
       upcoming.sort((a, b) => a.startDate.compareTo(b.startDate));
       return AsyncValue.data(upcoming);
     },
@@ -64,16 +76,17 @@ final upcomingTripsProvider = Provider<AsyncValue<List<TripModel>>>((ref) {
 // ==================== DESTINATIONS PROVIDER ====================
 final popularDestinationsProvider =
     FutureProvider<List<DestinationMasterModel>>((ref) async {
-  final api = ref.watch(apiServiceProvider);
-  return api.getPopularDestinations();
-});
+      final api = ref.watch(apiServiceProvider);
+      return api.getPopularDestinations();
+    });
 
 // ==================== SEARCH PROVIDER ====================
 final searchQueryProvider = StateProvider<String>((ref) => '');
 
 // Provider untuk search results (destinations)
-final destinationSearchProvider =
-    FutureProvider<List<DestinationMasterModel>>((ref) async {
+final destinationSearchProvider = FutureProvider<List<DestinationMasterModel>>((
+  ref,
+) async {
   final query = ref.watch(searchQueryProvider);
   if (query.length < 3) {
     return [];
@@ -89,10 +102,7 @@ final hotelLocationSearchProvider = FutureProvider<List<dynamic>>((ref) async {
     return [];
   }
   final api = ref.watch(apiServiceProvider);
-  return api.searchLocationsByKeyword(
-    keyword: query,
-    subType: "CITY,HOTEL",
-  );
+  return api.searchLocationsByKeyword(keyword: query, subType: "CITY,HOTEL");
 });
 
 // ==================== BOOKINGS PROVIDER ====================
@@ -105,12 +115,13 @@ final upcomingFlightsProvider = FutureProvider<List<BookingModel>>((ref) async {
 
 // ==================== WISHLIST PROVIDERS ====================
 /// Mengecek apakah suatu destinasi sudah ada di wishlist user
-final wishlistStatusProvider =
-    FutureProvider.family<bool, String>((ref, destinationId) async {
+final wishlistStatusProvider = FutureProvider.family<bool, String>((
+  ref,
+  destinationId,
+) async {
   final api = ref.watch(apiServiceProvider);
   return api.checkWishlistStatus(destinationId);
 });
 
 // ==================== BOTTOM NAV INDEX PROVIDER ====================
 final bottomNavIndexProvider = StateProvider<int>((ref) => 0);
-

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'screens/main/home_screen.dart';
+import 'screens/main/main_navigation_screen.dart';
 import 'core/theme/app_colors.dart';
 import 'firebase_options.dart';
 
@@ -72,7 +72,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const HomeScreen(),
+      home: const MainNavigationScreen(),
     );
   }
 }
