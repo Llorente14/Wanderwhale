@@ -271,8 +271,14 @@ class _HeaderSection extends ConsumerWidget {
               backgroundColor: AppColors.white,
               backgroundImage: user.photoURL != null
                   ? NetworkImage(user.photoURL!)
-                  : const AssetImage('assets/images/avatar_placeholder.png')
-                        as ImageProvider,
+                  : null,
+              child: user.photoURL == null
+                  ? Icon(
+                      Icons.person,
+                      size: 24,
+                      color: AppColors.gray3,
+                    )
+                  : null,
             ),
           ),
           loading: () => const CircleAvatar(

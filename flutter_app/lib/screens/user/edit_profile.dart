@@ -5,6 +5,57 @@ import '../../core/theme/app_colors.dart';
 import '../../models/user_profile.dart';
 import '../../providers/user_profile_provider.dart';
 
+// Model untuk avatar option
+class AvatarOption {
+  final String id;
+  final String? assetPath; // Path ke asset (jika dari assets)
+  final String? imageUrl; // URL gambar (jika dari internet)
+  
+  const AvatarOption({
+    required this.id,
+    this.assetPath,
+    this.imageUrl,
+  }) : assert(assetPath != null || imageUrl != null, 'Harus ada assetPath atau imageUrl');
+  
+  // Helper untuk mendapatkan image provider
+  ImageProvider get imageProvider {
+    if (assetPath != null) {
+      return AssetImage(assetPath!);
+    } else {
+      return NetworkImage(imageUrl!);
+    }
+  }
+  
+  // Helper untuk mendapatkan string identifier (untuk disimpan di database)
+  String get identifier => assetPath ?? imageUrl!;
+}
+
+// List avatar yang tersedia (4 avatar)
+class AvatarOptions {
+  static const List<AvatarOption> avatars = [
+    // Avatar 1: Dari URL (DiceBear PNG format)
+    AvatarOption(
+      id: 'avatar_1',
+      imageUrl: 'https://api.dicebear.com/7.x/avataaars/png?seed=Alex',
+    ),
+    // Avatar 2: Dari URL (DiceBear PNG format)
+    AvatarOption(
+      id: 'avatar_2',
+      imageUrl: 'https://api.dicebear.com/7.x/avataaars/png?seed=Jordan',
+    ),
+    // Avatar 3: Dari URL (DiceBear PNG format)
+    AvatarOption(
+      id: 'avatar_3',
+      imageUrl: 'https://api.dicebear.com/7.x/avataaars/png?seed=Taylor',
+    ),
+    // Avatar 4: Dari URL (DiceBear PNG format)
+    AvatarOption(
+      id: 'avatar_4',
+      imageUrl: 'https://api.dicebear.com/7.x/avataaars/png?seed=Casey',
+    ),
+  ];
+}
+
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -17,6 +68,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late final TextEditingController _cityController;
   DateTime? _selectedBirthDate;
   String _selectedGender = 'Laki-laki';
+  String? _selectedAvatarUrl; // State untuk avatar yang dipilih
 
   @override
   void initState() {
@@ -40,6 +92,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     if (profile.dateOfBirth != null) {
       setState(() {
         _selectedBirthDate = profile.dateOfBirth;
+        _selectedAvatarUrl = profile.photoUrl; // Set avatar dari profile
+      });
+    } else {
+      setState(() {
+        _selectedAvatarUrl = profile.photoUrl; // Set avatar dari profile
       });
     }
   }
@@ -65,20 +122,146 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     }
   }
 
+  void _showAvatarPicker() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: AppColors.gray2,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Text(
+                'Pilih Avatar',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.gray5,
+                ),
+              ),
+              const SizedBox(height: 20),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2, // 2 kolom untuk 4 avatar (2x2)
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 1,
+                ),
+                itemCount: AvatarOptions.avatars.length,
+                itemBuilder: (context, index) {
+                  final avatar = AvatarOptions.avatars[index];
+                  final avatarIdentifier = avatar.identifier;
+                  final isSelected = _selectedAvatarUrl == avatarIdentifier;
+                  
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedAvatarUrl = avatarIdentifier;
+                      });
+                      Navigator.of(context).pop();
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected ? AppColors.primary : AppColors.gray1,
+                          width: isSelected ? 3 : 2,
+                        ),
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.primary.withOpacity(0.3),
+                                  blurRadius: 12,
+                                  spreadRadius: 3,
+                                ),
+                              ]
+                            : [
+                                BoxShadow(
+                                  color: AppColors.black.withOpacity(0.05),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                      ),
+                      child: ClipOval(
+                        child: avatar.assetPath != null
+                            ? Image(
+                                image: avatar.imageProvider as AssetImage,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: AppColors.gray1,
+                                    child: const Icon(
+                                      Icons.person,
+                                      color: AppColors.gray3,
+                                    ),
+                                  );
+                                },
+                              )
+                            : Image.network(
+                                avatar.imageUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: AppColors.gray1,
+                                    child: const Icon(
+                                      Icons.person,
+                                      color: AppColors.gray3,
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _saveProfile() async {
     final provider = ref.read(userProfileProvider);
     
-    // Construct payload
-    final payload = {
-      'displayName': _displayNameController.text,
-      'dateOfBirth': _selectedBirthDate?.toIso8601String(),
-      // 'gender': _selectedGender, 
-      // 'city': _cityController.text, 
+    // Construct payload - always include displayName (even if empty)
+    final payload = <String, dynamic>{
+      'displayName': _displayNameController.text.trim(),
     };
+    
+    // Only add dateOfBirth if it's selected
+    if (_selectedBirthDate != null) {
+      payload['dateOfBirth'] = _selectedBirthDate!.toIso8601String();
+    }
+    
+    // Add photoURL if avatar is selected
+    if (_selectedAvatarUrl != null) {
+      payload['photoURL'] = _selectedAvatarUrl;
+    }
 
     try {
       await provider.updateProfile(payload);
       if (mounted) {
+        // Refresh profile to get updated data
+        await provider.refresh();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profil berhasil diperbarui')),
         );
@@ -134,7 +317,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   if (profile != null)
                     _ProfileAvatar(
                       profile: profile,
-                      onEdit: () {},
+                      selectedAvatarUrl: _selectedAvatarUrl,
+                      onEdit: _showAvatarPicker,
                     ),
 
                   const SizedBox(height: 24),
@@ -292,14 +476,20 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 class _ProfileAvatar extends StatelessWidget {
   const _ProfileAvatar({
     required this.profile,
+    this.selectedAvatarUrl,
     required this.onEdit,
   });
 
   final UserProfile profile;
+  final String? selectedAvatarUrl;
   final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
+    // Prioritize selected avatar, then profile photoUrl, then default icon
+    final displayUrl = selectedAvatarUrl ?? profile.photoUrl;
+    final isAssetPath = displayUrl != null && displayUrl.startsWith('assets/');
+    
     return Center(
       child: Column(
         children: [
@@ -317,17 +507,31 @@ class _ProfileAvatar extends StatelessWidget {
                     end: Alignment.bottomRight,
                   ),
                 ),
-                child: profile.photoUrl != null
+                child: displayUrl != null
                     ? ClipOval(
-                        child: Image.network(
-                          profile.photoUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (ctx, err, stack) => const Icon(
-                            Icons.person,
-                            color: Colors.white,
-                            size: 48,
-                          ),
-                        ),
+                        child: isAssetPath
+                            ? Image(
+                                image: AssetImage(displayUrl),
+                                fit: BoxFit.cover,
+                                width: 90,
+                                height: 90,
+                                errorBuilder: (ctx, err, stack) => const Icon(
+                                  Icons.person,
+                                  color: Colors.white,
+                                  size: 48,
+                                ),
+                              )
+                            : Image.network(
+                                displayUrl,
+                                fit: BoxFit.cover,
+                                width: 90,
+                                height: 90,
+                                errorBuilder: (ctx, err, stack) => const Icon(
+                                  Icons.person,
+                                  color: Colors.white,
+                                  size: 48,
+                                ),
+                              ),
                       )
                     : const Icon(
                         Icons.person,

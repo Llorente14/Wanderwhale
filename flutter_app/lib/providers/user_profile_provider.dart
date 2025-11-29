@@ -99,39 +99,27 @@ class UserProfileProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Gunakan ApiService langsung atau lewat ApiClient jika sudah ada wrapper-nya.
-      // Di sini kita asumsikan ApiClient punya method put atau kita pakai ApiService singleton jika ApiClient hanya wrapper http biasa.
-      // Tapi karena di kode yang ada ApiClient dipakai untuk get, kita coba pakai itu juga untuk put jika ada.
-      // Cek ApiClient dulu.
-      // Ternyata ApiClient di sini sepertinya wrapper custom. Mari kita lihat ApiClient dulu kalau perlu.
-      // Tapi tunggu, di file user_profile_provider.dart yang saya baca tadi:
-      // import '../core/network/api_client.dart';
-      // Dan _apiClient.get(...)
-      
-      // Kalau saya lihat ApiService.dart yang saya edit sebelumnya, itu pakai Dio langsung.
-      // UserProfileProvider pakai ApiClient.
-      // Ini ada inkonsistensi di codebase user. Ada ApiService (singleton dengan Dio) dan ApiClient (wrapper).
-      // Saya harus cek ApiClient.dart dulu untuk memastikan dia punya method PUT.
-      
       final token = await _getAuthToken();
       if (token == null) {
         throw Exception('User tidak terautentikasi');
       }
 
+      // JSON request - photoURL dikirim sebagai string dalam data
       final result = await _apiClient.put(
         path: AppConfig.userProfileEndpoint,
         data: data,
         authToken: token,
       );
-
+      
       final responseData = result['data'] ?? result;
-       _profile = UserProfile.fromJson(
+
+      _profile = UserProfile.fromJson(
         Map<String, dynamic>.from(responseData as Map),
       );
       
     } catch (error) {
       _errorMessage = error.toString();
-      rethrow; // Rethrow agar UI bisa tangkap errornya
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();

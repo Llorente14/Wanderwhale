@@ -63,6 +63,36 @@ class ApiClient {
     );
   }
 
+  Future<Map<String, dynamic>> sendMultipart({
+    required String path,
+    String method = 'POST',
+    required Map<String, String> fields,
+    required List<http.MultipartFile> files,
+    required String authToken,
+  }) async {
+    final uri = Uri.parse('${AppConfig.apiBaseUrl}$path');
+    final request = http.MultipartRequest(method, uri);
+
+    request.headers.addAll({
+      'Authorization': 'Bearer $authToken',
+    });
+
+    request.fields.addAll(fields);
+    request.files.addAll(files);
+
+    final streamedResponse = await request.send().timeout(AppConfig.networkTimeout);
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: response.body,
+    );
+  }
+
   void dispose() {
     _client.close();
   }
@@ -80,6 +110,7 @@ class ApiException implements Exception {
   @override
   String toString() => 'ApiException($statusCode): $message';
 }
+
 
 
 

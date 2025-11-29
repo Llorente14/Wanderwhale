@@ -4,35 +4,34 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/user_profile.dart';
 import '../../providers/discount_providers.dart';
+import '../../providers/user_profile_provider.dart';
+import '../../providers/providers.dart';
 import '../../widgets/common/custom_bottom_nav.dart';
 import '../main/home_screen.dart';
 import '../main/settings_screen.dart';
 import '../discount/discount_page.dart';
 import 'edit_profile.dart';
 
-/// Static profile screen that mimics the provided wireframe.
-class ProfileScreens extends ConsumerWidget {
+class ProfileScreens extends ConsumerStatefulWidget {
   const ProfileScreens({super.key});
 
-  static const UserProfile _mockProfile = UserProfile(
-    id: 'user-001',
-    email: 'user@example.com',
-    displayName: 'Username',
-    photoUrl: null,
-    phoneNumber: null,
-    dateOfBirth: null,
-    language: 'id',
-    currency: 'IDR',
-    createdAt: null,
-    updatedAt: null,
-    points: 0,
-    membershipLevel: 'Bronze',
-    postCount: 0,
-    followerCount: 0,
-    followingCount: 0,
-  );
+  @override
+  ConsumerState<ProfileScreens> createState() => _ProfileScreensState();
+}
 
-  static void _navigateToVoucherPage(BuildContext context) {
+class _ProfileScreensState extends ConsumerState<ProfileScreens> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = ref.read(userProfileProvider);
+      if (provider.profile == null) {
+        provider.loadProfile();
+      }
+    });
+  }
+
+  void _navigateToVoucherPage(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -42,8 +41,36 @@ class ProfileScreens extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final userProvider = ref.watch(userProfileProvider);
+    final profile = userProvider.profile;
+    final isLoading = userProvider.isLoading;
     final discounts = ref.watch(availableDiscountsProvider);
+
+    if (isLoading && profile == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (profile == null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text("Gagal memuat profil"),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref.read(userProfileProvider).loadProfile(),
+                child: const Text("Coba Lagi"),
+              ),
+            ],
+          ),
+        ),
+        bottomNavigationBar: const CustomBottomNav(),
+      );
+    }
     
     return Scaffold(
       body: Container(
@@ -75,10 +102,10 @@ class ProfileScreens extends ConsumerWidget {
                         const SizedBox(height: 24),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: _ProfileCard(profile: _mockProfile),
+                          child: _ProfileCard(profile: profile),
                         ),
                         const SizedBox(height: 20),
-                        _MembershipBanner(level: _mockProfile.membershipLevel),
+                        _MembershipBanner(level: profile.membershipLevel),
                         const SizedBox(height: 12),
                         _InfoCard(
                           title: 'My Reward',
@@ -89,18 +116,6 @@ class ProfileScreens extends ConsumerWidget {
                               title: '${discounts.length} Vouchers',
                               subtitle: 'Exchange Your Voucher',
                               onTap: () => _navigateToVoucherPage(context),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        const _InfoCard(
-                          title: 'Member Feature',
-                          items: [
-                            _InfoCardItem(
-                              icon: Icons.star,
-                              iconColor: AppColors.warning,
-                              title: 'Traveler Info',
-                              subtitle: 'Manage Your Passenger Address details',
                             ),
                           ],
                         ),
@@ -182,13 +197,15 @@ class _ProfileHeader extends StatelessWidget {
   }
 }
 
-class _ProfileCard extends StatelessWidget {
+class _ProfileCard extends ConsumerWidget {
   const _ProfileCard({required this.profile});
 
   final UserProfile profile;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tripsAsync = ref.watch(tripsProvider);
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -213,9 +230,14 @@ class _ProfileCard extends StatelessWidget {
                 backgroundColor: AppColors.gray1,
                 backgroundImage: profile.photoUrl != null
                     ? NetworkImage(profile.photoUrl!)
-                    : const AssetImage(
-                        'assets/images/avatar_placeholder.png',
-                      ) as ImageProvider,
+                    : null,
+                child: profile.photoUrl == null
+                    ? Icon(
+                        Icons.person,
+                        size: 40,
+                        color: AppColors.gray3,
+                      )
+                    : null,
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -290,20 +312,55 @@ class _ProfileCard extends StatelessWidget {
           const SizedBox(height: 18),
           const Divider(),
           const SizedBox(height: 12),
-          Row(
-            children: const [
-              Expanded(
-                child: _ProfileStat(label: 'Post', value: '0'),
-              ),
-              _VerticalDivider(),
-              Expanded(
-                child: _ProfileStat(label: 'Follower', value: '0'),
-              ),
-              _VerticalDivider(),
-              Expanded(
-                child: _ProfileStat(label: 'Following', value: '0'),
-              ),
-            ],
+          tripsAsync.when(
+            data: (trips) => Row(
+              children: [
+                Expanded(
+                  child: _ProfileStat(
+                    label: 'Trip',
+                    value: '${trips.length}',
+                  ),
+                ),
+                const _VerticalDivider(),
+                const Expanded(
+                  child: _ProfileStat(label: 'Follower', value: '0'),
+                ),
+                const _VerticalDivider(),
+                const Expanded(
+                  child: _ProfileStat(label: 'Following', value: '0'),
+                ),
+              ],
+            ),
+            loading: () => const Row(
+              children: [
+                Expanded(
+                  child: _ProfileStat(label: 'Trip', value: '...'),
+                ),
+                _VerticalDivider(),
+                Expanded(
+                  child: _ProfileStat(label: 'Follower', value: '0'),
+                ),
+                _VerticalDivider(),
+                Expanded(
+                  child: _ProfileStat(label: 'Following', value: '0'),
+                ),
+              ],
+            ),
+            error: (_, __) => const Row(
+              children: [
+                Expanded(
+                  child: _ProfileStat(label: 'Trip', value: '0'),
+                ),
+                _VerticalDivider(),
+                Expanded(
+                  child: _ProfileStat(label: 'Follower', value: '0'),
+                ),
+                _VerticalDivider(),
+                Expanded(
+                  child: _ProfileStat(label: 'Following', value: '0'),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -435,10 +492,10 @@ class _InfoCard extends StatelessWidget {
             Text(
               title,
               style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.gray5,
-              ),
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.gray5,
+            ),
             ),
             const SizedBox(height: 16),
             for (var i = 0; i < items.length; i++) ...[
@@ -516,4 +573,3 @@ class _InfoCardItem extends StatelessWidget {
     );
   }
 }
-
