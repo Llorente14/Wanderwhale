@@ -103,7 +103,6 @@ class _HotelRecommendationsState extends ConsumerState<HotelRecommendations> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNavBar(),
     );
   }
 
@@ -550,71 +549,6 @@ class _HotelRecommendationsState extends ConsumerState<HotelRecommendations> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildBottomNavBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: const [
-              _NavItem(icon: Icons.home, label: 'Home', isActive: true),
-              _NavItem(icon: Icons.favorite_border, label: 'Favorite'),
-              _NavItem(icon: Icons.add_circle_outline, label: 'Planning'),
-              _NavItem(icon: Icons.auto_awesome_outlined, label: 'AI Chat'),
-              _NavItem(icon: Icons.settings_outlined, label: 'Settings'),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-}
-
-class _NavItem extends StatelessWidget {
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    this.isActive = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool isActive;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          color: isActive ? Colors.blue[700] : Colors.grey[500],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: isActive ? Colors.blue[700] : Colors.grey[500],
-            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ],
     );
   }
 }
