@@ -141,21 +141,6 @@ class ApiService {
     }
   }
 
-  /// Verify OAuth ID token at backend and auto-register/login user there.
-  /// Endpoint: POST /auth/oauth { idToken: string, fcmToken?: string }
-  Future<void> verifyOAuth(String idToken, {String? fcmToken}) async {
-    try {
-      final payload = {'idToken': idToken};
-      if (fcmToken != null && fcmToken.isNotEmpty)
-        payload['fcmToken'] = fcmToken;
-
-      await _dio.post(ApiConstants.authOAuth, data: payload);
-    } catch (e) {
-      // bubble up error to caller
-      rethrow;
-    }
-  }
-
   // ==================== TRIPS (Internal) ====================
 
   Future<List<TripModel>> getTrips() async {
