@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_app/screens/user/profile_screens.dart';
 import 'package:flutter_app/screens/wishlist/wishlist_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -17,13 +18,13 @@ import 'package:flutter_app/providers/hotel_providers.dart';
 import 'package:flutter_app/providers/providers.dart';
 import 'package:flutter_app/providers/wishlist_providers.dart';
 import 'package:flutter_app/utils/formatters.dart';
-import 'package:flutter_app/widgets/common/custom_bottom_nav.dart';
 
 import '../discount/discount_page.dart';
 import '../explore/search_page.dart';
 import '../flight/flight_recommendation.dart';
 import '../hotel/hotel_recommendations.dart';
 import '../notification/notification_screen.dart';
+import '../trip/trip_list.dart';
 import '../destination/destination_detail.dart';
 import '../tips/tipstravel.dart';
 
@@ -89,7 +90,6 @@ class HomeScreen extends ConsumerWidget {
           ),
         ),
       ),
-      bottomNavigationBar: const CustomBottomNav(),
     );
   }
 }
@@ -127,18 +127,25 @@ Future<void> _refreshHomeData(
   WidgetRef ref,
   FlightSearchParams flightParams,
 ) async {
-  await Future.wait([
-    ref.refresh(userProvider.future),
-    ref.refresh(userLocationTextProvider.future),
-    ref.refresh(tripsProvider.future),
-    ref.refresh(popularDestinationsProvider.future),
-    ref.refresh(wishlistItemsProvider.future),
-    ref.refresh(notificationsProvider.future),
-    ref.refresh(unreadNotificationsProvider.future),
-    ref.refresh(hotelBookingsProvider(_homeHotelFilter).future),
-    ref.refresh(flightBookingsProvider(_homeFlightBookingFilter).future),
-    ref.refresh(flightOffersProvider(flightParams).future),
-  ]);
+  // Refresh semua data dengan error handling untuk mencegah crash
+  // Menggunakan eagerError: false agar tidak crash jika salah satu gagal
+  try {
+    await Future.wait([
+      ref.refresh(userProvider.future),
+      ref.refresh(userLocationTextProvider.future),
+      ref.refresh(tripsProvider.future),
+      ref.refresh(popularDestinationsProvider.future),
+      ref.refresh(wishlistItemsProvider.future),
+      ref.refresh(notificationsProvider.future),
+      ref.refresh(unreadNotificationsProvider.future),
+      ref.refresh(hotelBookingsProvider(_homeHotelFilter).future),
+      ref.refresh(flightBookingsProvider(_homeFlightBookingFilter).future),
+      ref.refresh(flightOffersProvider(flightParams).future),
+    ], eagerError: false);
+  } catch (e) {
+    // Log error di debug mode, tapi jangan crash app
+    debugPrint('Warning: Some data failed to refresh: $e');
+  }
 }
 
 String _formatDateLabel(DateTime? date) {
@@ -180,6 +187,35 @@ String _durationBetween(DateTime? start, DateTime? end) {
   return '${hours}h ${minutes}m';
 }
 
+// Helper function untuk menampilkan error feedback ke user
+void _showErrorFeedback(BuildContext context, Object? error) {
+  final errorMessage = error.toString();
+  final isAuthError =
+      errorMessage.contains('terautentikasi') ||
+      errorMessage.contains('login') ||
+      errorMessage.contains('Unauthorized');
+
+  final message = isAuthError
+      ? 'Silakan login terlebih dahulu untuk mengakses fitur ini'
+      : 'Terjadi kesalahan: ${errorMessage.length > 50 ? errorMessage.substring(0, 50) + "..." : errorMessage}';
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      backgroundColor: isAuthError ? AppColors.warning : AppColors.error,
+      behavior: SnackBarBehavior.floating,
+      action: SnackBarAction(
+        label: 'OK',
+        textColor: Colors.white,
+        onPressed: () {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        },
+      ),
+      duration: const Duration(seconds: 4),
+    ),
+  );
+}
+
 // ================= HEADER =================
 
 class _HeaderSection extends ConsumerWidget {
@@ -194,23 +230,46 @@ class _HeaderSection extends ConsumerWidget {
     return Row(
       children: [
         userAsync.when(
-          data: (user) => CircleAvatar(
-            radius: 24,
-            backgroundColor: AppColors.white,
-            backgroundImage: user.photoURL != null
-                ? NetworkImage(user.photoURL!)
-                : const AssetImage('assets/images/avatar_placeholder.png')
-                      as ImageProvider,
+          data: (user) => GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfileScreens()),
+              );
+            },
+            child: CircleAvatar(
+              radius: 24,
+              backgroundColor: AppColors.white,
+              backgroundImage: user.photoURL != null
+                  ? NetworkImage(user.photoURL!)
+                  : const AssetImage('assets/images/avatar_placeholder.png')
+                        as ImageProvider,
+            ),
           ),
           loading: () => const CircleAvatar(
             radius: 24,
             backgroundColor: AppColors.gray2,
             child: CircularProgressIndicator(strokeWidth: 2),
           ),
-          error: (_, __) => const CircleAvatar(
-            radius: 24,
-            backgroundColor: AppColors.gray2,
-            child: Icon(Icons.person, color: AppColors.gray4),
+          error: (error, stackTrace) => GestureDetector(
+            onTap: () {
+              // Tampilkan feedback ke user
+              _showErrorFeedback(context, error);
+
+              // Tetap redirect ke profile screen (mungkin ada login option di sana)
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfileScreens()),
+              );
+            },
+            child: Tooltip(
+              message: 'Tap untuk membuka profil atau login',
+              child: CircleAvatar(
+                radius: 24,
+                backgroundColor: AppColors.gray2,
+                child: const Icon(Icons.person, color: AppColors.gray4),
+              ),
+            ),
           ),
         ),
         const SizedBox(width: 12),
@@ -348,8 +407,34 @@ class _HeaderLine extends StatelessWidget {
 
 // ================= SEARCH BAR =================
 
-class _SearchBar extends StatelessWidget {
+class _SearchBar extends ConsumerStatefulWidget {
   const _SearchBar();
+
+  @override
+  ConsumerState<_SearchBar> createState() => _SearchBarState();
+}
+
+class _SearchBarState extends ConsumerState<_SearchBar> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleSearch(String query) {
+    if (query.trim().isEmpty) return;
+
+    // Update search query provider
+    ref.read(searchQueryProvider.notifier).state = query.trim();
+
+    // Navigate to search page
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SearchPage()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -372,6 +457,7 @@ class _SearchBar extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: TextField(
+              controller: _controller,
               style: const TextStyle(color: Colors.black, fontSize: 16),
               decoration: InputDecoration(
                 hintText: 'Mau jalan ke mana?',
@@ -383,6 +469,8 @@ class _SearchBar extends StatelessWidget {
                 disabledBorder: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
               ),
+              // Hanya redirect saat user tekan enter (onSubmitted)
+              onSubmitted: _handleSearch,
             ),
           ),
           Container(
@@ -396,7 +484,9 @@ class _SearchBar extends StatelessWidget {
             child: IconButton(
               icon: const Icon(Icons.tune, size: 20, color: Colors.white),
               padding: EdgeInsets.zero,
-              onPressed: () {},
+              onPressed: () {
+                // TODO: Open filter options
+              },
             ),
           ),
         ],
@@ -657,7 +747,12 @@ class _QuickMenuRow extends StatelessWidget {
         icon: Icons.explore,
         label: 'Trip',
         gradient: const [Color(0xFF005C97), Color(0xFF363795)],
-        onTap: null,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const TripListScreen()),
+          );
+        },
       ),
     ];
 
@@ -795,54 +890,86 @@ class _WishlistCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 180,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF6A4CFF), Color(0xFF9D7CFF)],
+    return GestureDetector(
+      onTap: () {
+        // Create destination object from wishlist data for navigation
+        // Use default values for missing fields
+        final destination = DestinationMasterModel(
+          destinationId: item.destinationId,
+          name: item.destinationName,
+          city: item.destinationCity ?? '',
+          country: item.destinationCountry ?? '',
+          continent: '', // Not available in wishlist
+          description: '', // Not available in wishlist
+          imageUrl: item.destinationImageUrl ?? '',
+          images: item.destinationImageUrl != null
+              ? [item.destinationImageUrl!]
+              : [],
+          rating: item.destinationRating ?? 0.0,
+          reviewsCount: 0, // Not available in wishlist
+          averageBudget: 0.0, // Not available in wishlist
+          isPopular: false, // Not available in wishlist
+          tags: item.destinationTags,
+          popularActivities: [], // Not available in wishlist
+        );
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                DestinationDetailPage(destination: destination),
+          ),
+        );
+      },
+      child: Container(
+        width: 180,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          gradient: const LinearGradient(
+            colors: [Color(0xFF6A4CFF), Color(0xFF9D7CFF)],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6A4CFF).withOpacity(0.25),
+              blurRadius: 14,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF6A4CFF).withOpacity(0.25),
-            blurRadius: 14,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.favorite, color: Colors.white, size: 18),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  item.destinationName,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.favorite, color: Colors.white, size: 18),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    item.destinationName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
-          ),
-          Text(
-            '${item.destinationCity ?? '-'}, ${item.destinationCountry ?? '-'}',
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            'Ditambahkan ${DateFormat('dd MMM').format(item.addedAt)}',
-            style: const TextStyle(color: Colors.white60, fontSize: 11),
-          ),
-        ],
+              ],
+            ),
+            Text(
+              '${item.destinationCity ?? '-'}, ${item.destinationCountry ?? '-'}',
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              'Ditambahkan ${DateFormat('dd MMM').format(item.addedAt)}',
+              style: const TextStyle(color: Colors.white60, fontSize: 11),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1028,75 +1155,84 @@ class _HotelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 180,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF8E44AD).withOpacity(0.35),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF8E44AD), Color(0xFF3498DB)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+    return GestureDetector(
+      onTap: () {
+        // Navigate to hotel recommendations page
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const HotelRecommendations()),
+        );
+      },
+      child: Container(
+        width: 180,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF8E44AD).withOpacity(0.35),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
             ),
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Text(
-                booking.hotelName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF8E44AD), Color(0xFF3498DB)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              const SizedBox(height: 4),
-              Text(
-                '${booking.city ?? '-'}, ${booking.country ?? ''}',
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                '${booking.checkInDate != null ? DateFormat('dd MMM').format(booking.checkInDate!) : '?'} • ${booking.numberOfGuests} tamu',
-                style: const TextStyle(color: Colors.white70, fontSize: 11),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.25),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Text(
-                  '${booking.totalPrice.toIDR()} • ${booking.currency}',
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  booking.hotelName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 4),
+                Text(
+                  '${booking.city ?? '-'}, ${booking.country ?? ''}',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '${booking.checkInDate != null ? DateFormat('dd MMM').format(booking.checkInDate!) : '?'} • ${booking.numberOfGuests} tamu',
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.25),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Text(
+                    '${booking.totalPrice.toIDR()} • ${booking.currency}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1241,7 +1377,16 @@ class _TripTicketCard extends StatelessWidget {
                 ],
               ),
               ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  // Navigate to trip list screen
+                  // TODO: Replace with trip detail page when available
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const TripListScreen(),
+                    ),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
                   foregroundColor: Colors.white,

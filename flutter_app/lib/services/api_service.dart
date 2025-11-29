@@ -159,6 +159,20 @@ class ApiService {
 
   Future<UserModel> getUserProfile() async {
     try {
+      // Jika user belum login, jangan panggil API supaya tidak error 401.
+      final user = _auth.currentUser;
+      if (user == null) {
+        throw DioException(
+          requestOptions: RequestOptions(path: ApiConstants.userProfile),
+          type: DioExceptionType.badResponse,
+          response: Response(
+            requestOptions: RequestOptions(path: ApiConstants.userProfile),
+            statusCode: 401,
+          ),
+          message: "User tidak terautentikasi. Silakan login terlebih dahulu.",
+        );
+      }
+
       final response = await _dio.get(ApiConstants.userProfile);
       return _parseResponse(response, (json) => UserModel.fromJson(json));
     } catch (e) {
@@ -528,6 +542,12 @@ class ApiService {
 
   Future<List<BookingModel>> getMyBookings({String? type}) async {
     try {
+      // Jika user belum login, return empty list
+      final user = _auth.currentUser;
+      if (user == null) {
+        return [];
+      }
+
       final queryParams = <String, dynamic>{};
       if (type != null) {
         queryParams['type'] = type;
@@ -546,6 +566,10 @@ class ApiService {
       }
       return [];
     } catch (e) {
+      // Jika terjadi 401, return empty list (user tidak login)
+      if (e is DioException && e.response?.statusCode == 401) {
+        return [];
+      }
       rethrow;
     }
   }
@@ -557,6 +581,12 @@ class ApiService {
     int? limit,
   }) async {
     try {
+      // Jika user belum login, return empty list
+      final user = _auth.currentUser;
+      if (user == null) {
+        return [];
+      }
+
       final response = await _dio.get(
         ApiConstants.hotelBookingsList,
         queryParameters: {
@@ -571,6 +601,10 @@ class ApiService {
         (json) => HotelBookingModel.fromJson(json),
       );
     } catch (e) {
+      // Jika terjadi 401, return empty list (user tidak login)
+      if (e is DioException && e.response?.statusCode == 401) {
+        return [];
+      }
       rethrow;
     }
   }
@@ -582,6 +616,12 @@ class ApiService {
     int? limit,
   }) async {
     try {
+      // Jika user belum login, return empty list
+      final user = _auth.currentUser;
+      if (user == null) {
+        return [];
+      }
+
       final response = await _dio.get(
         ApiConstants.flightBookingsList,
         queryParameters: {
@@ -596,6 +636,10 @@ class ApiService {
         (json) => FlightBookingModel.fromJson(json),
       );
     } catch (e) {
+      // Jika terjadi 401, return empty list (user tidak login)
+      if (e is DioException && e.response?.statusCode == 401) {
+        return [];
+      }
       rethrow;
     }
   }
@@ -605,6 +649,12 @@ class ApiService {
   /// Mengecek apakah destinasi tertentu sudah ada di wishlist user.
   Future<bool> checkWishlistStatus(String destinationId) async {
     try {
+      // Jika user belum login, return false (belum di-wishlist)
+      final user = _auth.currentUser;
+      if (user == null) {
+        return false;
+      }
+
       final response = await _dio.get(
         ApiConstants.wishlistCheck(destinationId),
       );
@@ -617,7 +667,7 @@ class ApiService {
 
       return false;
     } catch (e) {
-      // Jika terjadi error (misal network), jangan crash UI, anggap belum di-wishlist
+      // Jika terjadi error (misal network atau 401), jangan crash UI, anggap belum di-wishlist
       return false;
     }
   }
@@ -651,12 +701,22 @@ class ApiService {
 
   Future<List<WishlistModel>> getWishlistItems() async {
     try {
+      // Jika user belum login, return empty list
+      final user = _auth.currentUser;
+      if (user == null) {
+        return [];
+      }
+
       final response = await _dio.get(ApiConstants.wishlist);
       return _parseResponseList(
         response,
         (json) => WishlistModel.fromJson(json),
       );
     } catch (e) {
+      // Jika terjadi 401, return empty list (user tidak login)
+      if (e is DioException && e.response?.statusCode == 401) {
+        return [];
+      }
       rethrow;
     }
   }
@@ -675,6 +735,12 @@ class ApiService {
     bool unreadOnly = false,
   }) async {
     try {
+      // Jika user belum login, return empty list
+      final user = _auth.currentUser;
+      if (user == null) {
+        return [];
+      }
+
       final response = await _dio.get(
         ApiConstants.notifications,
         queryParameters: {
@@ -686,6 +752,10 @@ class ApiService {
         (json) => NotificationModel.fromJson(json['id'] ?? '', json),
       );
     } catch (e) {
+      // Jika terjadi 401, return empty list (user tidak login)
+      if (e is DioException && e.response?.statusCode == 401) {
+        return [];
+      }
       rethrow;
     }
   }
