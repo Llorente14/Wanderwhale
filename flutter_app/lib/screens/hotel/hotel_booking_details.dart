@@ -53,45 +53,51 @@ class _HotelBookingDetailsScreenState
       appBar: AppBar(
         title: const Text('Hotel Booking Details'),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _HotelSummaryCard(
-                hotelGroup: widget.hotelGroup,
-                offer: widget.offer,
-                imageUrl: widget.imageUrl,
-                dateFormat: _dateFormat,
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _HotelSummaryCard(
+                    hotelGroup: widget.hotelGroup,
+                    offer: widget.offer,
+                    imageUrl: widget.imageUrl,
+                    dateFormat: _dateFormat,
+                  ),
+                  const SizedBox(height: 24),
+                  _TripSelector(tripsAsync: tripsAsync, currentTrip: bookingState.tripId),
+                  const SizedBox(height: 24),
+                  _DateSelectionSection(
+                    checkInDate: bookingState.checkInDate,
+                    checkOutDate: bookingState.checkOutDate,
+                    onCheckInSelected: (date) => ref.read(hotelBookingProvider.notifier).setDates(checkIn: date),
+                    onCheckOutSelected: (date) => ref.read(hotelBookingProvider.notifier).setDates(checkOut: date),
+                    dateFormat: _dateFormat,
+                  ),
+                  const SizedBox(height: 24),
+                  _GuestSection(guests: bookingState.guests),
+                  const SizedBox(height: 24),
+                  _PriceBreakdown(
+                    currency: widget.offer.price.currency,
+                    basePrice: bookingState.basePrice,
+                    taxes: bookingState.taxes,
+                    total: bookingState.totalPrice,
+                  ),
+                  const SizedBox(height: 24),
+                  _CheckoutButton(
+                    enabled: bookingState.isReadyForCheckout,
+                    label: 'Save & Continue (${bookingState.totalPrice.toIDR()})',
+                    onTap: () => _handleCheckout(context, bookingState),
+                  ),
+                  const SizedBox(height: 24),
+                ],
               ),
-              const SizedBox(height: 24),
-              _TripSelector(tripsAsync: tripsAsync, currentTrip: bookingState.tripId),
-              const SizedBox(height: 24),
-              _DateSelectionSection(
-                checkInDate: bookingState.checkInDate,
-                checkOutDate: bookingState.checkOutDate,
-                onCheckInSelected: (date) => ref.read(hotelBookingProvider.notifier).setDates(checkIn: date),
-                onCheckOutSelected: (date) => ref.read(hotelBookingProvider.notifier).setDates(checkOut: date),
-                dateFormat: _dateFormat,
-              ),
-              const SizedBox(height: 24),
-              _GuestSection(guests: bookingState.guests),
-              const SizedBox(height: 24),
-              _PriceBreakdown(
-                currency: widget.offer.price.currency,
-                basePrice: bookingState.basePrice,
-                taxes: bookingState.taxes,
-                total: bookingState.totalPrice,
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
-      bottomNavigationBar: _CheckoutButton(
-        enabled: bookingState.isReadyForCheckout,
-        label: 'Save & Continue (${bookingState.totalPrice.toIDR()})',
-        onTap: () => _handleCheckout(context, bookingState),
+        ],
       ),
     );
   }

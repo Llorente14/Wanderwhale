@@ -5,6 +5,8 @@ import 'package:flutter_app/utils/formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../providers/providers.dart';
+
 class FlightBookingDetailsScreen extends ConsumerStatefulWidget {
   const FlightBookingDetailsScreen({
     super.key,
@@ -44,49 +46,57 @@ class _FlightBookingDetailsScreenState
       appBar: AppBar(
         title: const Text('Flight Booking Details'),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _FlightOverview(
-                offer: widget.offer,
-                dateFormat: _dateFormat,
-                timeFormat: _timeFormat,
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _FlightOverview(
+                    offer: widget.offer,
+                    dateFormat: _dateFormat,
+                    timeFormat: _timeFormat,
+                  ),
+                  const SizedBox(height: 16),
+                  _DatePickerSection(
+                    selectedDate: bookingState.departureDate,
+                    onDateSelected:
+                        ref.read(flightBookingProvider.notifier).setDepartureDate,
+                  ),
+                  const SizedBox(height: 16),
+                  _TripNoteField(currentValue: bookingState.tripId),
+                  const SizedBox(height: 24),
+                  _PassengerSection(passengers: bookingState.passengers),
+                  const SizedBox(height: 24),
+                  _SeatSelectionSection(
+                    selectedSeats: bookingState.selectedSeats,
+                    onToggle: ref.read(flightBookingProvider.notifier).toggleSeat,
+                  ),
+                  const SizedBox(height: 24),
+                  _BookingSummary(
+                    totalPrice: bookingState.totalPrice,
+                    passengerCount: bookingState.passengerCount,
+                    selectedSeats: bookingState.selectedSeats.length,
+                    currency: widget.offer.price.currency,
+                    unitPrice: bookingState.passengerUnitPrice,
+                    seatPrice: bookingState.seatPrice,
+                    seatsTotalPrice: bookingState.seatsTotalPrice,
+                  ),
+                  const SizedBox(height: 24),
+                  _CheckoutButton(
+                    enabled: bookingState.isReadyForCheckout,
+                    onTap: () => _handleCheckout(context, bookingState),
+                    label:
+                        'Proceed to Checkout (${bookingState.totalPrice.toIDR()})',
+                  ),
+                  const SizedBox(height: 24),
+                ],
               ),
-              const SizedBox(height: 16),
-              _DatePickerSection(
-                selectedDate: bookingState.departureDate,
-                onDateSelected: ref.read(flightBookingProvider.notifier).setDepartureDate,
-              ),
-              const SizedBox(height: 16),
-              _TripNoteField(currentValue: bookingState.tripId),
-              const SizedBox(height: 24),
-              _PassengerSection(passengers: bookingState.passengers),
-              const SizedBox(height: 24),
-              _SeatSelectionSection(
-                selectedSeats: bookingState.selectedSeats,
-                onToggle: ref.read(flightBookingProvider.notifier).toggleSeat,
-              ),
-              const SizedBox(height: 24),
-              _BookingSummary(
-                totalPrice: bookingState.totalPrice,
-                passengerCount: bookingState.passengerCount,
-                selectedSeats: bookingState.selectedSeats.length,
-                currency: widget.offer.price.currency,
-                unitPrice: bookingState.passengerUnitPrice,
-                seatPrice: bookingState.seatPrice,
-                seatsTotalPrice: bookingState.seatsTotalPrice,
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
-      bottomNavigationBar: _CheckoutButton(
-        enabled: bookingState.isReadyForCheckout,
-        onTap: () => _handleCheckout(context, bookingState),
-        label: 'Proceed to Checkout (${bookingState.totalPrice.toIDR()})',
+        ],
       ),
     );
   }
