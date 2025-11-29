@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'screens/main/welcome_screen.dart';
+import 'screens/hotel/checkout_hotel.dart';
+import 'screens/flight/checkout_flight.dart';
+
 import 'core/theme/app_colors.dart';
 import 'firebase_options.dart';
 
@@ -71,7 +74,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const WelcomeScreen(),
+      home: const CheckoutFlightScreen(),
     );
   }
 }

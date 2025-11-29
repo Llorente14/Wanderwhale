@@ -110,21 +110,6 @@ class AuthController {
     } catch (_) {}
   }
 
-  Future<void> signInWithApple() async {
-    final cred = await _authService.signInWithApple();
-    if (cred == null) throw Exception('Apple sign-in cancelled');
-
-    ref.invalidate(userProvider);
-
-    try {
-      final fcmService = ref.read(fcmServiceProvider);
-      final token = await fcmService.getDeviceToken();
-      if (token != null && token.isNotEmpty) {
-        await sendFcmToken(token);
-      }
-    } catch (_) {}
-  }
-
   Future<void> signOut() async {
     await _authService.signOut();
     ref.invalidate(userProvider);
