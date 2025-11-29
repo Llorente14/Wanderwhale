@@ -55,15 +55,16 @@ class DiscountPage extends ConsumerWidget {
             children: [
               const _DiscountHeader(),
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(28),
-                      topRight: Radius.circular(28),
-                    ),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(28),
+                    topRight: Radius.circular(28),
                   ),
-                  child: ListView.separated(
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: AppColors.white,
+                    ),
+                    child: ListView.separated(
                     padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
                     itemBuilder: (context, index) {
                       final item = discounts[index];
@@ -80,6 +81,7 @@ class DiscountPage extends ConsumerWidget {
                     },
                     separatorBuilder: (_, __) => const SizedBox(height: 16),
                     itemCount: discounts.length,
+                    ),
                   ),
                 ),
               ),
