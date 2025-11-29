@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../models/user_profile.dart';
+import '../../providers/discount_providers.dart';
 import '../../widgets/common/custom_bottom_nav.dart';
 import '../main/home_screen.dart';
 import '../main/settings_screen.dart';
+import '../discount/discount_page.dart';
 import 'edit_profile.dart';
 
 /// Static profile screen that mimics the provided wireframe.
@@ -30,42 +32,82 @@ class ProfileScreens extends ConsumerWidget {
     followingCount: 0,
   );
 
+  static void _navigateToVoucherPage(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const DiscountPage(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final discounts = ref.watch(availableDiscountsProvider);
+    
     return Scaffold(
-      backgroundColor: AppColors.gray0,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 32),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0F6DC2), Color(0xFF0BC5EA)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _ProfileHeroSection(profile: _mockProfile),
-              const SizedBox(height: 20),
-              _MembershipBanner(level: _mockProfile.membershipLevel),
-              const SizedBox(height: 12),
-              const _InfoCard(
-                title: 'My Reward',
-                items: [
-                  _InfoCardItem(
-                    icon: Icons.star,
-                    iconColor: AppColors.warning,
-                    title: '0 Vouchers',
-                    subtitle: 'Exchange Your Voucher',
+              _ProfileHeader(context: context),
+              Expanded(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(28),
+                      topRight: Radius.circular(28),
+                    ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              const _InfoCard(
-                title: 'Member Feature',
-                items: [
-                  _InfoCardItem(
-                    icon: Icons.star,
-                    iconColor: AppColors.warning,
-                    title: 'Traveler Info',
-                    subtitle: 'Manage Your Passenger Address details',
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.only(bottom: 32),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 24),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: _ProfileCard(profile: _mockProfile),
+                        ),
+                        const SizedBox(height: 20),
+                        _MembershipBanner(level: _mockProfile.membershipLevel),
+                        const SizedBox(height: 12),
+                        _InfoCard(
+                          title: 'My Reward',
+                          items: [
+                            _InfoCardItem(
+                              icon: Icons.star,
+                              iconColor: AppColors.warning,
+                              title: '${discounts.length} Vouchers',
+                              subtitle: 'Exchange Your Voucher',
+                              onTap: () => _navigateToVoucherPage(context),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        const _InfoCard(
+                          title: 'Member Feature',
+                          items: [
+                            _InfoCardItem(
+                              icon: Icons.star,
+                              iconColor: AppColors.warning,
+                              title: 'Traveler Info',
+                              subtitle: 'Manage Your Passenger Address details',
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ),
             ],
           ),
@@ -76,74 +118,64 @@ class ProfileScreens extends ConsumerWidget {
   }
 }
 
-class _ProfileHeroSection extends StatelessWidget {
-  const _ProfileHeroSection({required this.profile});
+class _ProfileHeader extends StatelessWidget {
+  const _ProfileHeader({required this.context});
 
-  final UserProfile profile;
+  final BuildContext context;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            AppColors.primaryLight2,
-            AppColors.primaryLight3,
-          ],
-        ),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
-        ),
-      ),
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
-      child: Column(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+      child: Row(
         children: [
-          Row(
-            children: [
-              Transform.translate(
-                offset: const Offset(-8, 0),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    color: AppColors.gray5,
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              icon: const Icon(
+                Icons.arrow_back,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (_) => const HomeScreen(),
                   ),
-                  onPressed: () {
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(
-                        builder: (_) => const HomeScreen(),
-                      ),
-                      (route) => false,
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Profile Page',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AppColors.gray5,
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const Spacer(),
-              IconButton(
-                icon: const Icon(Icons.settings_outlined, color: AppColors.gray5),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SettingsScreen(),
-                    ),
-                  );
-                },
-              ),
-            ],
+                  (route) => false,
+                );
+              },
+            ),
           ),
-          const SizedBox(height: 18),
-          _ProfileCard(profile: profile),
+          const SizedBox(width: 16),
+          Text(
+            'Profile Page',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 20,
+                ),
+          ),
+          const Spacer(),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.settings_outlined, color: Colors.white),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsScreen(),
+                  ),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -237,12 +269,17 @@ class _ProfileCard extends StatelessWidget {
                         color: const Color(0xFFD7C1A0),
                         borderRadius: BorderRadius.circular(24),
                       ),
-                      child: const Text(
-                        'You Have 0 Vouchers',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      child: Consumer(
+                        builder: (context, ref, child) {
+                          final discounts = ref.watch(availableDiscountsProvider);
+                          return Text(
+                            'You Have ${discounts.length} Vouchers',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -421,52 +458,61 @@ class _InfoCardItem extends StatelessWidget {
     required this.iconColor,
     required this.title,
     required this.subtitle,
+    this.onTap,
   });
 
   final IconData icon;
   final Color iconColor;
   final String title;
   final String subtitle;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: iconColor),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.gray5,
-                ),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.gray3,
-                ),
+              child: Icon(icon, color: iconColor),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.gray5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.gray3,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

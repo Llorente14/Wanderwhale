@@ -89,3 +89,40 @@ final priceWithDiscountProvider = Provider.family<double, double>((ref, original
   return selectedDiscount.calculateFinalPrice(originalPrice);
 });
 
+// ============================================================================
+// MOCK DATA
+// ============================================================================
+
+final List<DiscountModel> mockDiscounts = [
+  DiscountModel(
+    id: '1',
+    title: 'Diskon Hotel Hingga 40%',
+    code: 'STAYCOZY40',
+    description: 'Berlaku untuk minimal 2 malam di seluruh Asia Tenggara.',
+    imageUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80',
+    discountPercentage: 40.0,
+    discountType: 'hotel',
+  ),
+  DiscountModel(
+    id: '2',
+    title: 'Flash Sale Penerbangan',
+    code: 'FLYFAST25',
+    description: 'Promo akhir pekan untuk rute domestik pilihan.',
+    imageUrl: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80',
+    discountPercentage: 25.0,
+    discountType: 'flight',
+  ),
+  DiscountModel(
+    id: '3',
+    title: 'Voucher Aktivitas 15%',
+    code: 'FUNTRIP15',
+    description: 'Nikmati tur lokal, kuliner, hingga tiket atraksi.',
+    imageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
+    discountPercentage: 15.0,
+    discountType: 'activity',
+  ),
+];
+
+final availableDiscountsProvider = Provider<List<DiscountModel>>((ref) {
+  return mockDiscounts;
+});
