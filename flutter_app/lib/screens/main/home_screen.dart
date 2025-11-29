@@ -614,9 +614,9 @@ class _SearchBarState extends ConsumerState<_SearchBar> {
           ),
         ],
       ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         children: [
-          const SizedBox(width: 16),
           const Icon(Icons.search, color: AppColors.gray3),
           const SizedBox(width: 8),
           Expanded(
@@ -638,12 +638,13 @@ class _SearchBarState extends ConsumerState<_SearchBar> {
             ),
           ),
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
+              gradient: const LinearGradient(
+                colors: [AppColors.primaryLight1, AppColors.primaryDark1],
+              ),
             ),
             child: IconButton(
               icon: const Icon(Icons.tune, size: 20, color: Colors.white),
@@ -953,13 +954,24 @@ class _MenuItemData {
   final String label;
   final List<Color> gradient;
   final VoidCallback? onTap;
+  final List<Color> gradient;
+  final VoidCallback? onTap;
 
+  const _MenuItemData({
   const _MenuItemData({
     required this.icon,
     required this.label,
     required this.gradient,
     this.onTap,
+    required this.gradient,
+    this.onTap,
   });
+}
+
+class _QuickMenuItem extends StatelessWidget {
+  final _MenuItemData data;
+
+  const _QuickMenuItem({required this.data});
 }
 
 class _QuickMenuItem extends StatelessWidget {
@@ -971,7 +983,10 @@ class _QuickMenuItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: data.onTap,
+    return GestureDetector(
+      onTap: data.onTap,
       child: Container(
+        height: 82,
         height: 82,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
@@ -980,8 +995,16 @@ class _QuickMenuItem extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            colors: data.gradient,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           boxShadow: [
             BoxShadow(
+              color: data.gradient.last.withOpacity(0.3),
+              blurRadius: 14,
               color: data.gradient.last.withOpacity(0.3),
               blurRadius: 14,
               offset: const Offset(0, 8),
@@ -1001,10 +1024,22 @@ class _QuickMenuItem extends StatelessWidget {
               child: Icon(data.icon, color: Colors.white, size: 20),
             ),
             const SizedBox(height: 6),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(data.icon, color: Colors.white, size: 20),
+            ),
+            const SizedBox(height: 6),
             Text(
+              data.label,
               data.label,
               style: const TextStyle(
                 color: Colors.white,
+                fontSize: 12,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -3030,7 +3065,7 @@ class _DestinationByCountrySection extends ConsumerWidget {
   }
 }
 
-class _CountryHighlightColumn extends StatelessWidget {
+class _CountryDestinationsRow extends StatelessWidget {
   final String country;
   final List<DestinationMasterModel> highlights;
 

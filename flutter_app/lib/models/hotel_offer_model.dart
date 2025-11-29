@@ -153,6 +153,30 @@ class HotelOffer {
       paymentPolicy: json['paymentPolicy'],
     );
   }
+
+  HotelOffer copyWith({
+    String? id,
+    DateTime? checkInDate,
+    DateTime? checkOutDate,
+    HotelRoom? room,
+    HotelGuests? guests,
+    HotelPrice? price,
+    Map<String, dynamic>? policies,
+    String? boardType,
+    String? paymentPolicy,
+  }) {
+    return HotelOffer(
+      id: id ?? this.id,
+      checkInDate: checkInDate ?? this.checkInDate,
+      checkOutDate: checkOutDate ?? this.checkOutDate,
+      room: room ?? this.room,
+      guests: guests ?? this.guests,
+      price: price ?? this.price,
+      policies: policies ?? this.policies,
+      boardType: boardType ?? this.boardType,
+      paymentPolicy: paymentPolicy ?? this.paymentPolicy,
+    );
+  }
 }
 
 class HotelRoom {
