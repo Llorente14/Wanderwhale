@@ -31,6 +31,7 @@ const bookingStatusService = require("./services/bookingStatusService");
 // 5. Gunakan Middleware
 app.use(cors()); // Mengizinkan request dari domain lain (Flutter)
 app.use(express.json()); // Membaca body request sebagai JSON
+app.use(express.urlencoded({ extended: true })); // Membaca body request sebagai URL-encoded (untuk multipart form)
 
 // ============================================================================
 // CRON JOBS (Scheduled Tasks)

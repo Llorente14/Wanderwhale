@@ -105,16 +105,28 @@ exports.show = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const { uid } = req.user;
-    const { displayName, phoneNumber, dateOfBirth, language, currency } =
-      req.body;
+    
+    // Handle both JSON and multipart form data
+    // req.body bisa dari express.json() (JSON) atau multer (multipart form fields)
+    const body = req.body || {};
+    
+    // Safely destructure with defaults to avoid "Cannot destructure" errors
+    const displayName = body.displayName;
+    const phoneNumber = body.phoneNumber;
+    const dateOfBirth = body.dateOfBirth;
+    const language = body.language;
+    const currency = body.currency;
+    const photoURL = body.photoURL; // Avatar URL dari pilihan user
 
-    // Validasi: minimal ada 1 field yang di-update
+    // Validasi: minimal ada 1 field yang di-update (atau ada file photo)
     if (
-      !displayName &&
-      !phoneNumber &&
-      !dateOfBirth &&
-      !language &&
-      !currency
+      displayName === undefined &&
+      phoneNumber === undefined &&
+      dateOfBirth === undefined &&
+      language === undefined &&
+      currency === undefined &&
+      photoURL === undefined &&
+      !req.file
     ) {
       return res.status(400).json({
         success: false,
@@ -126,19 +138,87 @@ exports.update = async (req, res) => {
       updatedAt: new Date(),
     };
 
-    // Hanya update field yang dikirim
+    // Hanya update field yang dikirim (termasuk empty string untuk displayName)
     if (displayName !== undefined) updates.displayName = displayName;
     if (phoneNumber !== undefined) updates.phoneNumber = phoneNumber;
-    if (dateOfBirth !== undefined) updates.dateOfBirth = new Date(dateOfBirth);
+    if (dateOfBirth !== undefined) {
+      // Handle both ISO string and Date object
+      updates.dateOfBirth = dateOfBirth instanceof Date 
+        ? dateOfBirth 
+        : new Date(dateOfBirth);
+    }
     if (language !== undefined) updates.language = language;
     if (currency !== undefined) updates.currency = currency;
+    if (photoURL !== undefined) updates.photoURL = photoURL; // Update avatar URL
+
+    // Handle file upload if present - upload to Firebase Storage
+    if (req.file) {
+      try {
+        const { admin } = require("../index");
+        const bucket = admin.storage().bucket();
+        
+        // Generate unique filename: profile-photos/{uid}/{timestamp}.{ext}
+        const fileExtension = req.file.originalname.split('.').pop() || 'jpg';
+        const fileName = `profile-photos/${uid}/${Date.now()}.${fileExtension}`;
+        
+        // Upload file to Firebase Storage
+        const file = bucket.file(fileName);
+        const stream = file.createWriteStream({
+          metadata: {
+            contentType: req.file.mimetype,
+            metadata: {
+              uploadedBy: uid,
+              uploadedAt: new Date().toISOString(),
+            },
+          },
+        });
+
+        // Handle upload completion
+        await new Promise((resolve, reject) => {
+          stream.on('error', (error) => {
+            console.error('Error uploading to Firebase Storage:', error);
+            reject(error);
+          });
+
+          stream.on('finish', async () => {
+            try {
+              // Make file publicly accessible
+              await file.makePublic();
+              
+              // Get public URL
+              const photoURL = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+              updates.photoURL = photoURL;
+              console.log("Photo uploaded successfully:", photoURL);
+              resolve();
+            } catch (error) {
+              console.error('Error making file public:', error);
+              reject(error);
+            }
+          });
+
+          // Write file buffer to stream
+          stream.end(req.file.buffer);
+        });
+      } catch (uploadError) {
+        console.error("Error uploading photo to Firebase Storage:", uploadError);
+        // Don't fail the entire request if photo upload fails
+        // Just log the error and continue with other updates
+      }
+    }
 
     await usersCollection.doc(uid).set(updates, { merge: true });
+
+    // Get updated profile to return complete data
+    const updatedDoc = await usersCollection.doc(uid).get();
+    const updatedData = {
+      id: updatedDoc.id,
+      ...updatedDoc.data(),
+    };
 
     return res.status(200).json({
       success: true,
       message: "Profile updated successfully",
-      data: updates,
+      data: updatedData,
     });
   } catch (error) {
     console.error("Error updating user profile:", error);
