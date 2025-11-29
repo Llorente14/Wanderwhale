@@ -1,5 +1,6 @@
 // lib/providers/trip_providers.dart
 
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/trip_destination_model.dart';
@@ -54,10 +55,20 @@ class TripDestinationsNotifier
   Future<void> fetch({String? sortBy}) async {
     state = const AsyncValue.loading();
     try {
+      print('🔍 TripDestinationsNotifier: Fetching destinations for tripId: $tripId');
       final destinations =
           await api.getTripDestinations(tripId, sortBy: sortBy);
+      print('✅ TripDestinationsNotifier: Got ${destinations.length} destinations');
       state = AsyncValue.data(destinations);
     } catch (err, stack) {
+      print('❌ TripDestinationsNotifier: Error - $err');
+      print('❌ Stack trace: $stack');
+      // Jika error 404, return empty list (trip belum punya destinations)
+      if (err is DioException && err.response?.statusCode == 404) {
+        print('⚠️ TripDestinationsNotifier: 404 - Setting empty list');
+        state = const AsyncValue.data([]);
+        return;
+      }
       state = AsyncValue.error(err, stack);
     }
   }

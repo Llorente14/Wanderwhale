@@ -34,7 +34,8 @@ exports.getNotifications = async (req, res) => {
     // 2. Ambil query parameter unreadOnly
     const unreadOnly = req.query.unreadOnly === "true";
 
-    // 3. Build query
+    // 3. Build query - tanpa orderBy untuk menghindari index requirement
+    // Kita akan sort di memory
     let query = notificationsCollection.where("userId", "==", userId);
 
     // 4. Filter by unread if requested
@@ -42,10 +43,7 @@ exports.getNotifications = async (req, res) => {
       query = query.where("isRead", "==", false);
     }
 
-    // 5. Order by createdAt descending (newest first)
-    query = query.orderBy("createdAt", "desc");
-
-    // 6. Execute query
+    // 5. Execute query (tanpa orderBy)
     const snapshot = await query.get();
 
     // 7. Map documents to array
@@ -88,7 +86,14 @@ exports.getNotifications = async (req, res) => {
       };
     });
 
-    // 8. Return success response
+    // 8. Sort by createdAt descending (newest first) in memory
+    notifications.sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0);
+      const dateB = new Date(b.createdAt || 0);
+      return dateB - dateA; // Descending order
+    });
+
+    // 9. Return success response
     return res.status(200).json({
       success: true,
       message: "Notifications retrieved successfully",

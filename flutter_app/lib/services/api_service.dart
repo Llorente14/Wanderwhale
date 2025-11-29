@@ -284,15 +284,37 @@ class ApiService {
     String? sortBy,
   }) async {
     try {
+      print('📡 getTripDestinations: Fetching for tripId: $tripId');
       final response = await _dio.get(
         ApiConstants.tripDestinations(tripId),
         queryParameters: {if (sortBy != null) 'sortBy': sortBy},
       );
-      return _parseResponseList(
+
+      print('📡 getTripDestinations: Response status: ${response.statusCode}');
+      print('📡 getTripDestinations: Response data: ${response.data}');
+
+      final destinations = _parseResponseList(
         response,
         (json) => TripDestinationModel.fromJson(json),
       );
+
+      print(
+        '✅ getTripDestinations: Parsed ${destinations.length} destinations',
+      );
+      if (destinations.isNotEmpty) {
+        print('✅ First destination: ${destinations.first.destinationName}');
+        print('✅ First destination country: ${destinations.first.country}');
+        print('✅ First destination city: ${destinations.first.city}');
+      }
+
+      return destinations;
     } catch (e) {
+      print('❌ getTripDestinations: Error - $e');
+      // Handle 404 - trip belum punya destinations
+      if (e is DioException && e.response?.statusCode == 404) {
+        print('⚠️ getTripDestinations: 404 - Returning empty list');
+        return [];
+      }
       rethrow;
     }
   }
@@ -613,8 +635,14 @@ class ApiService {
       // Jika user belum login, return empty list
       final user = _auth.currentUser;
       if (user == null) {
+        print('⚠️ getHotelBookings: User belum login');
         return [];
       }
+
+      print('📡 getHotelBookings: Fetching for user ${user.uid}');
+      print(
+        '📡 Filter: tripId=$tripId, status=$status, page=$page, limit=$limit',
+      );
 
       final response = await _dio.get(
         ApiConstants.hotelBookingsList,
@@ -625,13 +653,28 @@ class ApiService {
           if (limit != null) 'limit': limit,
         },
       );
-      return _parseResponseList(
+
+      print('📡 getHotelBookings: Response status: ${response.statusCode}');
+      print('📡 getHotelBookings: Response data: ${response.data}');
+
+      final bookings = _parseResponseList(
         response,
         (json) => HotelBookingModel.fromJson(json),
       );
+
+      print('✅ getHotelBookings: Parsed ${bookings.length} hotel bookings');
+      if (bookings.isNotEmpty) {
+        print('✅ First hotel: ${bookings.first.hotelName}');
+        print('✅ First hotel check-in: ${bookings.first.checkInDate}');
+        print('✅ First hotel location: ${bookings.first.hotelAddress}');
+      }
+
+      return bookings;
     } catch (e) {
+      print('❌ getHotelBookings: Error - $e');
       // Jika terjadi 401, return empty list (user tidak login)
       if (e is DioException && e.response?.statusCode == 401) {
+        print('⚠️ getHotelBookings: 401 - User not authenticated');
         return [];
       }
       rethrow;
@@ -648,8 +691,14 @@ class ApiService {
       // Jika user belum login, return empty list
       final user = _auth.currentUser;
       if (user == null) {
+        print('⚠️ getFlightBookings: User belum login');
         return [];
       }
+
+      print('📡 getFlightBookings: Fetching for user ${user.uid}');
+      print(
+        '📡 Filter: status=$status, tripId=$tripId, page=$page, limit=$limit',
+      );
 
       final response = await _dio.get(
         ApiConstants.flightBookingsList,
@@ -660,11 +709,33 @@ class ApiService {
           if (limit != null) 'limit': limit,
         },
       );
-      return _parseResponseList(
+
+      print('📡 getFlightBookings: Response status: ${response.statusCode}');
+      print('📡 getFlightBookings: Response data: ${response.data}');
+
+      final bookings = _parseResponseList(
         response,
         (json) => FlightBookingModel.fromJson(json),
       );
+
+      print('✅ getFlightBookings: Parsed ${bookings.length} bookings');
+      if (bookings.isNotEmpty) {
+        print(
+          '✅ First booking: ${bookings.first.airline} - ${bookings.first.flightNumber}',
+        );
+      }
+
+      return bookings;
     } catch (e) {
+      print('❌ getFlightBookings: Error - $e');
+      // Handle 404 atau 500 - return empty list
+      if (e is DioException &&
+          (e.response?.statusCode == 404 || e.response?.statusCode == 500)) {
+        print(
+          '⚠️ getFlightBookings: ${e.response?.statusCode} - Returning empty list',
+        );
+        return [];
+      }
       // Jika terjadi 401, return empty list (user tidak login)
       if (e is DioException && e.response?.statusCode == 401) {
         return [];

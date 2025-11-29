@@ -16,7 +16,9 @@ import 'package:flutter_app/models/wishlist_model.dart';
 import 'package:flutter_app/providers/flight_providers.dart';
 import 'package:flutter_app/providers/hotel_providers.dart';
 import 'package:flutter_app/providers/providers.dart';
+import 'package:flutter_app/providers/trip_providers.dart';
 import 'package:flutter_app/providers/wishlist_providers.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:flutter_app/utils/formatters.dart';
 import 'package:flutter_app/widgets/login_required_popup.dart';
 
@@ -29,7 +31,7 @@ import '../trip/trip_list.dart';
 import '../destination/destination_detail.dart';
 import '../tips/tipstravel.dart';
 
-const _homeHotelFilter = HotelBookingFilter(status: 'CONFIRMED', limit: 5);
+const _homeHotelFilter = HotelBookingFilter(limit: 5);
 const _homeFlightBookingFilter = FlightBookingFilter(
   status: 'CONFIRMED',
   limit: 3,
@@ -74,7 +76,7 @@ class HomeScreen extends ConsumerWidget {
                   const _WishlistPeekSection(),
                   const SizedBox(height: 24),
                   const _UpcomingTripsSection(),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
                   const _HotelDealsSection(),
                   const SizedBox(height: 24),
                   const _TopRecommendationSection(),
@@ -255,6 +257,7 @@ class _HeaderSection extends ConsumerWidget {
     final userAsync = ref.watch(userProvider);
     final locationAsync = ref.watch(userLocationTextProvider);
     final unreadAsync = ref.watch(unreadNotificationsProvider);
+    final latestFlightAsync = ref.watch(latestFlightFromTripsProvider);
 
     return Row(
       children: [
@@ -307,15 +310,24 @@ class _HeaderSection extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               userAsync.when(
-                data: (user) => Text(
-                  'Hello, ${user.displayName ?? 'Traveler'}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.gray5,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
+                data: (user) {
+                  // Gunakan displayName, jika tidak ada atau kosong gunakan email, jika tidak ada gunakan 'Traveler'
+                  final displayText =
+                      (user.displayName != null && user.displayName!.isNotEmpty)
+                      ? user.displayName!
+                      : (user.email.isNotEmpty
+                            ? user.email.split('@').first
+                            : 'Traveler');
+                  return Text(
+                    'Hello, $displayText',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.gray5,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  );
+                },
                 loading: () => const _HeaderLine(width: 140),
                 error: (_, __) => const Text(
                   'Hello, Traveler',
@@ -327,36 +339,159 @@ class _HeaderSection extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.location_on,
-                    size: 16,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: locationAsync.when(
-                      data: (text) => Text(
-                        text,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.gray3,
+              // Tampilkan flight info jika ada, jika tidak tampilkan lokasi
+              latestFlightAsync.when(
+                data: (flight) {
+                  debugPrint(
+                    '🔍 _HeaderSection: Latest flight data: ${flight != null ? "Found" : "null"}',
+                  );
+                  if (flight != null) {
+                    debugPrint(
+                      '🔍 Flight details: ${flight.airline} ${flight.flightNumber} (${flight.origin} → ${flight.destination})',
+                    );
+                    debugPrint('🔍 Departure date: ${flight.departureDate}');
+                  }
+
+                  if (flight != null && flight.departureDate != null) {
+                    final dateFormat = DateFormat('dd MMM yyyy');
+                    debugPrint(
+                      '✅ _HeaderSection: Displaying flight info in header',
+                    );
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.flight_takeoff,
+                          size: 16,
+                          color: AppColors.primary,
                         ),
-                        overflow: TextOverflow.ellipsis,
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            '${flight.origin} → ${flight.destination} • ${dateFormat.format(flight.departureDate!)}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.gray3,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  // Fallback ke lokasi jika tidak ada flight
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: AppColors.primary,
                       ),
-                      loading: () => const Text(
-                        'Mengambil lokasi...',
-                        style: TextStyle(fontSize: 12, color: AppColors.gray3),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: locationAsync.when(
+                          data: (text) => Text(
+                            text,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.gray3,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          loading: () => const Text(
+                            'Mengambil lokasi...',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.gray3,
+                            ),
+                          ),
+                          error: (_, __) => const Text(
+                            'Lokasi tidak tersedia',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.gray3,
+                            ),
+                          ),
+                        ),
                       ),
-                      error: (_, __) => const Text(
-                        'Lokasi tidak tersedia',
-                        style: TextStyle(fontSize: 12, color: AppColors.gray3),
+                    ],
+                  );
+                },
+                loading: () => Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.location_on,
+                      size: 16,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: locationAsync.when(
+                        data: (text) => Text(
+                          text,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.gray3,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        loading: () => const Text(
+                          'Mengambil lokasi...',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.gray3,
+                          ),
+                        ),
+                        error: (_, __) => const Text(
+                          'Lokasi tidak tersedia',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.gray3,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+                error: (_, __) => Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.location_on,
+                      size: 16,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: locationAsync.when(
+                        data: (text) => Text(
+                          text,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.gray3,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        loading: () => const Text(
+                          'Mengambil lokasi...',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.gray3,
+                          ),
+                        ),
+                        error: (_, __) => const Text(
+                          'Lokasi tidak tersedia',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.gray3,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -536,6 +671,14 @@ class _HeroSummaryBanner extends ConsumerWidget {
 
     return flightsAsync.when(
       data: (flights) {
+        // Debug: Print untuk troubleshooting
+        debugPrint('🔍 Flight bookings count: ${flights.length}');
+        if (flights.isNotEmpty) {
+          debugPrint(
+            '🔍 First flight: ${flights.first.airline} - ${flights.first.flightNumber}',
+          );
+        }
+
         if (flights.isEmpty) {
           return const _HeroSummaryEmptyState();
         }
@@ -543,7 +686,12 @@ class _HeroSummaryBanner extends ConsumerWidget {
         return _HeroSummaryContent(booking: booking);
       },
       loading: () => const _HeroSummaryShimmer(),
-      error: (_, __) => const _HeroSummaryEmptyState(),
+      error: (error, stack) {
+        // Debug: Print error untuk troubleshooting
+        debugPrint('❌ Flight bookings error: $error');
+        // Jika error, tampilkan empty state
+        return const _HeroSummaryEmptyState();
+      },
     );
   }
 }
@@ -920,16 +1068,18 @@ class _WishlistCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        // Create destination object from wishlist data for navigation
-        // Use default values for missing fields
+      onTap: () async {
+        // Fetch full destination data from API untuk mendapatkan detail lengkap
+        // Tapi untuk sekarang, kita buat dari wishlist data dulu
+        // TODO: Fetch dari API jika diperlukan detail lengkap
         final destination = DestinationMasterModel(
           destinationId: item.destinationId,
           name: item.destinationName,
           city: item.destinationCity ?? '',
           country: item.destinationCountry ?? '',
           continent: '', // Not available in wishlist
-          description: '', // Not available in wishlist
+          description:
+              'Destinasi favorit yang telah Anda simpan ke wishlist.', // Placeholder
           imageUrl: item.destinationImageUrl ?? '',
           images: item.destinationImageUrl != null
               ? [item.destinationImageUrl!]
@@ -942,13 +1092,15 @@ class _WishlistCard extends StatelessWidget {
           popularActivities: [], // Not available in wishlist
         );
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                DestinationDetailPage(destination: destination),
-          ),
-        );
+        if (context.mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  DestinationDetailPage(destination: destination),
+            ),
+          );
+        }
       },
       child: Container(
         width: 180,
@@ -1121,11 +1273,28 @@ class _HotelDealsSection extends ConsumerWidget {
 
     return bookingsAsync.when(
       data: (bookings) {
+        debugPrint(
+          '🔍 _HotelDealsSection: Hotel bookings count: ${bookings.length}',
+        );
+        debugPrint(
+          '🔍 _HotelDealsSection: Filter: status=${_homeHotelFilter.status}, limit=${_homeHotelFilter.limit}',
+        );
+
         if (bookings.isEmpty) {
+          debugPrint('⚠️ _HotelDealsSection: No hotel bookings found');
           return const _EmptySectionMessage(
             title: 'Hotel Pilihan',
             message: 'Belum ada hotel yang dipesan. Temukan promo terbaik!',
           );
+        }
+
+        debugPrint(
+          '✅ _HotelDealsSection: Found ${bookings.length} hotel bookings',
+        );
+        if (bookings.isNotEmpty) {
+          debugPrint('✅ First hotel: ${bookings.first.hotelName}');
+          debugPrint('✅ First hotel check-in: ${bookings.first.checkInDate}');
+          debugPrint('✅ First hotel location: ${bookings.first.hotelAddress}');
         }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1149,6 +1318,7 @@ class _HotelDealsSection extends ConsumerWidget {
                     _HotelCard(booking: bookings[index]),
               ),
             ),
+            const SizedBox(height: 8),
           ],
         );
       },
@@ -1269,175 +1439,836 @@ class _HotelCard extends StatelessWidget {
   }
 }
 
-class _TripTicketCard extends StatelessWidget {
+// Helper function untuk mendapatkan country dari destination name
+String? _getCountryFromDestinationName(String destinationName) {
+  // Mapping destination name (kota/bandara) ke country
+  final destinationToCountry = {
+    // Airport codes
+    'BER': 'Germany',
+    'CGK': 'Indonesia',
+    'DPS': 'Indonesia',
+    'LAX': 'United States',
+    'JFK': 'United States',
+    'LHR': 'United Kingdom',
+    'CDG': 'France',
+    'NRT': 'Japan',
+    'ICN': 'South Korea',
+    'SIN': 'Singapore',
+    'KUL': 'Malaysia',
+    'BKK': 'Thailand',
+    'DXB': 'United Arab Emirates',
+
+    // City names
+    'Los Angeles': 'United States',
+    'New York': 'United States',
+    'London': 'United Kingdom',
+    'Paris': 'France',
+    'Berlin': 'Germany',
+    'Tokyo': 'Japan',
+    'Seoul': 'South Korea',
+    'Singapore': 'Singapore',
+    'Kuala Lumpur': 'Malaysia',
+    'Bangkok': 'Thailand',
+    'Bali': 'Indonesia',
+    'Jakarta': 'Indonesia',
+    'Dubai': 'United Arab Emirates',
+  };
+
+  // Cek exact match (case-insensitive)
+  final destinationLower = destinationName.trim();
+  for (final entry in destinationToCountry.entries) {
+    if (entry.key.toLowerCase() == destinationLower.toLowerCase()) {
+      return entry.value;
+    }
+  }
+
+  return null;
+}
+
+// Helper function untuk mendapatkan koordinat negara (latitude, longitude)
+// Mengembalikan koordinat ibukota atau pusat negara
+Map<String, double>? _getCountryCoordinates(String countryName) {
+  // Mapping country name ke koordinat (lat, lng) - biasanya ibukota
+  final countryCoordinates = {
+    'Indonesia': {'lat': -6.2088, 'lng': 106.8456}, // Jakarta
+    'Malaysia': {'lat': 3.1390, 'lng': 101.6869}, // Kuala Lumpur
+    'Singapore': {'lat': 1.3521, 'lng': 103.8198}, // Singapore
+    'Thailand': {'lat': 13.7563, 'lng': 100.5018}, // Bangkok
+    'Philippines': {'lat': 14.5995, 'lng': 120.9842}, // Manila
+    'Vietnam': {'lat': 21.0285, 'lng': 105.8542}, // Hanoi
+    'Japan': {'lat': 35.6762, 'lng': 139.6503}, // Tokyo
+    'South Korea': {'lat': 37.5665, 'lng': 126.9780}, // Seoul
+    'China': {'lat': 39.9042, 'lng': 116.4074}, // Beijing
+    'India': {'lat': 28.6139, 'lng': 77.2090}, // New Delhi
+    'Australia': {'lat': -35.2809, 'lng': 149.1300}, // Canberra
+    'New Zealand': {'lat': -41.2865, 'lng': 174.7762}, // Wellington
+    'United States': {'lat': 38.9072, 'lng': -77.0369}, // Washington DC
+    'United Kingdom': {'lat': 51.5074, 'lng': -0.1278}, // London
+    'France': {'lat': 48.8566, 'lng': 2.3522}, // Paris
+    'Germany': {'lat': 52.5200, 'lng': 13.4050}, // Berlin
+    'Italy': {'lat': 41.9028, 'lng': 12.4964}, // Rome
+    'Spain': {'lat': 40.4168, 'lng': -3.7038}, // Madrid
+    'Netherlands': {'lat': 52.3676, 'lng': 4.9041}, // Amsterdam
+    'Switzerland': {'lat': 46.9481, 'lng': 7.4474}, // Bern
+    'Turkey': {'lat': 41.0082, 'lng': 28.9784}, // Istanbul
+    'United Arab Emirates': {'lat': 24.4539, 'lng': 54.3773}, // Abu Dhabi
+    'Saudi Arabia': {'lat': 24.7136, 'lng': 46.6753}, // Riyadh
+    'Qatar': {'lat': 25.2854, 'lng': 51.5310}, // Doha
+    'Egypt': {'lat': 30.0444, 'lng': 31.2357}, // Cairo
+    'South Africa': {'lat': -25.7479, 'lng': 28.2293}, // Pretoria
+    'Brazil': {'lat': -15.7942, 'lng': -47.8822}, // Brasília
+    'Mexico': {'lat': 19.4326, 'lng': -99.1332}, // Mexico City
+    'Canada': {'lat': 45.4215, 'lng': -75.6972}, // Ottawa
+  };
+
+  // Cek exact match
+  if (countryCoordinates.containsKey(countryName)) {
+    return countryCoordinates[countryName];
+  }
+
+  // Cek case-insensitive match
+  for (final entry in countryCoordinates.entries) {
+    if (entry.key.toLowerCase() == countryName.toLowerCase()) {
+      return entry.value;
+    }
+  }
+
+  return null;
+}
+
+// Helper function untuk mendapatkan country flag emoji
+String _getCountryFlag(String countryName) {
+  // Mapping country name ke flag emoji
+  final countryFlags = {
+    'Indonesia': '🇮🇩',
+    'Malaysia': '🇲🇾',
+    'Singapore': '🇸🇬',
+    'Thailand': '🇹🇭',
+    'Philippines': '🇵🇭',
+    'Vietnam': '🇻🇳',
+    'Japan': '🇯🇵',
+    'South Korea': '🇰🇷',
+    'China': '🇨🇳',
+    'India': '🇮🇳',
+    'Australia': '🇦🇺',
+    'New Zealand': '🇳🇿',
+    'United States': '🇺🇸',
+    'United Kingdom': '🇬🇧',
+    'France': '🇫🇷',
+    'Germany': '🇩🇪',
+    'Italy': '🇮🇹',
+    'Spain': '🇪🇸',
+    'Netherlands': '🇳🇱',
+    'Switzerland': '🇨🇭',
+    'Turkey': '🇹🇷',
+    'United Arab Emirates': '🇦🇪',
+    'Saudi Arabia': '🇸🇦',
+    'Qatar': '🇶🇦',
+    'Egypt': '🇪🇬',
+    'South Africa': '🇿🇦',
+    'Brazil': '🇧🇷',
+    'Mexico': '🇲🇽',
+    'Canada': '🇨🇦',
+  };
+
+  // Cek exact match
+  if (countryFlags.containsKey(countryName)) {
+    return countryFlags[countryName]!;
+  }
+
+  // Cek case-insensitive match
+  for (final entry in countryFlags.entries) {
+    if (entry.key.toLowerCase() == countryName.toLowerCase()) {
+      return entry.value;
+    }
+  }
+
+  // Default: globe emoji
+  return '🌍';
+}
+
+class _TripTicketCard extends ConsumerWidget {
   const _TripTicketCard({required this.trip});
 
   final TripModel trip;
 
+  // Helper untuk menghitung jarak dari lokasi user ke negara (dalam KM)
+  String _calculateDistanceToCountry(
+    double? userLat,
+    double? userLng,
+    String? countryName,
+  ) {
+    if (userLat == null ||
+        userLng == null ||
+        countryName == null ||
+        countryName.isEmpty) {
+      return '-';
+    }
+
+    try {
+      // Dapatkan koordinat negara
+      final countryCoords = _getCountryCoordinates(countryName);
+      if (countryCoords == null) {
+        debugPrint('⚠️ Country coordinates not found for: $countryName');
+        return '-';
+      }
+
+      final countryLat = countryCoords['lat']!;
+      final countryLng = countryCoords['lng']!;
+
+      // Hitung jarak dalam meter
+      final distanceInMeters = Geolocator.distanceBetween(
+        userLat,
+        userLng,
+        countryLat,
+        countryLng,
+      );
+
+      // Konversi ke KM dan format
+      final distanceInKm = distanceInMeters / 1000;
+
+      // Format: selalu dalam KM dengan 1 desimal jika < 1000, atau tanpa desimal jika >= 1000
+      if (distanceInKm < 1000) {
+        return '${distanceInKm.toStringAsFixed(1)} KM';
+      } else {
+        return '${distanceInKm.toInt()} KM';
+      }
+    } catch (e) {
+      debugPrint('❌ Error calculating distance to country: $e');
+      return '-';
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 220,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Avatar + lokasi
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.gray1,
-                ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Fetch destinations untuk mendapatkan country data dan koordinat
+    final destinationsAsync = ref.watch(tripDestinationsProvider(trip.tripId));
+    // Fetch user location untuk menghitung jarak
+    final userLocationAsync = ref.watch(userLocationProvider);
+
+    return destinationsAsync.when(
+      data: (destinations) {
+        // Debug: Print destinations untuk troubleshooting
+        debugPrint(
+          '🔍 Trip ${trip.tripId}: Destinations count: ${destinations.length}',
+        );
+        if (destinations.isNotEmpty) {
+          debugPrint(
+            '🔍 First destination: ${destinations.first.destinationName}',
+          );
+          debugPrint(
+            '🔍 First destination country: ${destinations.first.country}',
+          );
+          debugPrint('🔍 First destination city: ${destinations.first.city}');
+          debugPrint(
+            '🔍 First destination coords: ${destinations.first.latitude}, ${destinations.first.longitude}',
+          );
+        } else {
+          debugPrint('⚠️ Trip ${trip.tripId}: No destinations found');
+        }
+
+        // Ambil country dari destination pertama jika ada
+        final firstDestination = destinations.isNotEmpty
+            ? destinations.first
+            : null;
+        String? firstCountry = firstDestination?.country;
+
+        // Fallback: Jika destinations kosong, coba extract dari tripName
+        // Contoh: "Trip to BER" -> "BER", "Trip to Los Angeles" -> "Los Angeles"
+        if (firstCountry == null || firstCountry.isEmpty) {
+          debugPrint(
+            '⚠️ No country from destinations, trying to extract from tripName: ${trip.tripName}',
+          );
+          // Extract destination name dari tripName
+          final tripNameLower = trip.tripName.toLowerCase();
+          if (tripNameLower.contains('to ')) {
+            final parts = trip.tripName.split(' to ');
+            if (parts.length > 1) {
+              final destinationName = parts[1].trim();
+              debugPrint(
+                '🔍 Extracted destination name from tripName: $destinationName',
+              );
+
+              // Coba mapping destination name ke country
+              // BER -> Germany, Los Angeles -> United States, dll
+              firstCountry = _getCountryFromDestinationName(destinationName);
+              debugPrint(
+                '🔍 Mapped country from destination name: $firstCountry',
+              );
+            }
+          }
+        }
+
+        debugPrint('🔍 Final country: $firstCountry');
+        final flagEmoji = firstCountry != null && firstCountry.isNotEmpty
+            ? _getCountryFlag(firstCountry)
+            : '🌍';
+        debugPrint('🔍 Flag emoji: $flagEmoji');
+
+        return Container(
+          width: 220,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 18,
+                offset: const Offset(0, 10),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      trip.tripName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.gray5,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      '${trip.totalDestinations} destinasi • ${trip.totalHotels} hotel',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.gray3,
-                      ),
-                    ),
-                  ],
-                ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Row(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.location_on, size: 16, color: AppColors.primary),
-              const SizedBox(width: 4),
-              const Text(
-                'Mulai',
-                style: TextStyle(fontSize: 10, color: AppColors.gray3),
-              ),
-              const SizedBox(width: 4),
-              const Expanded(
-                child: Divider(
-                  color: AppColors.gray2,
-                  thickness: 1,
-                  indent: 8,
-                  endIndent: 8,
-                ),
-              ),
-              const Icon(Icons.location_on, size: 16, color: AppColors.error),
-              const SizedBox(width: 4),
-              const Text(
-                'Selesai',
-                style: TextStyle(fontSize: 10, color: AppColors.gray3),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          // When + Details
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              // Avatar + lokasi dengan flag
+              Row(
                 children: [
                   Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.gray1,
+                      border: Border.all(color: AppColors.gray2, width: 1),
+                    ),
+                    child: Center(
+                      child: Text(
+                        flagEmoji,
+                        style: const TextStyle(fontSize: 24),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          trip.tripName,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.gray5,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          trip.totalDestinations > 0
+                              ? '${trip.totalDestinations} ${trip.totalDestinations == 1 ? 'destinasi' : 'destinasi'} • ${trip.totalHotels} ${trip.totalHotels == 1 ? 'hotel' : 'hotel'}'
+                              : 'Belum ada destinasi',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.gray3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Garis dengan text di tengah
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'Mulai',
+                        style: TextStyle(fontSize: 10, color: AppColors.gray3),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Divider(
+                          color: AppColors.gray2,
+                          thickness: 1,
+                          indent: 8,
+                          endIndent: 8,
+                        ),
+                      ),
+                      const Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: AppColors.error,
+                      ),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'Selesai',
+                        style: TextStyle(fontSize: 10, color: AppColors.gray3),
+                      ),
+                    ],
+                  ),
+                  // Text di tengah garis - jarak dari lokasi sekarang ke negara (dalam KM)
+                  firstCountry != null && firstCountry.isNotEmpty
+                      ? userLocationAsync.when(
+                          data: (userPosition) {
+                            final distance = _calculateDistanceToCountry(
+                              userPosition.latitude,
+                              userPosition.longitude,
+                              firstCountry,
+                            );
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: AppColors.gray2,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                distance,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: AppColors.gray4,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            );
+                          },
+                          loading: () => Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: AppColors.gray2,
+                                width: 1,
+                              ),
+                            ),
+                            child: const Text(
+                              '-',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppColors.gray4,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          error: (_, __) => Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: AppColors.gray2,
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              '${trip.durationInDays} hari',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: AppColors.gray4,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: AppColors.gray2,
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            '${trip.durationInDays} hari',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: AppColors.gray4,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              // When + Details
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '${trip.durationInDays} hari',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            DateFormat('dd MMM yyyy').format(trip.startDate),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.gray4,
+                            ),
+                          ),
+                          Text(
+                            DateFormat('dd MMM yyyy').format(trip.endDate),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.gray4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Navigate to trip list screen
+                      // TODO: Replace with trip detail page when available
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TripListScreen(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    child: const Text('Details'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () {
+        debugPrint('⏳ Trip ${trip.tripId}: Loading destinations...');
+        return Container(
+          width: 220,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 18,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.gray1,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 120,
+                          height: 16,
+                          decoration: BoxDecoration(
+                            color: AppColors.gray1,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          width: 100,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: AppColors.gray1,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+      error: (error, stack) {
+        debugPrint(
+          '❌ Trip ${trip.tripId}: Error loading destinations - $error',
+        );
+        debugPrint('❌ Stack: $stack');
+        // Tetap tampilkan card dengan default flag jika error
+        return Container(
+          width: 220,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 18,
+                offset: const Offset(0, 10),
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Avatar + lokasi dengan flag default
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.gray1,
+                      border: Border.all(color: AppColors.gray2, width: 1),
+                    ),
+                    child: const Center(
+                      child: Text('🌍', style: TextStyle(fontSize: 24)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          trip.tripName,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.gray5,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          trip.totalDestinations > 0
+                              ? '${trip.totalDestinations} ${trip.totalDestinations == 1 ? 'destinasi' : 'destinasi'} • ${trip.totalHotels} ${trip.totalHotels == 1 ? 'hotel' : 'hotel'}'
+                              : 'Belum ada destinasi',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.gray3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Garis dengan durasi di tengah
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'Mulai',
+                        style: TextStyle(fontSize: 10, color: AppColors.gray3),
+                      ),
+                      const SizedBox(width: 4),
+                      const Expanded(
+                        child: Divider(
+                          color: AppColors.gray2,
+                          thickness: 1,
+                          indent: 8,
+                          endIndent: 8,
+                        ),
+                      ),
+                      const Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: AppColors.error,
+                      ),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'Selesai',
+                        style: TextStyle(fontSize: 10, color: AppColors.gray3),
+                      ),
+                    ],
+                  ),
+                  // Text di tengah garis - durasi fallback
+                  Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 6,
+                      horizontal: 8,
+                      vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.gray2, width: 1),
                     ),
                     child: Text(
                       '${trip.durationInDays} hari',
                       style: const TextStyle(
-                        fontSize: 11,
-                        color: Colors.white,
+                        fontSize: 10,
+                        color: AppColors.gray4,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 6),
+                ],
+              ),
+              const SizedBox(height: 10),
+              // When + Details
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        DateFormat('dd MMM yyyy').format(trip.startDate),
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.gray4,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '${trip.durationInDays} hari',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                      Text(
-                        DateFormat('dd MMM yyyy').format(trip.endDate),
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.gray4,
-                        ),
+                      const SizedBox(height: 6),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            DateFormat('dd MMM yyyy').format(trip.startDate),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.gray4,
+                            ),
+                          ),
+                          Text(
+                            DateFormat('dd MMM yyyy').format(trip.endDate),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.gray4,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  // Navigate to trip list screen
-                  // TODO: Replace with trip detail page when available
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const TripListScreen(),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TripListScreen(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    child: const Text('Details'),
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                child: const Text('Details'),
+                ],
               ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -1452,7 +2283,8 @@ class _EmptySectionMessage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -2557,8 +3389,6 @@ class _RecommendationCardState extends ConsumerState<_RecommendationCard> {
       // Refresh wishlist setelah toggle
       ref.invalidate(wishlistItemsProvider);
       ref.invalidate(wishlistStatusProvider(widget.destination.destinationId));
-      // Trigger refresh untuk memastikan UI update
-      ref.refresh(wishlistItemsProvider);
     } on DioException catch (error) {
       if (!mounted) return;
       final status = error.response?.statusCode;

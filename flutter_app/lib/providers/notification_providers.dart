@@ -52,8 +52,17 @@ final unreadNotificationsProvider =
     return [];
   }
 
-  final api = ref.watch(apiServiceProvider);
-  return api.getNotifications(unreadOnly: true);
+  try {
+    final api = ref.watch(apiServiceProvider);
+    return await api.getNotifications(unreadOnly: true);
+  } on DioException catch (e) {
+    // Handle 404 atau 500 - return empty list
+    if (e.response?.statusCode == 404 || e.response?.statusCode == 500) {
+      return [];
+    }
+    // Re-throw error lainnya (401, dll)
+    rethrow;
+  }
 });
 
 final notificationControllerProvider =
