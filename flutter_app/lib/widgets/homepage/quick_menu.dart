@@ -17,7 +17,7 @@ class QuickMenu extends ConsumerWidget {
         children: [
           _QuickMenuItem(
             icon: Icons.flight_takeoff,
-            label: 'Trip',
+            label: 'Flight',
             color: AppColors.primary,
             onTap: () {
               // TODO: Navigasi ke halaman daftar penerbangan / trip
@@ -34,6 +34,14 @@ class QuickMenu extends ConsumerWidget {
           _QuickMenuItem(
             icon: Icons.favorite,
             label: 'Wishlist',
+            color: AppColors.primaryDark1,
+            onTap: () {
+              // TODO: Navigasi ke halaman wishlist
+            },
+          ),
+          _QuickMenuItem(
+            icon: Icons.travel_explore,
+            label: 'Trip',
             color: AppColors.primaryDark1,
             onTap: () {
               // TODO: Navigasi ke halaman wishlist

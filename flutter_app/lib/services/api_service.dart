@@ -41,17 +41,62 @@ class ApiService {
           final user = _auth.currentUser;
 
           if (user != null) {
-            // 2. Minta ID token (ini akan otomatis refresh jika kedaluwarsa)
-            final token = await user.getIdToken();
-            options.headers['Authorization'] = 'Bearer $token';
+            try {
+              // 2. Minta ID token (ini akan otomatis refresh jika kedaluwarsa)
+              final token = await user.getIdToken();
+              options.headers['Authorization'] = 'Bearer $token';
+            } catch (e) {
+              // Jika gagal mendapatkan token, lanjutkan tanpa header
+              // Request akan gagal dengan 401, dan akan ditangani di onError
+              print("Warning: Failed to get ID token: $e");
+            }
           }
           return handler.next(options);
         },
-        onError: (error, handler) {
-          // Handle 401 Unauthorized (misal: token dicabut)
+        onError: (error, handler) async {
+          // Handle 401 Unauthorized - coba refresh token dan retry
           if (error.response?.statusCode == 401) {
-            // TODO: Panggil AuthProvider untuk logout & redirect ke login
-            print("Token tidak valid. Harap login ulang.");
+            final user = _auth.currentUser;
+            
+            if (user != null) {
+              try {
+                // Force refresh token
+                final newToken = await user.getIdToken(true);
+                
+                // Retry request dengan token baru
+                final options = error.requestOptions;
+                options.headers['Authorization'] = 'Bearer $newToken';
+                
+                // Clone request dengan options baru
+                final response = await _dio.fetch(options);
+                return handler.resolve(response);
+              } catch (refreshError) {
+                // Jika refresh gagal, token mungkin sudah tidak valid
+                print("Token refresh failed: $refreshError");
+                print("Sesi berakhir. Silakan login ulang.");
+                
+                // Return error yang lebih informatif
+                return handler.next(
+                  DioException(
+                    requestOptions: error.requestOptions,
+                    response: error.response,
+                    type: DioExceptionType.badResponse,
+                    message: "Sesi berakhir. Silakan login ulang.",
+                  ),
+                );
+              }
+            } else {
+              // User tidak login
+              print("User tidak terautentikasi. Silakan login terlebih dahulu.");
+              return handler.next(
+                DioException(
+                  requestOptions: error.requestOptions,
+                  response: error.response,
+                  type: DioExceptionType.badResponse,
+                  message: "Silakan login terlebih dahulu.",
+                ),
+              );
+            }
           }
           return handler.next(error);
         },
