@@ -3,6 +3,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:flutter_app/models/user_model.dart';
 import 'package:flutter_app/services/api_service.dart';
 
@@ -72,7 +73,19 @@ class AuthService {
       idToken: auth.idToken,
     );
 
-    return await _auth.signInWithCredential(credential);
+    final cred = await _auth.signInWithCredential(credential);
+
+    // After successful client-side sign-in, notify backend to verify ID Token
+    try {
+      final idToken = await _auth.currentUser?.getIdToken();
+      if (idToken != null && idToken.isNotEmpty) {
+        await _api.verifyOAuth(idToken);
+      }
+    } catch (_) {
+      // Non-fatal: backend sync failed, client still signed in
+    }
+
+    return cred;
   }
 
   /// Facebook sign-in implementation using `flutter_facebook_auth`.
@@ -84,7 +97,49 @@ class AuthService {
     if (accessToken == null) return null;
 
     final credential = FacebookAuthProvider.credential(accessToken);
-    return await _auth.signInWithCredential(credential);
+    final cred = await _auth.signInWithCredential(credential);
+
+    // After successful client-side sign-in, notify backend to verify ID Token
+    try {
+      final idToken = await _auth.currentUser?.getIdToken();
+      if (idToken != null && idToken.isNotEmpty) {
+        await _api.verifyOAuth(idToken);
+      }
+    } catch (_) {
+      // Non-fatal: backend sync failed
+    }
+
+    return cred;
+  }
+
+  /// Apple Sign In (requires `sign_in_with_apple` package and iOS/Android setup)
+  Future<UserCredential?> signInWithApple() async {
+    // This will trigger native Apple sign-in on supported platforms
+    final appleCredential = await SignInWithApple.getAppleIDCredential(
+      scopes: [
+        AppleIDAuthorizationScopes.email,
+        AppleIDAuthorizationScopes.fullName,
+      ],
+    );
+
+    final oauthCredential = OAuthProvider("apple.com").credential(
+      idToken: appleCredential.identityToken,
+      accessToken: appleCredential.authorizationCode,
+    );
+
+    final cred = await _auth.signInWithCredential(oauthCredential);
+
+    // Sync with backend
+    try {
+      final idToken = await _auth.currentUser?.getIdToken();
+      if (idToken != null && idToken.isNotEmpty) {
+        await _api.verifyOAuth(idToken);
+      }
+    } catch (_) {
+      // ignore
+    }
+
+    return cred;
   }
 
   // ------------------ Backend related helpers ------------------

@@ -311,7 +311,31 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                             const SizedBox(width: 20),
                             CircularSocialButton(
                               imagePath: 'assets/logo_apple.png',
-                              onTap: () {},
+                              onTap: () async {
+                                setState(() => _isLoading = true);
+                                try {
+                                  await ref
+                                      .read(authControllerProvider)
+                                      .signInWithApple();
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Signed in with Apple'),
+                                    ),
+                                  );
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Apple sign-in failed: ${e.toString()}',
+                                      ),
+                                    ),
+                                  );
+                                } finally {
+                                  if (mounted)
+                                    setState(() => _isLoading = false);
+                                }
+                              },
                             ),
                           ],
                         ),
