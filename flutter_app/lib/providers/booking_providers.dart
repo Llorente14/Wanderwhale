@@ -288,6 +288,7 @@ class HotelBookingState {
     this.checkInDate,
     this.checkOutDate,
     this.guests = const [],
+    this.imageUrl,
   });
 
   final HotelOffer? offer;
@@ -296,6 +297,7 @@ class HotelBookingState {
   final DateTime? checkInDate;
   final DateTime? checkOutDate;
   final List<HotelGuestForm> guests;
+  final String? imageUrl; // URL gambar hotel
 
   double get totalPrice => offer?.price.total ?? 0;
   double get basePrice => offer?.price.base ?? 0;
@@ -325,6 +327,7 @@ class HotelBookingState {
     DateTime? checkInDate,
     DateTime? checkOutDate,
     List<HotelGuestForm>? guests,
+    String? imageUrl,
   }) {
     return HotelBookingState(
       offer: offer ?? this.offer,
@@ -333,6 +336,7 @@ class HotelBookingState {
       checkInDate: checkInDate ?? this.checkInDate,
       checkOutDate: checkOutDate ?? this.checkOutDate,
       guests: guests ?? this.guests,
+      imageUrl: imageUrl ?? this.imageUrl,
     );
   }
 }
@@ -343,12 +347,14 @@ class HotelBookingNotifier extends StateNotifier<HotelBookingState> {
   void setContext({
     HotelOffer? offer,
     HotelSummary? hotel,
+    String? imageUrl,
   }) {
     state = state.copyWith(
       offer: offer ?? state.offer,
       hotel: hotel ?? state.hotel,
       checkInDate: offer?.checkInDate ?? state.checkInDate,
       checkOutDate: offer?.checkOutDate ?? state.checkOutDate,
+      imageUrl: imageUrl ?? state.imageUrl,
     );
   }
 

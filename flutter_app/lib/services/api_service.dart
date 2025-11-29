@@ -34,6 +34,46 @@ class ApiService {
       ),
     );
 
+    // Interceptor untuk retry logic (hanya untuk GET requests)
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onError: (error, handler) async {
+          // Retry logic: hanya untuk GET requests yang mengalami timeout
+          if (error is DioException) {
+            final requestOptions = error.requestOptions;
+            final retryCount = requestOptions.extra['retryCount'] ?? 0;
+            const maxRetries = 2;
+
+            // Hanya retry untuk GET requests dan timeout errors
+            final shouldRetry = requestOptions.method == 'GET' &&
+                (error.type == DioExceptionType.connectionTimeout ||
+                    error.type == DioExceptionType.receiveTimeout ||
+                    error.type == DioExceptionType.connectionError) &&
+                retryCount < maxRetries;
+
+            if (shouldRetry) {
+              // Exponential backoff: 1s, 2s
+              final delay = Duration(seconds: 1 << retryCount);
+              await Future.delayed(delay);
+
+              // Update retry count
+              requestOptions.extra['retryCount'] = retryCount + 1;
+
+              // Retry the request
+              try {
+                final response = await _dio.fetch(requestOptions);
+                return handler.resolve(response);
+              } catch (e) {
+                // If retry also fails, continue with error
+                return handler.next(error);
+              }
+            }
+          }
+          return handler.next(error);
+        },
+      ),
+    );
+
     // Interceptor untuk menambahkan token Firebase Auth
     _dio.interceptors.add(
       InterceptorsWrapper(
@@ -49,6 +89,19 @@ class ApiService {
           return handler.next(options);
         },
         onError: (error, handler) {
+          // Log error details for debugging
+          if (error is DioException) {
+            print('DioException: ${error.type}');
+            print('Message: ${error.message}');
+            print('Path: ${error.requestOptions.path}');
+            
+            // Handle timeout errors specifically
+            if (error.type == DioExceptionType.connectionTimeout ||
+                error.type == DioExceptionType.receiveTimeout) {
+              print('Connection timeout occurred. Check network connection and server response time.');
+            }
+          }
+          
           // Handle 401 Unauthorized (misal: token dicabut)
           if (error.response?.statusCode == 401) {
             // Panggil callback jika terdaftar (AuthProvider akan mendaftarkan)
@@ -68,6 +121,45 @@ class ApiService {
   /// Register callback yang dipanggil saat API mengembalikan 401 Unauthorized
   void setOnUnauthorizedCallback(void Function()? callback) {
     _onUnauthorized = callback;
+  }
+
+  /// Helper method untuk mendapatkan user-friendly error message dari DioException
+  static String getErrorMessage(DioException error) {
+    if (error.type == DioExceptionType.connectionTimeout) {
+      return 'Connection timeout. Please check your internet connection and try again.';
+    }
+    if (error.type == DioExceptionType.receiveTimeout) {
+      return 'Request timeout. The server is taking too long to respond. Please try again.';
+    }
+    if (error.type == DioExceptionType.sendTimeout) {
+      return 'Send timeout. Please check your internet connection and try again.';
+    }
+    if (error.type == DioExceptionType.badResponse) {
+      final statusCode = error.response?.statusCode;
+      if (statusCode == 401) {
+        return 'Unauthorized. Please login again.';
+      }
+      if (statusCode == 403) {
+        return 'Access forbidden. You don\'t have permission to perform this action.';
+      }
+      if (statusCode == 404) {
+        return 'Resource not found.';
+      }
+      if (statusCode == 500) {
+        return 'Server error. Please try again later.';
+      }
+      return 'Request failed with status code $statusCode.';
+    }
+    if (error.type == DioExceptionType.cancel) {
+      return 'Request was cancelled.';
+    }
+    if (error.type == DioExceptionType.connectionError) {
+      return 'Connection error. Please check your internet connection.';
+    }
+    if (error.type == DioExceptionType.unknown) {
+      return 'An unexpected error occurred. Please try again.';
+    }
+    return error.message ?? 'An error occurred. Please try again.';
   }
 
   // === Helper untuk parsing respons ===

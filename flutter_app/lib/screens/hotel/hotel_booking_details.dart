@@ -6,6 +6,7 @@ import 'package:flutter_app/providers/providers.dart';
 import 'package:flutter_app/utils/formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'checkout_hotel.dart';
 
 class HotelBookingDetailsScreen extends ConsumerStatefulWidget {
   const HotelBookingDetailsScreen({
@@ -36,6 +37,7 @@ class _HotelBookingDetailsScreenState
       notifier.setContext(
         offer: widget.offer,
         hotel: widget.hotelGroup.hotel,
+        imageUrl: widget.imageUrl,
       );
       final currentState = ref.read(hotelBookingProvider);
       if (currentState.guests.isEmpty) {
@@ -112,9 +114,12 @@ class _HotelBookingDetailsScreenState
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Detail booking hotel tersimpan. Lanjut ke checkout!'),
+    // Navigate ke checkout screen
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CheckoutHotelScreen(),
       ),
     );
   }

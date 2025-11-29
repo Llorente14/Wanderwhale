@@ -4,8 +4,12 @@ class ApiConstants {
   // Ganti ke "http://localhost:5000/api" jika pakai iOS Simulator
   // 10.0.2.2 adalah alamat IP khusus emulator Android untuk mengakses 'localhost'
   static const String baseUrl = "http://10.0.2.2:5000/api";
-  static const Duration connectTimeout = Duration(seconds: 15);
-  static const Duration receiveTimeout = Duration(seconds: 15);
+  
+  // Timeout values: Increased to handle slow network connections and server response times
+  // connectTimeout: Time to establish connection (increased from 15s to 30s)
+  // receiveTimeout: Time to receive response after connection (increased from 15s to 60s for operations like booking)
+  static const Duration connectTimeout = Duration(seconds: 30);
+  static const Duration receiveTimeout = Duration(seconds: 60);
 
   // === AUTH ===
   // (Login/Register ditangani oleh Firebase Auth, bukan API kita)

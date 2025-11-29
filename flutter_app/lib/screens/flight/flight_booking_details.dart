@@ -4,6 +4,7 @@ import 'package:flutter_app/providers/booking_providers.dart';
 import 'package:flutter_app/utils/formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'checkout_flight.dart';
 
 class FlightBookingDetailsScreen extends ConsumerStatefulWidget {
   const FlightBookingDetailsScreen({
@@ -105,9 +106,12 @@ class _FlightBookingDetailsScreenState
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Data booking tersimpan. Lanjut ke checkout!'),
+    // Navigate ke checkout screen
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CheckoutFlightScreen(),
       ),
     );
   }

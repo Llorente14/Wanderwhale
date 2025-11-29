@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:dio/dio.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../providers/booking_providers.dart';
@@ -8,6 +9,7 @@ import '../../providers/checkout_provider.dart';
 import '../../providers/app_providers.dart';
 import '../../utils/formatters.dart';
 import '../../screens/main/home_screen.dart';
+import '../../services/api_service.dart';
 
 // Import Widget Reusable
 import '../../widgets/common/section_title.dart';
@@ -327,41 +329,32 @@ class _CheckoutHotelScreenState extends ConsumerState<CheckoutHotelScreen> {
               controller: _promoController,
               initialValue: checkoutState.promoCode,
               onApply: (code) {
-                if (code.isNotEmpty) {
-                  // Set promo code first
-                  ref.read(checkoutProvider.notifier).setPromoCode(code);
-                  
-                  // Generate discount berdasarkan harga asli
-                  // Wait a bit for state to update, then get the discount
-                  Future.microtask(() {
-                    final notifier = ref.read(checkoutProvider.notifier);
-                    notifier.setDiscountAmount(bookingState.totalPrice);
-                    
-                    // Get updated state untuk menampilkan persentase diskon
-                    final updatedState = ref.read(checkoutProvider);
-                    final discountPercent = updatedState.getDiscountPercentage(bookingState.totalPrice);
-                    
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Promo code applied! You got ${discountPercent.toStringAsFixed(0)}% discount'),
-                          backgroundColor: Colors.green,
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                  });
-                } else {
-                  ref.read(checkoutProvider.notifier).clearDiscount();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Promo code removed'),
-                        duration: Duration(seconds: 1),
-                      ),
-                    );
-                  }
+                // Validasi: jika code kosong, jangan lakukan apa-apa
+                if (code.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter a promo code'),
+                      duration: Duration(seconds: 1),
+                    ),
+                  );
+                  return;
                 }
+
+                // Apply promo code dan generate discount dalam satu operasi atomik
+                final notifier = ref.read(checkoutProvider.notifier);
+                notifier.applyPromoCode(code, bookingState.totalPrice);
+                
+                // Get updated state untuk menampilkan persentase diskon
+                final updatedState = ref.read(checkoutProvider);
+                final discountPercent = updatedState.getDiscountPercentage(bookingState.totalPrice);
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Promo code applied! You got ${discountPercent.toStringAsFixed(0)}% discount'),
+                    backgroundColor: Colors.green,
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
               },
             ),
 
@@ -526,15 +519,43 @@ class _CheckoutHotelScreenState extends ConsumerState<CheckoutHotelScreen> {
         const SnackBar(
           content: Text('Payment successful! Your booking is confirmed.'),
           backgroundColor: Colors.green,
-          duration: Duration(seconds: 3),
+          duration: Duration(seconds: 2),
         ),
       );
 
-      // Navigate to home screen
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-        (route) => false,
+      // Wait a bit to ensure user sees the notification before navigation
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (!mounted) return;
+
+      // Navigate back to home screen by popping screens
+      // Pop checkout screen first
+      Navigator.of(context).pop();
+      
+      // Wait a bit before popping booking details screen
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      if (!mounted) return;
+      
+      // Pop booking details screen to return to HomeScreen
+      // If we're already at HomeScreen, this will be a no-op
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    } on DioException catch (e) {
+      if (!mounted) return;
+      final errorMessage = ApiService.getErrorMessage(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: 'Retry',
+            textColor: Colors.white,
+            onPressed: () => _handlePayment(),
+          ),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
@@ -542,6 +563,7 @@ class _CheckoutHotelScreenState extends ConsumerState<CheckoutHotelScreen> {
         SnackBar(
           content: Text('Payment failed: ${e.toString()}'),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
         ),
       );
     } finally {
