@@ -1,62 +1,35 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../models/user_profile.dart';
-import '../../providers/providers.dart';
 
-class EditProfileScreen extends ConsumerWidget {
+class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final userAsync = ref.watch(userProvider);
-
-    return Scaffold(
-      backgroundColor: AppColors.gray0,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: AppColors.white,
-        foregroundColor: AppColors.gray5,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
-        title: const Text(
-          'Info Akun',
-          style: TextStyle(
-            color: AppColors.gray5,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: false,
-      ),
-      body: userAsync.when(
-        data: (profile) => _EditProfileForm(profile: profile),
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
-        ),
-        error: (error, stack) => Center(
-          child: Text(
-            'Failed to load profile',
-            style: TextStyle(color: AppColors.error),
-          ),
-        ),
-      ),
-    );
-  }
+  State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-class _EditProfileForm extends StatefulWidget {
-  const _EditProfileForm({required this.profile});
+class _EditProfileScreenState extends State<EditProfileScreen> {
+  static const UserProfile _mockProfile = UserProfile(
+    id: 'user-001',
+    email: 'user@example.com',
+    displayName: 'Username',
+    photoUrl: null,
+    phoneNumber: null,
+    dateOfBirth: null,
+    language: 'id',
+    currency: 'IDR',
+    createdAt: null,
+    updatedAt: null,
+    points: 0,
+    membershipLevel: 'Bronze',
+    postCount: 0,
+    followerCount: 0,
+    followingCount: 0,
+  );
 
-  final UserProfile profile;
 
-  @override
-  State<_EditProfileForm> createState() => _EditProfileFormState();
-}
-
-class _EditProfileFormState extends State<_EditProfileForm> {
   late final TextEditingController _displayNameController;
   late final TextEditingController _cityController;
   DateTime? _selectedBirthDate;
@@ -65,14 +38,15 @@ class _EditProfileFormState extends State<_EditProfileForm> {
   @override
   void initState() {
     super.initState();
-    _displayNameController =
-        TextEditingController(text: widget.profile.displayName);
+
+    _displayNameController = TextEditingController(text: _mockProfile.displayName);
     _cityController = TextEditingController();
-    _selectedBirthDate = widget.profile.dateOfBirth;
+    _selectedBirthDate = DateTime(2005, 11, 13);
   }
 
   @override
   void dispose() {
+
     _displayNameController.dispose();
     _cityController.dispose();
     super.dispose();
@@ -94,126 +68,148 @@ class _EditProfileFormState extends State<_EditProfileForm> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _ProfileAvatar(
-            profile: widget.profile,
-            onEdit: () {},
+    return Scaffold(
+      backgroundColor: AppColors.gray0,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: AppColors.white,
+        foregroundColor: AppColors.gray5,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        title: const Text(
+          'Info Akun',
+          style: TextStyle(
+            color: AppColors.gray5,
+            fontWeight: FontWeight.w600,
           ),
-          const SizedBox(height: 24),
-          _SectionHeader(
-            title: 'Data Pribadi',
-            actionText: 'Ubah',
-            onAction: () {},
-          ),
-          const SizedBox(height: 12),
-          _FormCard(
-            child: Column(
-              children: [
-                _LabeledField(
-                  label: 'Username',
-                  child: TextField(
-                    controller: _displayNameController,
+        ),
+        centerTitle: false,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _ProfileAvatar(
+              profile: _mockProfile,
+              onEdit: () {},
+            ),
+
+            const SizedBox(height: 24),
+            _SectionHeader(
+              title: 'Data Pribadi',
+              actionText: 'Ubah',
+              onAction: () {},
+            ),
+            const SizedBox(height: 12),
+            _FormCard(
+              child: Column(
+                children: [
+                  _LabeledField(
+                    label: 'Username',
+                    child: TextField(
+                      controller: _displayNameController,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _LabeledField(
-                        label: 'Tanggal Lahir',
-                        child: GestureDetector(
-                          onTap: _pickDate,
-                          child: InputDecorator(
-                            decoration: const InputDecoration(
-                              suffixIcon: Icon(Icons.calendar_today),
-                            ),
-                            child: Text(
-                              _selectedBirthDate != null
-                                  ? _formatDate(_selectedBirthDate!)
-                                  : 'Pilih tanggal',
-                              style: TextStyle(
-                                color: _selectedBirthDate != null
-                                    ? AppColors.gray5
-                                    : AppColors.gray3,
-                                fontWeight: FontWeight.w600,
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _LabeledField(
+                          label: 'Tanggal Lahir',
+                          child: GestureDetector(
+                            onTap: _pickDate,
+                            child: InputDecorator(
+                              decoration: const InputDecoration(
+                                suffixIcon: Icon(Icons.calendar_today),
+                              ),
+                              child: Text(
+                                _selectedBirthDate != null
+                                    ? _formatDate(_selectedBirthDate!)
+                                    : 'Pilih tanggal',
+                                style: TextStyle(
+                                  color: _selectedBirthDate != null
+                                      ? AppColors.gray5
+                                      : AppColors.gray3,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _LabeledField(
-                        label: 'Kelamin',
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedGender,
-                          items: const [
-                            DropdownMenuItem(
-                              value: 'Laki-laki',
-                              child: Text('Laki-laki'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'Perempuan',
-                              child: Text('Perempuan'),
-                            ),
-                          ],
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() {
-                                _selectedGender = value;
-                              });
-                            }
-                          },
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _LabeledField(
+                          label: 'Kelamin',
+                          child: DropdownButtonFormField<String>(
+                            value: _selectedGender,
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'Laki-laki',
+                                child: Text('Laki-laki'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Perempuan',
+                                child: Text('Perempuan'),
+                              ),
+                            ],
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() {
+                                  _selectedGender = value;
+                                });
+                              }
+                            },
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _LabeledField(
-                  label: 'Kota Tempat Tinggal',
-                  child: TextField(
-                    controller: _cityController,
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  _LabeledField(
+                    label: 'Kota Tempat Tinggal',
+                    child: TextField(
+                      controller: _cityController,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 28),
-          _SectionHeader(
-            title: 'Email',
-          ),
-          const SizedBox(height: 8),
-          _InfoBlock(
-            message: 'Email digunakan untuk login dan menerima notifikasi.',
-            value: widget.profile.email,
-            statusLabel: 'Penerima notifikasi',
-          ),
-          const SizedBox(height: 28),
-          _SectionHeader(
-            title: 'No. Handphone',
-          ),
-          const SizedBox(height: 8),
-          _InfoBlock(
-            message:
-                'No. handphone digunakan untuk login dan menerima notifikasi.',
-            value: widget.profile.phoneNumber ?? '-',
-            statusLabel: 'Utama',
-          ),
-          const SizedBox(height: 40),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {},
-              child: const Text('Simpan Perubahan'),
+            const SizedBox(height: 28),
+            _SectionHeader(
+              title: 'Email',
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            _InfoBlock(
+              message:
+                  'Email digunakan untuk login dan menerima notifikasi.',
+              value: _mockProfile.email,
+              statusLabel: 'Penerima notifikasi',
+            ),
+            const SizedBox(height: 28),
+            _SectionHeader(
+              title: 'No. Handphone',
+            ),
+            const SizedBox(height: 8),
+            _InfoBlock(
+              message:
+                  'No. handphone digunakan untuk login dan menerima notifikasi.',
+              value: _mockProfile.phoneNumber ?? '-',
+              statusLabel: 'Utama',
+            ),
+            const SizedBox(height: 40),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {},
+                child: const Text('Simpan Perubahan'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -483,3 +479,4 @@ class _InfoBlock extends StatelessWidget {
     );
   }
 }
+

@@ -8,63 +8,66 @@ import '../main/home_screen.dart';
 import '../main/settings_screen.dart';
 import 'edit_profile.dart';
 
-import '../../providers/providers.dart';
-
 /// Static profile screen that mimics the provided wireframe.
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
+  static const UserProfile _mockProfile = UserProfile(
+    id: 'user-001',
+    email: 'user@example.com',
+    displayName: 'Username',
+    photoUrl: null,
+    phoneNumber: null,
+    dateOfBirth: null,
+    language: 'id',
+    currency: 'IDR',
+    createdAt: null,
+    updatedAt: null,
+    points: 0,
+    membershipLevel: 'Bronze',
+    postCount: 0,
+    followerCount: 0,
+    followingCount: 0,
+  );
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userAsync = ref.watch(userProvider);
-
     return Scaffold(
       backgroundColor: AppColors.gray0,
       body: SafeArea(
-        child: userAsync.when(
-          data: (profile) => SingleChildScrollView(
-            padding: const EdgeInsets.only(bottom: 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _ProfileHeroSection(profile: profile),
-                const SizedBox(height: 20),
-                _MembershipBanner(level: profile.membershipLevel),
-                const SizedBox(height: 12),
-                const _InfoCard(
-                  title: 'My Reward',
-                  items: [
-                    _InfoCardItem(
-                      icon: Icons.star,
-                      iconColor: AppColors.warning,
-                      title: '0 Vouchers',
-                      subtitle: 'Exchange Your Voucher',
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                const _InfoCard(
-                  title: 'Member Feature',
-                  items: [
-                    _InfoCardItem(
-                      icon: Icons.star,
-                      iconColor: AppColors.warning,
-                      title: 'Traveler Info',
-                      subtitle: 'Manage Your Passenger Address details',
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          loading: () => const Center(
-            child: CircularProgressIndicator(color: AppColors.primary),
-          ),
-          error: (error, stack) => Center(
-            child: Text(
-              'Failed to load profile',
-              style: TextStyle(color: AppColors.error),
-            ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _ProfileHeroSection(profile: _mockProfile),
+              const SizedBox(height: 20),
+              _MembershipBanner(level: _mockProfile.membershipLevel),
+              const SizedBox(height: 12),
+              const _InfoCard(
+                title: 'My Reward',
+                items: [
+                  _InfoCardItem(
+                    icon: Icons.star,
+                    iconColor: AppColors.warning,
+                    title: '0 Vouchers',
+                    subtitle: 'Exchange Your Voucher',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const _InfoCard(
+                title: 'Member Feature',
+                items: [
+                  _InfoCardItem(
+                    icon: Icons.star,
+                    iconColor: AppColors.warning,
+                    title: 'Traveler Info',
+                    subtitle: 'Manage Your Passenger Address details',
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
