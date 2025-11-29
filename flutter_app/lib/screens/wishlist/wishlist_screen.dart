@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -7,8 +6,10 @@ import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/wishlist_model.dart';
 import '../../providers/wishlist_providers.dart';
+import '../../providers/auth_provider.dart';
 import '../../widgets/login_required_popup.dart';
 import '../explore/search_page.dart';
+import '../auth/login_screen.dart';
 
 // ============================================================================
 // ENUMS FOR SORT AND FILTER
@@ -118,6 +119,9 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
   @override
   Widget build(BuildContext context) {
     final wishlistAsync = ref.watch(wishlistItemsProvider);
+    // Check auth state untuk menentukan apakah perlu tampilkan login required
+    final authState = ref.watch(authStateProvider);
+    final user = authState.valueOrNull;
 
     return Scaffold(
       body: Container(
@@ -174,12 +178,54 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                             },
                           ),
                           const SizedBox(height: 18),
+                          // Sama seperti tripsProvider, langsung watch wishlistItemsProvider
+                          // API service sudah handle auth check dan return empty list jika user null
                           wishlistAsync.when(
                             data: (items) {
+                              // Debug: Print items untuk troubleshooting
+                              debugPrint(
+                                '🔍 Wishlist items count: ${items.length}',
+                              );
+                              if (items.isNotEmpty) {
+                                debugPrint(
+                                  '🔍 First item: ${items.first.destinationName}',
+                                );
+                                debugPrint('🔍 Search query: "$_searchQuery"');
+                                debugPrint('🔍 Filter option: $_filterOption');
+                              }
+
+                              // Jika user belum login dan items kosong, tampilkan login required
+                              if (user == null && items.isEmpty) {
+                                return const _LoginRequiredState();
+                              }
+                              // Jika user sudah login tapi items kosong, tampilkan empty state
+                              if (items.isEmpty) {
+                                return const _WishlistEmptyState();
+                              }
+                              // Tampilkan wishlist items
                               final filteredItems = _getFilteredAndSortedItems(
                                 items,
                               );
+                              debugPrint(
+                                '🔍 Filtered items count: ${filteredItems.length}',
+                              );
+
                               if (filteredItems.isEmpty) {
+                                // Jika ada filter/search aktif, beri tahu user
+                                if (_searchQuery.isNotEmpty ||
+                                    _filterOption != FilterOption.semua) {
+                                  return _EmptyFilterState(
+                                    searchQuery: _searchQuery,
+                                    filterOption: _filterOption,
+                                    onClearFilter: () {
+                                      setState(() {
+                                        _searchQuery = '';
+                                        _searchController.clear();
+                                        _filterOption = FilterOption.semua;
+                                      });
+                                    },
+                                  );
+                                }
                                 return const _WishlistEmptyState();
                               }
                               return _WishlistGrid(
@@ -190,8 +236,19 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                               );
                             },
                             loading: () => const _WishlistLoadingGrid(),
-                            error: (error, stack) =>
-                                const _WishlistEmptyState(),
+                            error: (error, stack) {
+                              // Jika error karena belum login (401), tampilkan login required
+                              if (error is DioException &&
+                                  error.response?.statusCode == 401) {
+                                return const _LoginRequiredState();
+                              }
+                              // Jika user belum login, tampilkan login required
+                              if (user == null) {
+                                return const _LoginRequiredState();
+                              }
+                              // Error lainnya, tampilkan empty state
+                              return const _WishlistEmptyState();
+                            },
                           ),
                         ],
                       ),
@@ -207,8 +264,8 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
   }
 
   Future<void> _handleDelete(WishlistModel item) async {
-    // Check if user is logged in
-    final user = FirebaseAuth.instance.currentUser;
+    // Check if user is logged in using authStateProvider
+    final user = ref.read(authStateProvider).valueOrNull;
     if (user == null) {
       if (mounted) {
         LoginRequiredPopup.show(
@@ -254,7 +311,10 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
             ),
           );
         }
+        // Refresh wishlist provider setelah delete
         ref.invalidate(wishlistItemsProvider);
+        // Juga refresh untuk memastikan UI update
+        await ref.read(wishlistItemsProvider.future);
       } on DioException catch (error) {
         if (mounted) {
           final message = error.response?.statusCode == 401
@@ -868,6 +928,193 @@ class _WishlistLoadingGrid extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+// ============================================================================
+// LOGIN REQUIRED STATE
+// ============================================================================
+
+class _LoginRequiredState extends StatelessWidget {
+  const _LoginRequiredState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(40),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.primary.withOpacity(0.1),
+            ),
+            child: const Icon(
+              Icons.lock_outline,
+              size: 48,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Login Diperlukan',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.gray5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Silakan login terlebih dahulu untuk mengakses wishlist Anda.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: AppColors.gray3),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () {
+              LoginRequiredPopup.show(
+                context,
+                message:
+                    'Silakan login terlebih dahulu untuk mengakses wishlist Anda.',
+                onLoginTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  );
+                },
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'Login Sekarang',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// EMPTY FILTER STATE (ketika filter/search tidak menemukan hasil)
+// ============================================================================
+
+class _EmptyFilterState extends StatelessWidget {
+  const _EmptyFilterState({
+    required this.searchQuery,
+    required this.filterOption,
+    required this.onClearFilter,
+  });
+
+  final String searchQuery;
+  final FilterOption filterOption;
+  final VoidCallback onClearFilter;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(40),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.search_off, size: 80, color: AppColors.gray3),
+          const SizedBox(height: 24),
+          const Text(
+            'Tidak Ada Hasil',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.gray5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            _getEmptyMessage(),
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 13, color: AppColors.gray3),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: onClearFilter,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'Hapus Filter',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getEmptyMessage() {
+    if (searchQuery.isNotEmpty && filterOption != FilterOption.semua) {
+      return 'Tidak ada destinasi yang cocok dengan pencarian "$searchQuery" dan filter yang dipilih.';
+    } else if (searchQuery.isNotEmpty) {
+      return 'Tidak ada destinasi yang cocok dengan pencarian "$searchQuery".';
+    } else if (filterOption != FilterOption.semua) {
+      String filterText = '';
+      switch (filterOption) {
+        case FilterOption.rating40:
+          filterText = 'Rating ≥ 4.0';
+          break;
+        case FilterOption.rating45:
+          filterText = 'Rating ≥ 4.5';
+          break;
+        case FilterOption.indonesia:
+          filterText = 'Indonesia';
+          break;
+        case FilterOption.luarNegeri:
+          filterText = 'Luar Negeri';
+          break;
+        default:
+          filterText = 'Filter yang dipilih';
+      }
+      return 'Tidak ada destinasi yang cocok dengan filter "$filterText".';
+    }
+    return 'Tidak ada hasil yang ditemukan.';
   }
 }
 

@@ -8,6 +8,8 @@ import 'app_providers.dart';
 
 final wishlistItemsProvider =
     FutureProvider.autoDispose<List<WishlistModel>>((ref) async {
+  // Sama seperti tripsProvider, langsung call API
+  // API service sudah handle auth check dan return empty list jika user null
   final api = ref.watch(apiServiceProvider);
   return api.getWishlistItems();
 });

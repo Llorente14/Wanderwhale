@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lottie/lottie.dart';
 
 import '../core/theme/app_colors.dart';
+import '../providers/auth_provider.dart';
+import '../providers/auth_screen_provider.dart';
 import 'main/main_navigation_screen.dart';
+import 'main/welcome_screen.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
 
@@ -28,18 +32,35 @@ class _SplashScreenState extends State<SplashScreen>
     // Listen to animation status
     _animationController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        // Navigate to MainNavigationScreen when animation completes
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const MainNavigationScreen(),
-          ),
-        );
+        // Check auth state and navigate accordingly
+        _navigateAfterSplash();
       }
     });
 
     // Start animation
     _animationController.forward();
+  }
+
+  void _navigateAfterSplash() {
+    // Check current user directly from FirebaseAuth
+    final user = ref.read(authStateProvider).valueOrNull;
+
+    if (mounted) {
+      if (user == null) {
+        // User belum login, redirect ke welcome screen dengan login state
+        ref.read(authScreenProvider.notifier).state = AuthScreenType.login;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+        );
+      } else {
+        // User sudah login, redirect ke main navigation
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+        );
+      }
+    }
   }
 
   @override
@@ -75,7 +96,9 @@ class _SplashScreenState extends State<SplashScreen>
                     if (actualDuration.inSeconds < 4) {
                       _animationController.duration = actualDuration;
                     } else {
-                      _animationController.duration = const Duration(seconds: 4);
+                      _animationController.duration = const Duration(
+                        seconds: 4,
+                      );
                     }
                     // Restart animation with correct duration
                     _animationController.reset();
@@ -109,4 +132,3 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 }
-

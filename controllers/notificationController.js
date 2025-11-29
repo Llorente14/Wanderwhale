@@ -18,6 +18,94 @@ const notificationsCollection = db.collection("notifications");
 // ============================================================================
 
 // ============================================================================
+// 0. GET NOTIFICATIONS - Ambil List Notifikasi User
+// ============================================================================
+/**
+ * @desc    Get all notifications for the authenticated user
+ * @route   GET /api/notifications
+ * @access  Private (require authCheck middleware)
+ * @query   unreadOnly (optional) - if true, only return unread notifications
+ */
+exports.getNotifications = async (req, res) => {
+  try {
+    // 1. Ambil userId dari middleware
+    const { uid: userId } = req.user;
+
+    // 2. Ambil query parameter unreadOnly
+    const unreadOnly = req.query.unreadOnly === "true";
+
+    // 3. Build query
+    let query = notificationsCollection.where("userId", "==", userId);
+
+    // 4. Filter by unread if requested
+    if (unreadOnly) {
+      query = query.where("isRead", "==", false);
+    }
+
+    // 5. Order by createdAt descending (newest first)
+    query = query.orderBy("createdAt", "desc");
+
+    // 6. Execute query
+    const snapshot = await query.get();
+
+    // 7. Map documents to array
+    const notifications = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      
+      // Helper function to convert Firestore timestamp to ISO string
+      const toISOString = (timestamp) => {
+        if (!timestamp) return null;
+        // If it's a Firestore Timestamp object
+        if (timestamp.toDate && typeof timestamp.toDate === 'function') {
+          return timestamp.toDate().toISOString();
+        }
+        // If it's already a Date object
+        if (timestamp instanceof Date) {
+          return timestamp.toISOString();
+        }
+        // If it's already a string
+        if (typeof timestamp === 'string') {
+          return timestamp;
+        }
+        // If it's a Map with _seconds (serialized timestamp)
+        if (timestamp._seconds) {
+          return new Date(timestamp._seconds * 1000).toISOString();
+        }
+        return null;
+      };
+      
+      return {
+        id: doc.id,
+        userId: data.userId || "",
+        type: data.type || "general",
+        title: data.title || "",
+        body: data.body || "",
+        isRead: data.isRead || false,
+        createdAt: toISOString(data.createdAt) || new Date().toISOString(),
+        referenceId: data.relatedId || data.referenceId || null,
+        imageUrl: data.imageUrl || null,
+        actionUrl: data.actionUrl || null,
+      };
+    });
+
+    // 8. Return success response
+    return res.status(200).json({
+      success: true,
+      message: "Notifications retrieved successfully",
+      data: notifications,
+      count: notifications.length,
+    });
+  } catch (error) {
+    console.error("Error getting notifications:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to get notifications",
+      error: error.message,
+    });
+  }
+};
+
+// ============================================================================
 // 1. MARK AS READ - Tandai Satu Notifikasi Sudah Dibaca
 // ============================================================================
 /**
