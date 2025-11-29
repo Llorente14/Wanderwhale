@@ -1,4 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -6,25 +6,17 @@ import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/notification_model.dart';
 import '../../providers/notification_providers.dart';
-
-final _unauthenticatedProvider =
-    Provider.autoDispose<AsyncValue<List<NotificationModel>>>(
-      (ref) => const AsyncValue.error(
-        'Harap login untuk melihat notifikasi',
-        StackTrace.empty,
-      ),
-    );
+import '../../providers/auth_provider.dart';
+import '../../widgets/login_required_popup.dart';
+import '../auth/login_screen.dart';
 
 class NotificationScreen extends ConsumerWidget {
   const NotificationScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final notificationsAsync = ref.watch(
-      FirebaseAuth.instance.currentUser == null
-          ? _unauthenticatedProvider
-          : notificationsProvider,
-    );
+    final authState = ref.watch(authStateProvider);
+    final notificationsAsync = ref.watch(notificationsProvider);
 
     return Scaffold(
       body: Container(
@@ -48,29 +40,62 @@ class NotificationScreen extends ConsumerWidget {
                       topRight: Radius.circular(28),
                     ),
                   ),
-                  child: notificationsAsync.when(
-                    data: (items) {
-                      if (items.isEmpty) {
-                        return const _EmptyState();
+                  child: authState.when(
+                    data: (user) {
+                      if (user == null) {
+                        // User belum login, tampilkan login required UI
+                        return const _LoginRequiredState();
                       }
-                      return RefreshIndicator(
-                        color: AppColors.primary,
-                        onRefresh: () async {
-                          ref.invalidate(notificationsProvider);
-                          await ref.read(notificationsProvider.future);
+                      // User sudah login, tampilkan notifikasi
+                      return notificationsAsync.when(
+                        data: (items) {
+                          if (items.isEmpty) {
+                            return const _EmptyState();
+                          }
+                          return RefreshIndicator(
+                            color: AppColors.primary,
+                            onRefresh: () async {
+                              ref.invalidate(notificationsProvider);
+                              await ref.read(notificationsProvider.future);
+                            },
+                            child: ListView.separated(
+                              padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+                              itemCount: items.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 16),
+                              itemBuilder: (context, index) {
+                                final notification = items[index];
+                                return _NotificationCard(
+                                  notification: notification,
+                                );
+                              },
+                            ),
+                          );
                         },
-                        child: ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
-                          itemCount: items.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 16),
-                          itemBuilder: (context, index) {
-                            final notification = items[index];
-                            return _NotificationCard(
-                              notification: notification,
-                            );
-                          },
+                        loading: () => const Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.primary,
+                          ),
                         ),
+                        error: (err, _) {
+                          // Jika error karena belum login (401), tampilkan login required
+                          if (err is DioException && err.response?.statusCode == 401) {
+                            return const _LoginRequiredState();
+                          }
+                          // Jika error message mengandung 'login' atau 'terautentikasi'
+                          if (err.toString().contains('401') ||
+                              err.toString().contains('login') ||
+                              err.toString().contains('terautentikasi')) {
+                            return const _LoginRequiredState();
+                          }
+                          // Error lainnya (404, 500, dll), tampilkan error state dengan retry
+                          // Tapi jika 404, seharusnya sudah di-handle di provider dan return empty list
+                          return _ErrorState(
+                            message: err.toString(),
+                            onRetry: () => ref.refresh(notificationsProvider),
+                            showRetry: true,
+                          );
+                        },
                       );
                     },
                     loading: () => const Center(
@@ -80,8 +105,8 @@ class NotificationScreen extends ConsumerWidget {
                     ),
                     error: (err, _) => _ErrorState(
                       message: err.toString(),
-                      onRetry: () => ref.refresh(notificationsProvider),
-                      showRetry: FirebaseAuth.instance.currentUser != null,
+                      onRetry: () => ref.refresh(authStateProvider),
+                      showRetry: true,
                     ),
                   ),
                 ),
@@ -352,6 +377,89 @@ class _NotificationCard extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LoginRequiredState extends StatelessWidget {
+  const _LoginRequiredState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primary.withOpacity(0.1),
+              ),
+              child: const Icon(
+                Icons.lock_outline,
+                size: 48,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Login Diperlukan',
+              style: TextStyle(
+                color: AppColors.gray5,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Silakan login terlebih dahulu untuk melihat notifikasi Anda.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.gray3,
+                fontSize: 14,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                LoginRequiredPopup.show(
+                  context,
+                  message: 'Silakan login terlebih dahulu untuk melihat notifikasi Anda.',
+                  onLoginTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    );
+                  },
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Login Sekarang',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

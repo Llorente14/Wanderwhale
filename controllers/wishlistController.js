@@ -288,10 +288,12 @@ exports.getUserWishlist = async (req, res) => {
     // }
   } catch (error) {
     console.error("Error getting wishlist:", error);
+    console.error("Error stack:", error.stack);
     return res.status(500).json({
       success: false,
       message: "Failed to retrieve wishlist",
       error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     });
   }
 };

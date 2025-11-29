@@ -1,200 +1,370 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/theme/app_colors.dart';
-import '../user/edit_profile.dart';
-import 'about_us_screen.dart';
-import 'privacy_notice_screen.dart';
-import 'terms_and_conditions_screen.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/app_providers.dart';
+import '../main/welcome_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final userAsync = ref.watch(userProvider);
+
     return Scaffold(
-      backgroundColor: AppColors.gray0,
+      backgroundColor: AppColors.white,
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        title: const Text('Settings'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.gray5),
-          onPressed: () => Navigator.pop(context),
+      ),
+      body: userAsync.when(
+        data: (user) => ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            // Profile Section
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 40,
+                    backgroundColor: AppColors.gray1,
+                    backgroundImage: user.photoURL != null
+                        ? NetworkImage(user.photoURL!)
+                        : const AssetImage('assets/images/avatar_placeholder.png')
+                            as ImageProvider,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user.displayName ?? 'User',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.gray5,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          user.email,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.gray3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Settings Options
+            _SettingsSection(
+              title: 'Account',
+              items: [
+                _SettingsItem(
+                  icon: Icons.person_outline,
+                  title: 'Edit Profile',
+                  onTap: () {
+                    // TODO: Navigate to edit profile
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Edit Profile - Coming Soon')),
+                    );
+                  },
+                ),
+                _SettingsItem(
+                  icon: Icons.notifications_outlined,
+                  title: 'Notifications',
+                  onTap: () {
+                    // TODO: Navigate to notification settings
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Notification Settings - Coming Soon')),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _SettingsSection(
+              title: 'General',
+              items: [
+                _SettingsItem(
+                  icon: Icons.language_outlined,
+                  title: 'Language',
+                  trailing: const Text('Bahasa Indonesia'),
+                  onTap: () {
+                    // TODO: Language settings
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Language Settings - Coming Soon')),
+                    );
+                  },
+                ),
+                _SettingsItem(
+                  icon: Icons.help_outline,
+                  title: 'Help & Support',
+                  onTap: () {
+                    // TODO: Help & Support
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Help & Support - Coming Soon')),
+                    );
+                  },
+                ),
+                _SettingsItem(
+                  icon: Icons.info_outline,
+                  title: 'About',
+                  onTap: () {
+                    // TODO: About
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('About - Coming Soon')),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            // Logout Button
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 20),
+              child: ElevatedButton(
+                onPressed: () => _showLogoutDialog(context, ref),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.error,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.logout, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Logout',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-        title: const Text(
-          'Settings',
-          style: TextStyle(
-            color: AppColors.gray5,
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
+        loading: () => const Center(
+          child: CircularProgressIndicator(),
+        ),
+        error: (error, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+              const SizedBox(height: 16),
+              Text(
+                'Gagal memuat data',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.gray5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                error.toString(),
+                style: const TextStyle(color: AppColors.gray3),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSectionHeader('ACCOUNT & SECURITY'),
-            _buildSettingsTile(
-              context,
-              icon: Icons.person_outline,
-              title: 'Account Information',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const EditProfileScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildSettingsTile(
-              context,
-              icon: Icons.lock_outline,
-              title: 'Password & Security',
-              onTap: () {
-                // TODO: Implement Password & Security
-              },
-            ),
+    );
+  }
 
-            _buildSectionHeader('CONTACT SERVICE'),
-            _buildSettingsTile(
-              context,
-              icon: Icons.headset_mic_outlined,
-              title: 'Customer Service',
-              onTap: () {
-                // TODO: Implement Customer Service
-              },
-            ),
-
-            const SizedBox(height: 12),
-            _buildSettingsTile(
-              context,
-              title: 'App Version',
-              trailingText: '1.0.0',
-              showChevron: false,
-            ),
-            _buildSettingsTile(
-              context,
-              title: 'Terms & Conditions',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const TermsAndConditionsScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildSettingsTile(
-              context,
-              title: 'Privacy Notice',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const PrivacyNoticeScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildSettingsTile(
-              context,
-              title: 'About Us',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AboutUsScreen(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-            _buildSettingsTile(
-              context,
-              icon: Icons.power_settings_new,
-              title: 'Log Out',
-              textColor: AppColors.error,
-              iconColor: AppColors.error,
-              showChevron: true, // Or false if we want it to look like a button
-              onTap: () {
-                // TODO: Implement Logout
-              },
-            ),
-            const SizedBox(height: 32),
-          ],
+  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
         ),
+        title: const Text('Logout'),
+        content: const Text('Apakah Anda yakin ingin logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await _handleLogout(context, ref);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.error,
+            ),
+            child: const Text('Logout'),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-      child: Text(
-        title,
-        style: const TextStyle(
-          color: AppColors.gray3,
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
+  Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
+    try {
+      final controller = ref.read(authControllerProvider);
+      await controller.signOut();
+      
+      if (context.mounted) {
+        // Navigate to welcome screen after logout
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => const WelcomeScreen(),
+          ),
+          (route) => false,
+        );
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logout berhasil'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal logout: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+}
+
+class _SettingsSection extends StatelessWidget {
+  const _SettingsSection({
+    required this.title,
+    required this.items,
+  });
+
+  final String title;
+  final List<_SettingsItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 12),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.gray4,
+              letterSpacing: 0.5,
+            ),
+          ),
         ),
-      ),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: items,
+          ),
+        ),
+      ],
     );
   }
+}
 
-  Widget _buildSettingsTile(
-    BuildContext context, {
-    IconData? icon,
-    required String title,
-    String? trailingText,
-    Color? textColor,
-    Color? iconColor,
-    bool showChevron = true,
-    VoidCallback? onTap,
-  }) {
+class _SettingsItem extends StatelessWidget {
+  const _SettingsItem({
+    required this.icon,
+    required this.title,
+    this.trailing,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final Widget? trailing;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
     return Material(
-      color: AppColors.white,
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Row(
             children: [
-              if (icon != null) ...[
-                Icon(
-                  icon,
-                  color: iconColor ?? AppColors.gray4,
-                  size: 24,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                const SizedBox(width: 16),
-              ],
+                child: Icon(icon, color: AppColors.primary, size: 20),
+              ),
+              const SizedBox(width: 16),
               Expanded(
                 child: Text(
                   title,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
-                    color: textColor ?? AppColors.gray5,
-                    fontWeight: FontWeight.w400,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.gray5,
                   ),
                 ),
               ),
-              if (trailingText != null)
-                Text(
-                  trailingText,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.gray3,
-                  ),
-                ),
-              if (showChevron) ...[
+              if (trailing != null) ...[
                 const SizedBox(width: 8),
-                const Icon(
-                  Icons.chevron_right,
-                  color: AppColors.gray3,
-                  size: 20,
-                ),
+                trailing!,
               ],
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.chevron_right,
+                color: AppColors.gray3,
+                size: 20,
+              ),
             ],
           ),
         ),

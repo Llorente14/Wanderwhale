@@ -24,6 +24,14 @@ router.use(authCheck);
 // ============================================================================
 
 /**
+ * @route   GET /api/notifications
+ * @desc    Get all notifications for the authenticated user
+ * @access  Private
+ * @query   unreadOnly (optional) - if true, only return unread notifications
+ */
+router.get("/", notificationController.getNotifications);
+
+/**
  * @route   PATCH /api/notifications/read-all
  * @desc    Mark all notifications as read
  * @access  Private

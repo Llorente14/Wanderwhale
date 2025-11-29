@@ -194,12 +194,33 @@ void _showErrorFeedback(BuildContext context, Object? error) {
   final isAuthError =
       errorMessage.contains('terautentikasi') ||
       errorMessage.contains('login') ||
-      errorMessage.contains('Unauthorized');
+      errorMessage.contains('Unauthorized') ||
+      errorMessage.contains('401');
 
   if (isAuthError) {
     LoginRequiredPopup.show(
       context,
       message: 'Silakan login terlebih dahulu untuk mengakses fitur ini',
+    );
+    return;
+  }
+
+  // Handle 404 untuk profile (profile belum dibuat)
+  final isProfileNotFound =
+      errorMessage.contains('404') ||
+      errorMessage.contains('Profile belum dibuat') ||
+      errorMessage.contains('not found');
+
+  if (isProfileNotFound) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          'Profile belum dibuat. Silakan lengkapi profil Anda.',
+        ),
+        backgroundColor: AppColors.warning,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
+      ),
     );
     return;
   }
@@ -210,7 +231,7 @@ void _showErrorFeedback(BuildContext context, Object? error) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text(message),
-      backgroundColor: isAuthError ? AppColors.warning : AppColors.error,
+      backgroundColor: AppColors.error,
       behavior: SnackBarBehavior.floating,
       action: SnackBarAction(
         label: 'OK',
@@ -2534,9 +2555,11 @@ class _RecommendationCardState extends ConsumerState<_RecommendationCard> {
     final manager = ref.read(wishlistManagerProvider);
     try {
       await manager.toggle(widget.destination.destinationId);
+      // Refresh wishlist setelah toggle
       ref.invalidate(wishlistItemsProvider);
       ref.invalidate(wishlistStatusProvider(widget.destination.destinationId));
-      ref.invalidate(wishlistStatusProvider(widget.destination.destinationId));
+      // Trigger refresh untuk memastikan UI update
+      ref.refresh(wishlistItemsProvider);
     } on DioException catch (error) {
       if (!mounted) return;
       final status = error.response?.statusCode;

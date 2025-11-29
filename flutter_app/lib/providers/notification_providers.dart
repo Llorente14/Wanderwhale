@@ -1,19 +1,57 @@
 // lib/providers/notification_providers.dart
 
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/notification_model.dart';
 import '../services/api_service.dart';
 import 'app_providers.dart';
+import 'auth_provider.dart';
 
 final notificationsProvider =
     FutureProvider.autoDispose<List<NotificationModel>>((ref) async {
-  final api = ref.watch(apiServiceProvider);
-  return api.getNotifications();
+  // Check auth state first
+  final authState = ref.watch(authStateProvider);
+  final user = authState.valueOrNull;
+
+  if (user == null) {
+    // User belum login, throw error yang jelas
+    throw DioException(
+      requestOptions: RequestOptions(path: '/notifications'),
+      type: DioExceptionType.badResponse,
+      response: Response(
+        requestOptions: RequestOptions(path: '/notifications'),
+        statusCode: 401,
+      ),
+      message: 'Silakan login terlebih dahulu untuk mengakses notifikasi.',
+    );
+  }
+
+  try {
+    final api = ref.watch(apiServiceProvider);
+    return await api.getNotifications();
+  } on DioException catch (e) {
+    // Handle 404 - endpoint belum tersedia atau user belum memiliki notifications
+    if (e.response?.statusCode == 404) {
+      // Return empty list jika 404 (normal jika user belum punya notifications)
+      return [];
+    }
+    // Re-throw error lainnya (401, 500, dll)
+    rethrow;
+  }
 });
 
 final unreadNotificationsProvider =
     FutureProvider.autoDispose<List<NotificationModel>>((ref) async {
+  // Check auth state first
+  final authState = ref.watch(authStateProvider);
+  final user = authState.valueOrNull;
+
+  if (user == null) {
+    // User belum login, return empty list untuk unread (tidak perlu error)
+    return [];
+  }
+
   final api = ref.watch(apiServiceProvider);
   return api.getNotifications(unreadOnly: true);
 });

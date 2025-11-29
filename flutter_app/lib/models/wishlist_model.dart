@@ -26,7 +26,13 @@ class WishlistModel {
   });
 
   factory WishlistModel.fromJson(Map<String, dynamic> json) {
-    return WishlistModel(
+    // Debug logging untuk troubleshooting
+    print('📦 WishlistModel.fromJson: Parsing JSON');
+    print('📦 JSON keys: ${json.keys.toList()}');
+    print('📦 destinationName: ${json['destinationName']}');
+    print('📦 destinationId: ${json['destinationId']}');
+    
+    final model = WishlistModel(
       id: json['id'] ?? json['wishlistId'] ?? '',
       userId: json['userId'] ?? '',
       destinationId: json['destinationId'] ?? '',
@@ -38,6 +44,9 @@ class WishlistModel {
       destinationTags: List<String>.from(json['destinationTags'] ?? []),
       addedAt: _parseTimestamp(json['addedAt']),
     );
+    
+    print('✅ WishlistModel created: ${model.destinationName} (ID: ${model.id})');
+    return model;
   }
 
   // --- Timestamp Helper (Non-Nullable) ---

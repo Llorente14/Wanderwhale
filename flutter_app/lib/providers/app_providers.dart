@@ -47,6 +47,12 @@ final userProvider = FutureProvider<UserModel>((ref) async {
         "User tidak terautentikasi. Silakan login terlebih dahulu.",
       );
     }
+    // Jika 404 (profile belum dibuat), throw error yang jelas
+    if (e.response?.statusCode == 404) {
+      throw Exception(
+        "Profile belum dibuat. Silakan lengkapi profil Anda.",
+      );
+    }
     rethrow;
   }
 });

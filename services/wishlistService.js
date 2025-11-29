@@ -104,19 +104,70 @@ async function removeFromWishlist(userId, destinationId) {
  * @returns {Promise<Array>} Wishlist items
  */
 async function getUserWishlist(userId) {
-  const snapshot = await wishlistsCollection
-    .where("userId", "==", userId)
-    .orderBy("addedAt", "desc")
-    .get();
+  try {
+    // Query tanpa orderBy dulu untuk menghindari index requirement
+    // Kita akan sort di memory
+    const snapshot = await wishlistsCollection
+      .where("userId", "==", userId)
+      .get();
 
-  if (snapshot.empty) {
-    return [];
+    if (snapshot.empty) {
+      return [];
+    }
+
+    // Map documents dan convert timestamps
+    const wishlist = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      
+      // Helper function to convert Firestore timestamp to ISO string
+      const toISOString = (timestamp) => {
+        if (!timestamp) return null;
+        // If it's a Firestore Timestamp object
+        if (timestamp.toDate && typeof timestamp.toDate === 'function') {
+          return timestamp.toDate().toISOString();
+        }
+        // If it's already a Date object
+        if (timestamp instanceof Date) {
+          return timestamp.toISOString();
+        }
+        // If it's already a string
+        if (typeof timestamp === 'string') {
+          return timestamp;
+        }
+        // If it's a Map with _seconds (serialized timestamp)
+        if (timestamp._seconds) {
+          return new Date(timestamp._seconds * 1000).toISOString();
+        }
+        return null;
+      };
+
+      return {
+        id: doc.id,
+        wishlistId: doc.id,
+        userId: data.userId || userId,
+        destinationId: data.destinationId || '',
+        destinationName: data.destinationName || 'Unknown',
+        destinationCity: data.destinationCity || null,
+        destinationCountry: data.destinationCountry || null,
+        destinationImageUrl: data.destinationImageUrl || null,
+        destinationRating: data.destinationRating || 0,
+        destinationTags: data.destinationTags || [],
+        addedAt: toISOString(data.addedAt) || toISOString(data.createdAt) || new Date().toISOString(),
+      };
+    });
+
+    // Sort by addedAt descending (newest first) in memory
+    wishlist.sort((a, b) => {
+      const dateA = new Date(a.addedAt || 0);
+      const dateB = new Date(b.addedAt || 0);
+      return dateB - dateA; // Descending order
+    });
+
+    return wishlist;
+  } catch (error) {
+    console.error("Error in getUserWishlist:", error);
+    throw error;
   }
-
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
 }
 
 /**

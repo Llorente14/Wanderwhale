@@ -23,6 +23,7 @@ class ApiService {
   late Dio _dio;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   void Function()? _onUnauthorized;
+
   ApiService._internal() {
     _dio = Dio(
       BaseOptions(
@@ -41,64 +42,22 @@ class ApiService {
           final user = _auth.currentUser;
 
           if (user != null) {
-            try {
-              // 2. Minta ID token (ini akan otomatis refresh jika kedaluwarsa)
-              final token = await user.getIdToken();
-              options.headers['Authorization'] = 'Bearer $token';
-            } catch (e) {
-              // Jika gagal mendapatkan token, lanjutkan tanpa header
-              // Request akan gagal dengan 401, dan akan ditangani di onError
-              print("Warning: Failed to get ID token: $e");
-            }
+            // 2. Minta ID token (ini akan otomatis refresh jika kedaluwarsa)
+            final token = await user.getIdToken();
+            options.headers['Authorization'] = 'Bearer $token';
           }
           return handler.next(options);
         },
-        onError: (error, handler) async {
-          // Handle 401 Unauthorized - coba refresh token dan retry
+        onError: (error, handler) {
+          // Handle 401 Unauthorized (misal: token dicabut)
           if (error.response?.statusCode == 401) {
-            final user = _auth.currentUser;
-
-            if (user != null) {
-              try {
-                // Force refresh token
-                final newToken = await user.getIdToken(true);
-
-                // Retry request dengan token baru
-                final options = error.requestOptions;
-                options.headers['Authorization'] = 'Bearer $newToken';
-
-                // Clone request dengan options baru
-                final response = await _dio.fetch(options);
-                return handler.resolve(response);
-              } catch (refreshError) {
-                // Jika refresh gagal, token mungkin sudah tidak valid
-                print("Token refresh failed: $refreshError");
-                print("Sesi berakhir. Silakan login ulang.");
-
-                // Return error yang lebih informatif
-                return handler.next(
-                  DioException(
-                    requestOptions: error.requestOptions,
-                    response: error.response,
-                    type: DioExceptionType.badResponse,
-                    message: "Sesi berakhir. Silakan login ulang.",
-                  ),
-                );
-              }
-            } else {
-              // User tidak login
-              print(
-                "User tidak terautentikasi. Silakan login terlebih dahulu.",
-              );
-              return handler.next(
-                DioException(
-                  requestOptions: error.requestOptions,
-                  response: error.response,
-                  type: DioExceptionType.badResponse,
-                  message: "Silakan login terlebih dahulu.",
-                ),
-              );
+            // Panggil callback jika terdaftar (AuthProvider akan mendaftarkan)
+            try {
+              _onUnauthorized?.call();
+            } catch (e) {
+              // ignore errors from callback
             }
+            print("Token tidak valid. Harap login ulang.");
           }
           return handler.next(error);
         },
@@ -164,48 +123,10 @@ class ApiService {
     }
   }
 
-  Future<UserModel> updateUserProfile(Map<String, dynamic> data) async {
-    try {
-      final response = await _dio.put(
-        ApiConstants.userProfile,
-        data: data,
-      );
-      return _parseResponse(response, (json) => UserModel.fromJson(json));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
   Future<UserModel> getUserProfile() async {
     try {
-      // Jika user belum login, jangan panggil API supaya tidak error 401.
-      final user = _auth.currentUser;
-      if (user == null) {
-        throw DioException(
-          requestOptions: RequestOptions(path: ApiConstants.userProfile),
-          type: DioExceptionType.badResponse,
-          response: Response(
-            requestOptions: RequestOptions(path: ApiConstants.userProfile),
-            statusCode: 401,
-          ),
-          message: "User tidak terautentikasi. Silakan login terlebih dahulu.",
-        );
-      }
-
       final response = await _dio.get(ApiConstants.userProfile);
       return _parseResponse(response, (json) => UserModel.fromJson(json));
-    } on DioException catch (e) {
-      // Handle 404 - user profile belum dibuat di backend
-      if (e.response?.statusCode == 404) {
-        // User sudah login tapi profile belum ada, throw error yang jelas
-        throw DioException(
-          requestOptions: e.requestOptions,
-          type: DioExceptionType.badResponse,
-          response: e.response,
-          message: "Profile belum dibuat. Silakan lengkapi profil Anda.",
-        );
-      }
-      rethrow;
     } catch (e) {
       rethrow;
     }
@@ -219,6 +140,7 @@ class ApiService {
       rethrow;
     }
   }
+
   // ==================== TRIPS (Internal) ====================
 
   Future<List<TripModel>> getTrips() async {
@@ -583,12 +505,6 @@ class ApiService {
 
   Future<List<BookingModel>> getMyBookings({String? type}) async {
     try {
-      // Jika user belum login, return empty list
-      final user = _auth.currentUser;
-      if (user == null) {
-        return [];
-      }
-
       final queryParams = <String, dynamic>{};
       if (type != null) {
         queryParams['type'] = type;
@@ -607,10 +523,6 @@ class ApiService {
       }
       return [];
     } catch (e) {
-      // Jika terjadi 401, return empty list (user tidak login)
-      if (e is DioException && e.response?.statusCode == 401) {
-        return [];
-      }
       rethrow;
     }
   }
@@ -622,12 +534,6 @@ class ApiService {
     int? limit,
   }) async {
     try {
-      // Jika user belum login, return empty list
-      final user = _auth.currentUser;
-      if (user == null) {
-        return [];
-      }
-
       final response = await _dio.get(
         ApiConstants.hotelBookingsList,
         queryParameters: {
@@ -642,10 +548,6 @@ class ApiService {
         (json) => HotelBookingModel.fromJson(json),
       );
     } catch (e) {
-      // Jika terjadi 401, return empty list (user tidak login)
-      if (e is DioException && e.response?.statusCode == 401) {
-        return [];
-      }
       rethrow;
     }
   }
@@ -657,12 +559,6 @@ class ApiService {
     int? limit,
   }) async {
     try {
-      // Jika user belum login, return empty list
-      final user = _auth.currentUser;
-      if (user == null) {
-        return [];
-      }
-
       final response = await _dio.get(
         ApiConstants.flightBookingsList,
         queryParameters: {
@@ -677,10 +573,6 @@ class ApiService {
         (json) => FlightBookingModel.fromJson(json),
       );
     } catch (e) {
-      // Jika terjadi 401, return empty list (user tidak login)
-      if (e is DioException && e.response?.statusCode == 401) {
-        return [];
-      }
       rethrow;
     }
   }
@@ -690,12 +582,6 @@ class ApiService {
   /// Mengecek apakah destinasi tertentu sudah ada di wishlist user.
   Future<bool> checkWishlistStatus(String destinationId) async {
     try {
-      // Jika user belum login, return false (belum di-wishlist)
-      final user = _auth.currentUser;
-      if (user == null) {
-        return false;
-      }
-
       final response = await _dio.get(
         ApiConstants.wishlistCheck(destinationId),
       );
@@ -708,7 +594,7 @@ class ApiService {
 
       return false;
     } catch (e) {
-      // Jika terjadi error (misal network atau 401), jangan crash UI, anggap belum di-wishlist
+      // Jika terjadi error (misal network), jangan crash UI, anggap belum di-wishlist
       return false;
     }
   }
@@ -742,45 +628,12 @@ class ApiService {
 
   Future<List<WishlistModel>> getWishlistItems() async {
     try {
-      // Jika user belum login, return empty list
-      final user = _auth.currentUser;
-      if (user == null) {
-        print('⚠️ getWishlistItems: User belum login');
-        return [];
-      }
-
-      print('📡 getWishlistItems: Fetching wishlist for user ${user.uid}');
       final response = await _dio.get(ApiConstants.wishlist);
-
-      print('📡 getWishlistItems: Response status: ${response.statusCode}');
-      print('📡 getWishlistItems: Response data: ${response.data}');
-
-      final items = _parseResponseList(
+      return _parseResponseList(
         response,
         (json) => WishlistModel.fromJson(json),
       );
-
-      print('✅ getWishlistItems: Parsed ${items.length} items');
-      if (items.isNotEmpty) {
-        print(
-          '✅ First item: ${items.first.destinationName} (ID: ${items.first.id})',
-        );
-      }
-
-      return items;
     } catch (e) {
-      print('❌ getWishlistItems: Error - $e');
-      // Handle 404 - endpoint belum tersedia atau user belum memiliki wishlist
-      if (e is DioException && e.response?.statusCode == 404) {
-        print('⚠️ getWishlistItems: 404 - Returning empty list');
-        // Return empty list jika 404 (normal jika user belum punya wishlist)
-        return [];
-      }
-      // Jika terjadi 401, return empty list (user tidak login)
-      if (e is DioException && e.response?.statusCode == 401) {
-        print('⚠️ getWishlistItems: 401 - User tidak terautentikasi');
-        return [];
-      }
       rethrow;
     }
   }
@@ -799,33 +652,15 @@ class ApiService {
     bool unreadOnly = false,
   }) async {
     try {
-      // Jika user belum login, return empty list
-      final user = _auth.currentUser;
-      if (user == null) {
-        return [];
-      }
-
       final response = await _dio.get(
         ApiConstants.notifications,
         queryParameters: {if (unreadOnly) 'unreadOnly': unreadOnly},
       );
       return _parseResponseList(
         response,
-        (json) => NotificationModel.fromJson(
-          json['id'] ?? json['notificationId'] ?? '',
-          json,
-        ),
+        (json) => NotificationModel.fromJson(json['id'] ?? '', json),
       );
     } catch (e) {
-      // Handle 404 - endpoint belum tersedia atau user belum memiliki notifications
-      if (e is DioException && e.response?.statusCode == 404) {
-        // Return empty list jika 404 (normal jika user belum punya notifications)
-        return [];
-      }
-      // Jika terjadi 401, return empty list (user tidak login)
-      if (e is DioException && e.response?.statusCode == 401) {
-        return [];
-      }
       rethrow;
     }
   }
