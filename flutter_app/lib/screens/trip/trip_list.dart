@@ -1,25 +1,31 @@
 import 'package:flutter/material.dart';
-import '../../models/trip_model.dart';
-import '../../services/trip_service.dart';
-import '../../widgets/trip_card.dart';
-import '../chatbot/ai_chat.dart';
-import 'trip_detail.dart';
-import 'create_trip.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class TripList extends StatefulWidget {
+import '../../models/trip_model.dart';
+import '../../providers/app_providers.dart';
+import '../../services/trip_service.dart';
+import '../../widgets/common/custom_bottom_nav.dart';
+import '../../widgets/trip_card.dart';
+import 'create_trip.dart';
+import 'trip_detail.dart';
+
+class TripList extends ConsumerStatefulWidget {
   const TripList({super.key});
 
   @override
-  State<TripList> createState() => _TripListState();
+  ConsumerState<TripList> createState() => _TripListState();
 }
 
-class _TripListState extends State<TripList> {
+class _TripListState extends ConsumerState<TripList> {
   final TripService _tripService = TripService();
 
   @override
   void initState() {
     super.initState();
     _tripService.addListener(_onTripsChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(bottomNavIndexProvider.notifier).state = 2;
+    });
   }
 
   @override
@@ -101,7 +107,7 @@ class _TripListState extends State<TripList> {
           ),
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      bottomNavigationBar: const CustomBottomNav(),
     );
   }
 
@@ -158,69 +164,5 @@ class _TripListState extends State<TripList> {
     );
   }
 
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Container(
-          height: 70,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(Icons.home, 'Home', false, () {
-                Navigator.pop(context);
-              }),
-              _buildNavItem(Icons.flight_takeoff, 'Trips', true, () {}),
-              _buildNavItem(Icons.star_border, 'AI Chat', false, () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AiChat()),
-                );
-              }),
-              _buildNavItem(Icons.settings_outlined, 'Settings', false, () {}),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, String label, bool isActive, VoidCallback onTap) {
-    const Color activeColor = Color(0xFF2196F3);
-    const Color inactiveColor = Colors.black;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            color: isActive ? activeColor : inactiveColor,
-            size: 24,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: isActive ? activeColor : inactiveColor,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 

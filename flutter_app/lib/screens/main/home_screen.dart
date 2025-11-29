@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:flutter_app/core/navigation/app_routes.dart';
 import 'package:flutter_app/core/theme/app_colors.dart';
 import 'package:flutter_app/widgets/common/custom_bottom_nav.dart';
+import 'package:flutter_app/providers/app_providers.dart';
 
 import '../discount/discount_page.dart';
 import '../explore/search_page.dart';
@@ -13,6 +15,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.read(bottomNavIndexProvider.notifier).state = 0;
     return Scaffold(
       backgroundColor: AppColors.white,
       body: SafeArea(
@@ -37,6 +40,8 @@ class HomeScreen extends ConsumerWidget {
                 const _SearchBar(),
                 const SizedBox(height: 18),
                 const _QuickMenuRow(),
+                const SizedBox(height: 18),
+                const _AiAssistantBanner(),
                 const SizedBox(height: 24),
                 const _UpcomingTripsSection(),
                 const SizedBox(height: 24),
@@ -297,11 +302,11 @@ class _FlightPoint extends StatelessWidget {
 
 // ================= QUICK MENU =================
 
-class _QuickMenuRow extends StatelessWidget {
+class _QuickMenuRow extends ConsumerWidget {
   const _QuickMenuRow();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final totalWidth =
         MediaQuery.of(context).size.width - 40; // padding horizontal 20+20
     final itemWidth = (totalWidth - 2 * 12) / 3; // 3 item, 2 gap @12
@@ -311,28 +316,37 @@ class _QuickMenuRow extends StatelessWidget {
       children: [
         SizedBox(
           width: itemWidth,
-          child: const _QuickMenuItem(
+          child: _QuickMenuItem(
             icon: Icons.flight_takeoff,
             label: 'Trip',
             color: AppColors.primary,
+            onTap: () {
+              ref.read(bottomNavIndexProvider.notifier).state = 2;
+              Navigator.of(context).pushNamed(AppRoutes.tripList);
+            },
           ),
         ),
         const SizedBox(width: 12),
         SizedBox(
           width: itemWidth,
-          child: const _QuickMenuItem(
+          child: _QuickMenuItem(
             icon: Icons.hotel,
             label: 'Hotel',
             color: AppColors.primaryLight1,
+            onTap: () {},
           ),
         ),
         const SizedBox(width: 12),
         SizedBox(
           width: itemWidth,
-          child: const _QuickMenuItem(
-            icon: Icons.favorite,
-            label: 'Wishlist',
+          child: _QuickMenuItem(
+            icon: Icons.chat_bubble_outline,
+            label: 'AI Chat',
             color: AppColors.primaryDark1,
+            onTap: () {
+              ref.read(bottomNavIndexProvider.notifier).state = 3;
+              Navigator.of(context).pushNamed(AppRoutes.aiChat);
+            },
           ),
         ),
       ],
@@ -344,44 +358,49 @@ class _QuickMenuItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
+  final VoidCallback? onTap;
 
   const _QuickMenuItem({
     required this.icon,
     required this.label,
     required this.color,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 72,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 2),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 16,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.white, size: 22),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.3),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
               ),
-            ),
-          ],
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: Colors.white, size: 22),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -390,37 +409,57 @@ class _QuickMenuItem extends StatelessWidget {
 
 // ================= TOP RECOMMENDATION =================
 
-class _UpcomingTripsSection extends StatelessWidget {
+class _UpcomingTripsSection extends ConsumerWidget {
   const _UpcomingTripsSection();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    void openTripList() {
+      ref.read(bottomNavIndexProvider.notifier).state = 2;
+      Navigator.of(context).pushNamed(AppRoutes.tripList);
+    }
+
     // Dummy data untuk sekarang
     final trips = [
-      const _TripTicketCard(
+      _TripTicketCard(
         country: 'Indonesia',
         city: 'Bali',
         distanceKm: 2.9,
         dateTimeText: '27 Oct 2025 09:00',
+        onTap: openTripList,
       ),
-      const _TripTicketCard(
+      _TripTicketCard(
         country: 'Japan',
         city: 'Tokyo',
         distanceKm: 5.1,
         dateTimeText: '01 Nov 2025 08:30',
+        onTap: openTripList,
       ),
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Upcoming Trips',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.gray5,
-          ),
+        Row(
+          children: [
+            const Text(
+              'Upcoming Trips',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.gray5,
+              ),
+            ),
+            const Spacer(),
+            TextButton(
+              onPressed: openTripList,
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                textStyle: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              child: const Text('View all'),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         SizedBox(
@@ -603,17 +642,21 @@ class _TripTicketCard extends StatelessWidget {
   final String city;
   final double distanceKm;
   final String dateTimeText;
+  final VoidCallback? onTap;
 
   const _TripTicketCard({
     required this.country,
     required this.city,
     required this.distanceKm,
     required this.dateTimeText,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       width: 220,
       decoration: BoxDecoration(
         color: Colors.white,
@@ -762,7 +805,7 @@ class _TripTicketCard extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ));
   }
 }
 
@@ -1464,6 +1507,83 @@ class _RecommendationCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _AiAssistantBanner extends ConsumerWidget {
+  const _AiAssistantBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          colors: [AppColors.primaryLight1, AppColors.primaryDark1],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryDark1.withOpacity(0.25),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'Need trip inspiration?',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'Ask our AI travel assistant anything about your next journey.',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          ElevatedButton(
+            onPressed: () {
+              ref.read(bottomNavIndexProvider.notifier).state = 3;
+              Navigator.of(context).pushNamed(AppRoutes.aiChat);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: AppColors.primaryDark1,
+              elevation: 0,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: const Text(
+              'Chat now',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

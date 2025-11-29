@@ -1,16 +1,20 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
-import '../trip/trip_list.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../../providers/app_providers.dart';
+import '../../widgets/common/custom_bottom_nav.dart';
 
-class AiChat extends StatefulWidget {
+class AiChat extends ConsumerStatefulWidget {
   const AiChat({super.key});
 
   @override
-  _AiChatState createState() => _AiChatState();
+  ConsumerState<AiChat> createState() => _AiChatState();
 }
 
-class _AiChatState extends State<AiChat> with SingleTickerProviderStateMixin {
+class _AiChatState extends ConsumerState<AiChat>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _messageController = TextEditingController();
   final List<ChatMessage> _messages = [];
   final ScrollController _scrollController = ScrollController();
@@ -26,9 +30,7 @@ class _AiChatState extends State<AiChat> with SingleTickerProviderStateMixin {
     "How to find cheap flights?"
   ];
 
-  // Using Groq API - free tier with generous limits
-  // Get your free API key at: https://console.groq.com/
-  static const String _groqApiKey = ""; // Replace with your free API key
+  static String get _groqApiKey => dotenv.env['GROQ_API_KEY'] ?? '';
   static const String _groqApiUrl = "https://api.groq.com/openai/v1/chat/completions";
   
   @override
@@ -44,6 +46,9 @@ class _AiChatState extends State<AiChat> with SingleTickerProviderStateMixin {
     );
     _animationController.forward();
     _addBotMessage("Hello! I'm your AI travel assistant. How can I help you plan your trip today?");
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(bottomNavIndexProvider.notifier).state = 3;
+    });
   }
 
   @override
@@ -148,77 +153,7 @@ class _AiChatState extends State<AiChat> with SingleTickerProviderStateMixin {
           _buildInputArea(),
         ],
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Container(
-          height: 70,
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(Icons.home, 'Home', false),
-              _buildNavItem(Icons.flight_takeoff, 'Trips', false),
-              _buildNavItem(Icons.star_border, 'AI Chat', true),
-              _buildNavItem(Icons.settings_outlined, 'Settings', false),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, String label, bool isActive) {
-    final Color activeColor = Color(0xFF2196F3);
-    final Color inactiveColor = Colors.black;
-    
-    return GestureDetector(
-      onTap: () {
-        if (label == 'Home' && !isActive) {
-          Navigator.pop(context);
-        } else if (label == 'Trips' && !isActive) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const TripList()),
-          );
-        } else if (label == 'AI Chat' && !isActive) {
-          // Already on AI Chat page, do nothing
-        }
-        // Add navigation for other items (Favorite, Settings) as needed
-      },
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            color: isActive ? activeColor : inactiveColor,
-            size: 24,
-          ),
-          SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: isActive ? activeColor : inactiveColor,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-            ),
-          ),
-        ],
-      ),
+      bottomNavigationBar: const CustomBottomNav(),
     );
   }
 

@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/navigation/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../providers/providers.dart';
 
@@ -16,26 +17,31 @@ class CustomBottomNav extends ConsumerWidget {
         icon: Icons.home_outlined,
         activeIcon: Icons.home_rounded,
         label: 'Home',
+        routeName: AppRoutes.home,
       ),
       _NavItemData(
         icon: Icons.favorite_border,
         activeIcon: Icons.favorite,
         label: 'Favorite',
+        routeName: null,
       ),
       _NavItemData(
         icon: Icons.add_circle_outline_outlined,
         activeIcon: Icons.add_circle_outline,
         label: 'Trip',
+        routeName: AppRoutes.tripList,
       ),
       _NavItemData(
         icon: Icons.chat_bubble_outline,
         activeIcon: Icons.chat_bubble,
         label: 'AI Chat',
+        routeName: AppRoutes.aiChat,
       ),
       _NavItemData(
         icon: Icons.settings_outlined,
         activeIcon: Icons.settings,
         label: 'Settings',
+        routeName: null,
       ),
     ];
 
@@ -87,7 +93,9 @@ class CustomBottomNav extends ConsumerWidget {
                         index: i,
                         currentIndex: currentIndex,
                         onTap: () {
+                          if (currentIndex == i) return;
                           ref.read(bottomNavIndexProvider.notifier).state = i;
+                          _handleNavigation(context, navItems[i].routeName);
                         },
                       ),
                     ),
@@ -99,6 +107,23 @@ class CustomBottomNav extends ConsumerWidget {
       ),
     );
   }
+}
+
+void _handleNavigation(BuildContext context, String? routeName) {
+  if (routeName == null) return;
+
+  final currentRoute = ModalRoute.of(context)?.settings.name;
+  if (currentRoute == routeName) return;
+
+  if (routeName == AppRoutes.home) {
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      AppRoutes.home,
+      (route) => false,
+    );
+    return;
+  }
+
+  Navigator.of(context).pushNamed(routeName);
 }
 
 class _NavItem extends StatelessWidget {
@@ -156,10 +181,12 @@ class _NavItemData {
   final IconData icon;
   final IconData activeIcon;
   final String label;
+  final String? routeName;
 
   const _NavItemData({
     required this.icon,
     required this.activeIcon,
     required this.label,
+    required this.routeName,
   });
 }

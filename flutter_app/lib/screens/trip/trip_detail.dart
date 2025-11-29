@@ -74,7 +74,7 @@ class _TripDetailPageState extends State<TripDetailPage> {
           ),
         ),
         content: Text(
-          'Are you sure you want to delete your trip to ${_trip!.destination}?',
+          'Are you sure you want to delete your trip to ${_trip!.destinationCity.isNotEmpty ? _trip!.destinationCity : _trip!.destination}?',
           style: TextStyle(color: Colors.grey[700]),
         ),
         actions: [
@@ -174,13 +174,33 @@ class _TripDetailPageState extends State<TripDetailPage> {
                 children: [
                   // Destination
                   Text(
-                    _trip!.destination,
+                    _trip!.destinationCity.isNotEmpty
+                        ? _trip!.destinationCity
+                        : _trip!.destination,
                     style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF2C3E50),
                     ),
                   ),
+              if (_trip!.originCity.isNotEmpty ||
+                  _trip!.destinationCity.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.swap_horiz, color: Color(0xFF2196F3)),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${_trip!.originCity.isNotEmpty ? _trip!.originCity : 'Origin'} → ${_trip!.destinationCity.isNotEmpty ? _trip!.destinationCity : _trip!.destination}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2C3E50),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
                   const SizedBox(height: 12),
                   
                   // Trip Type and Accommodation
@@ -270,6 +290,48 @@ class _TripDetailPageState extends State<TripDetailPage> {
                         ),
                       ),
                     ],
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Preferences Section
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SectionTitle(
+                    title: 'Travel preferences',
+                    icon: Icons.tune,
+                  ),
+                  const Divider(),
+                  const SizedBox(height: 12),
+                  _buildPreferenceRow(
+                    icon: Icons.flight_takeoff,
+                    label: 'Flight assistance',
+                    isEnabled: _trip!.wantFlight,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildPreferenceRow(
+                    icon: Icons.hotel,
+                    label: 'Hotel booking',
+                    isEnabled: _trip!.wantHotel,
                   ),
                 ],
               ),
@@ -548,6 +610,50 @@ class _TripDetailPageState extends State<TripDetailPage> {
     } else {
       return Icons.home;
     }
+  }
+
+  Widget _buildPreferenceRow({
+    required IconData icon,
+    required String label,
+    required bool isEnabled,
+  }) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          color: isEnabled ? const Color(0xFF2196F3) : Colors.grey[400],
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF2C3E50),
+            ),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: (isEnabled
+                    ? const Color(0xFF2196F3)
+                    : Colors.grey[400])
+                ?.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            isEnabled ? 'Enabled' : 'Disabled',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isEnabled ? const Color(0xFF2196F3) : Colors.grey[500],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 

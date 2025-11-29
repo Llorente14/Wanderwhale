@@ -16,6 +16,8 @@ class SampleData {
       Trip(
         id: 'trip_1',
         destination: 'Paris, France',
+        originCity: 'Jakarta, Indonesia',
+        destinationCity: 'Paris, France',
         startDate: DateTime(now.year, now.month + 1, 15),
         endDate: DateTime(now.year, now.month + 1, 22),
         durationInDays: 7,
@@ -24,6 +26,8 @@ class SampleData {
         accommodationType: 'Hotel',
         budget: 3500.0,
         notes: 'Romantic getaway to the City of Light. Planning to visit the Eiffel Tower, Louvre Museum, and enjoy French cuisine.',
+        wantFlight: true,
+        wantHotel: true,
       ),
     );
     
@@ -32,6 +36,8 @@ class SampleData {
       Trip(
         id: 'trip_2',
         destination: 'New York, USA',
+        originCity: 'London, UK',
+        destinationCity: 'New York, USA',
         startDate: DateTime(now.year, now.month + 2, 5),
         endDate: DateTime(now.year, now.month + 2, 8),
         durationInDays: 3,
@@ -40,6 +46,8 @@ class SampleData {
         accommodationType: 'Hotel',
         budget: 2000.0,
         notes: 'Client meeting and conference attendance.',
+        wantFlight: true,
+        wantHotel: true,
       ),
     );
     
@@ -48,6 +56,8 @@ class SampleData {
       Trip(
         id: 'trip_3',
         destination: 'Bali, Indonesia',
+        originCity: 'Surabaya, Indonesia',
+        destinationCity: 'Bali, Indonesia',
         startDate: DateTime(now.year, now.month + 3, 1),
         endDate: DateTime(now.year, now.month + 3, 14),
         durationInDays: 13,
@@ -56,6 +66,8 @@ class SampleData {
         accommodationType: 'Resort',
         budget: 4500.0,
         notes: 'Surfing, hiking, and exploring the beautiful beaches and temples of Bali.',
+        wantFlight: true,
+        wantHotel: true,
       ),
     );
     
@@ -64,6 +76,8 @@ class SampleData {
       Trip(
         id: 'trip_4',
         destination: 'Tokyo, Japan',
+        originCity: 'Sydney, Australia',
+        destinationCity: 'Tokyo, Japan',
         startDate: DateTime(now.year, now.month + 4, 10),
         endDate: DateTime(now.year, now.month + 4, 20),
         durationInDays: 10,
@@ -72,6 +86,8 @@ class SampleData {
         accommodationType: 'Apartment',
         budget: 6000.0,
         notes: 'Family vacation with kids. Planning to visit Disneyland, temples, and experience Japanese culture.',
+        wantFlight: true,
+        wantHotel: true,
       ),
     );
     
@@ -80,6 +96,8 @@ class SampleData {
       Trip(
         id: 'trip_5',
         destination: 'Thailand',
+        originCity: 'Kuala Lumpur, Malaysia',
+        destinationCity: 'Thailand',
         startDate: DateTime(now.year, now.month + 5, 1),
         endDate: DateTime(now.year, now.month + 5, 21),
         durationInDays: 20,
@@ -87,6 +105,8 @@ class SampleData {
         tripType: 'Backpacking',
         accommodationType: 'Hostel',
         notes: 'Budget backpacking trip through Thailand. Exploring Bangkok, Chiang Mai, and the islands.',
+        wantFlight: false,
+        wantHotel: false,
       ),
     );
   }

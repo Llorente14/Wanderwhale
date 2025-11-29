@@ -98,6 +98,8 @@ class TripModel {
 class Trip {
   final String id;
   final String destination;
+  final String originCity;
+  final String destinationCity;
   final DateTime startDate;
   final DateTime endDate;
   final int durationInDays;
@@ -106,10 +108,14 @@ class Trip {
   final String accommodationType;
   final double? budget;
   final String? notes;
+  final bool wantFlight;
+  final bool wantHotel;
 
   Trip({
     required this.id,
     required this.destination,
+    this.originCity = '',
+    this.destinationCity = '',
     required this.startDate,
     required this.endDate,
     required this.durationInDays,
@@ -118,6 +124,8 @@ class Trip {
     required this.accommodationType,
     this.budget,
     this.notes,
+    this.wantFlight = false,
+    this.wantHotel = false,
   });
 
   // Factory constructor for creating a Trip from JSON
@@ -125,6 +133,8 @@ class Trip {
     return Trip(
       id: json['id'] as String,
       destination: json['destination'] as String,
+      originCity: json['originCity'] as String? ?? '',
+      destinationCity: json['destinationCity'] as String? ?? '',
       startDate: DateTime.parse(json['startDate'] as String),
       endDate: DateTime.parse(json['endDate'] as String),
       durationInDays: json['durationInDays'] as int,
@@ -133,6 +143,8 @@ class Trip {
       accommodationType: json['accommodationType'] as String,
       budget: json['budget'] != null ? (json['budget'] as num).toDouble() : null,
       notes: json['notes'] as String?,
+      wantFlight: json['wantFlight'] as bool? ?? false,
+      wantHotel: json['wantHotel'] as bool? ?? false,
     );
   }
 
@@ -141,6 +153,8 @@ class Trip {
     return {
       'id': id,
       'destination': destination,
+      'originCity': originCity,
+      'destinationCity': destinationCity,
       'startDate': startDate.toIso8601String(),
       'endDate': endDate.toIso8601String(),
       'durationInDays': durationInDays,
@@ -149,6 +163,8 @@ class Trip {
       'accommodationType': accommodationType,
       'budget': budget,
       'notes': notes,
+      'wantFlight': wantFlight,
+      'wantHotel': wantHotel,
     };
   }
 
@@ -156,6 +172,8 @@ class Trip {
   Trip copyWith({
     String? id,
     String? destination,
+    String? originCity,
+    String? destinationCity,
     DateTime? startDate,
     DateTime? endDate,
     int? durationInDays,
@@ -164,10 +182,14 @@ class Trip {
     String? accommodationType,
     double? budget,
     String? notes,
+    bool? wantFlight,
+    bool? wantHotel,
   }) {
     return Trip(
       id: id ?? this.id,
       destination: destination ?? this.destination,
+      originCity: originCity ?? this.originCity,
+      destinationCity: destinationCity ?? this.destinationCity,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       durationInDays: durationInDays ?? this.durationInDays,
@@ -176,6 +198,8 @@ class Trip {
       accommodationType: accommodationType ?? this.accommodationType,
       budget: budget ?? this.budget,
       notes: notes ?? this.notes,
+      wantFlight: wantFlight ?? this.wantFlight,
+      wantHotel: wantHotel ?? this.wantHotel,
     );
   }
 

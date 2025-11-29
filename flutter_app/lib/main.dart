@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'screens/main/home_screen.dart';
+import 'core/navigation/app_routes.dart';
 import 'core/theme/app_colors.dart';
+import 'screens/chatbot/ai_chat.dart';
+import 'screens/main/home_screen.dart';
+import 'screens/trip/trip_list.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -68,7 +71,12 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const HomeScreen(),
+      initialRoute: AppRoutes.home,
+      routes: {
+        AppRoutes.home: (_) => const HomeScreen(),
+        AppRoutes.tripList: (_) => const TripList(),
+        AppRoutes.aiChat: (_) => const AiChat(),
+      },
     );
   }
 }

@@ -33,7 +33,9 @@ class TripCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      trip.destination,
+                      trip.destinationCity.isNotEmpty
+                          ? trip.destinationCity
+                          : trip.destination,
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -45,6 +47,30 @@ class TripCard extends StatelessWidget {
                   _buildTripTypeTag(trip.tripType),
                 ],
               ),
+              if (trip.originCity.isNotEmpty ||
+                  trip.destinationCity.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.swap_horiz,
+                      size: 16,
+                      color: Colors.grey[600],
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        '${trip.originCity.isNotEmpty ? trip.originCity : 'Origin'} → ${trip.destinationCity.isNotEmpty ? trip.destinationCity : trip.destination}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 12),
               
               // Date Range

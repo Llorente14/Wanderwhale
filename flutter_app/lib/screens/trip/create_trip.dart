@@ -20,6 +20,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
   final int _totalSteps = 7;
 
   // Form fields
+  final TextEditingController _originController = TextEditingController();
   final TextEditingController _destinationController = TextEditingController();
   DateTime? _startDate;
   DateTime? _endDate;
@@ -28,6 +29,20 @@ class _CreateTripPageState extends State<CreateTripPage> {
   String? _accommodationType;
   final TextEditingController _budgetController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
+  bool _wantFlight = false;
+  bool _wantHotel = false;
+
+  static const List<_FlightOption> _mockFlights = [
+    _FlightOption(airline: 'AirFast', departureTime: '08:00', priceText: '\$120'),
+    _FlightOption(airline: 'SkyWings', departureTime: '13:30', priceText: '\$150'),
+    _FlightOption(airline: 'FlyGo', departureTime: '18:45', priceText: '\$99'),
+  ];
+
+  static const List<_HotelOption> _mockHotels = [
+    _HotelOption(name: 'Sunrise Hotel', rating: 4.5, priceText: '\$60 / night'),
+    _HotelOption(name: 'City Comfort Inn', rating: 4.0, priceText: '\$45 / night'),
+    _HotelOption(name: 'Grand Plaza', rating: 4.8, priceText: '\$120 / night'),
+  ];
 
   final List<String> _tripTypes = [
     'Vacation',
@@ -57,12 +72,16 @@ class _CreateTripPageState extends State<CreateTripPage> {
 
   void _loadExistingTrip() {
     final trip = widget.existingTrip!;
-    _destinationController.text = trip.destination;
+    _originController.text = trip.originCity;
+    _destinationController.text =
+        trip.destinationCity.isNotEmpty ? trip.destinationCity : trip.destination;
     _startDate = trip.startDate;
     _endDate = trip.endDate;
     _travelers = trip.travelers;
     _tripType = trip.tripType;
     _accommodationType = trip.accommodationType;
+    _wantFlight = trip.wantFlight;
+    _wantHotel = trip.wantHotel;
     if (trip.budget != null) {
       _budgetController.text = trip.budget!.toStringAsFixed(0);
     }
@@ -74,6 +93,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
   @override
   void dispose() {
     _pageController.dispose();
+    _originController.dispose();
     _destinationController.dispose();
     _budgetController.dispose();
     _notesController.dispose();
@@ -114,7 +134,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
   bool _canProceedToNextStep() {
     switch (_currentStep) {
       case 0:
-        return _destinationController.text.trim().isNotEmpty;
+        return _originController.text.trim().isNotEmpty &&
+            _destinationController.text.trim().isNotEmpty;
       case 1:
         return _startDate != null && _endDate != null && _calculatedDuration > 0;
       case 2:
@@ -144,6 +165,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
     final trip = Trip(
       id: tripId,
       destination: _destinationController.text.trim(),
+      originCity: _originController.text.trim(),
+      destinationCity: _destinationController.text.trim(),
       startDate: _startDate!,
       endDate: _endDate!,
       durationInDays: _calculatedDuration,
@@ -156,6 +179,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
       notes: _notesController.text.trim().isNotEmpty
           ? _notesController.text.trim()
           : null,
+      wantFlight: _wantFlight,
+      wantHotel: _wantHotel,
     );
 
     if (widget.existingTrip != null) {
@@ -345,13 +370,17 @@ class _CreateTripPageState extends State<CreateTripPage> {
 
   // Step 1: Destination
   Widget _buildStep1Destination() {
+    final originFilled = _originController.text.trim().isNotEmpty;
+    final destinationFilled = _destinationController.text.trim().isNotEmpty;
+    final canShowResults = originFilled && destinationFilled;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Where are you going?',
+            'Plan your route',
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -360,19 +389,41 @@ class _CreateTripPageState extends State<CreateTripPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Enter your destination',
+            'Tell us where you are and where you want to go. We can also suggest flights and hotels.',
             style: TextStyle(
               fontSize: 16,
               color: Colors.grey[600],
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
+          TextField(
+            controller: _originController,
+            decoration: InputDecoration(
+              labelText: 'Where are you coming from?',
+              hintText: 'e.g., Jakarta, Indonesia',
+              prefixIcon:
+                  const Icon(Icons.my_location, color: Color(0xFF2196F3)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFF2196F3),
+                  width: 2,
+                ),
+              ),
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 16),
           TextField(
             controller: _destinationController,
             decoration: InputDecoration(
-              labelText: 'Destination',
+              labelText: 'Where do you want to go?',
               hintText: 'e.g., Paris, France',
-              prefixIcon: const Icon(Icons.location_on, color: Color(0xFF2196F3)),
+              prefixIcon:
+                  const Icon(Icons.location_on, color: Color(0xFF2196F3)),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -382,6 +433,254 @@ class _CreateTripPageState extends State<CreateTripPage> {
               ),
             ),
             onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 24),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                SwitchListTile.adaptive(
+                  value: _wantFlight,
+                  onChanged: (value) => setState(() => _wantFlight = value),
+                  title: const Text(
+                    'Do you want to buy a flight ticket?',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2C3E50),
+                    ),
+                  ),
+                  subtitle: const Text('Show the best flight options'),
+                  activeColor: const Color(0xFF2196F3),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                ),
+                const Divider(height: 0),
+                SwitchListTile.adaptive(
+                  value: _wantHotel,
+                  onChanged: (value) => setState(() => _wantHotel = value),
+                  title: const Text(
+                    'Do you want to book a hotel?',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2C3E50),
+                    ),
+                  ),
+                  subtitle: const Text('Discover places to stay'),
+                  activeColor: const Color(0xFF2196F3),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                ),
+              ],
+            ),
+          ),
+          if ((_wantFlight || _wantHotel) && !canShowResults) ...[
+            const SizedBox(height: 18),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2196F3).withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                'Enter both origin and destination to see personalized suggestions.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF2C3E50),
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          if (_wantFlight && canShowResults) _buildFlightSuggestions(),
+          if (_wantHotel && canShowResults) ...[
+            const SizedBox(height: 20),
+            _buildHotelSuggestions(),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFlightSuggestions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Available flights',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF2C3E50),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ..._mockFlights.map(
+          (flight) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _buildFlightCard(flight),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHotelSuggestions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Available hotels',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF2C3E50),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ..._mockHotels.map(
+          (hotel) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _buildHotelCard(hotel),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFlightCard(_FlightOption flight) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF2196F3).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.flight_takeoff, color: Color(0xFF2196F3)),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  flight.airline,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF2C3E50),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Departure • ${flight.departureTime}',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            flight.priceText,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF2C3E50),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHotelCard(_HotelOption hotel) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFC107).withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.hotel, color: Color(0xFFFFA000)),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  hotel.name,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF2C3E50),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.star, size: 16, color: Color(0xFFFFA000)),
+                    const SizedBox(width: 4),
+                    Text(
+                      hotel.rating.toStringAsFixed(1),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2C3E50),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Text(
+            hotel.priceText,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF2C3E50),
+            ),
           ),
         ],
       ),
@@ -822,6 +1121,30 @@ class _CreateTripPageState extends State<CreateTripPage> {
       ),
     );
   }
+}
+
+class _FlightOption {
+  final String airline;
+  final String departureTime;
+  final String priceText;
+
+  const _FlightOption({
+    required this.airline,
+    required this.departureTime,
+    required this.priceText,
+  });
+}
+
+class _HotelOption {
+  final String name;
+  final double rating;
+  final String priceText;
+
+  const _HotelOption({
+    required this.name,
+    required this.rating,
+    required this.priceText,
+  });
 }
 
 
