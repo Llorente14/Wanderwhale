@@ -110,6 +110,12 @@ class Trip {
   final String? notes;
   final bool wantFlight;
   final bool wantHotel;
+  final String? hotelName;
+  final String? roomType;
+  final double? hotelPrice;
+  final DateTime? hotelCheckIn;
+  final DateTime? hotelCheckOut;
+  final String syncStatus; // synced, pending, failed
 
   Trip({
     required this.id,
@@ -126,6 +132,12 @@ class Trip {
     this.notes,
     this.wantFlight = false,
     this.wantHotel = false,
+    this.hotelName,
+    this.roomType,
+    this.hotelPrice,
+    this.hotelCheckIn,
+    this.hotelCheckOut,
+    this.syncStatus = 'pending',
   });
 
   // Factory constructor for creating a Trip from JSON
@@ -145,6 +157,12 @@ class Trip {
       notes: json['notes'] as String?,
       wantFlight: json['wantFlight'] as bool? ?? false,
       wantHotel: json['wantHotel'] as bool? ?? false,
+      hotelName: json['hotelName'] as String?,
+      roomType: json['roomType'] as String?,
+      hotelPrice: json['hotelPrice'] != null ? (json['hotelPrice'] as num).toDouble() : null,
+      hotelCheckIn: json['hotelCheckIn'] != null ? DateTime.parse(json['hotelCheckIn'] as String) : null,
+      hotelCheckOut: json['hotelCheckOut'] != null ? DateTime.parse(json['hotelCheckOut'] as String) : null,
+      syncStatus: json['syncStatus'] as String? ?? 'pending',
     );
   }
 
@@ -165,6 +183,12 @@ class Trip {
       'notes': notes,
       'wantFlight': wantFlight,
       'wantHotel': wantHotel,
+      'hotelName': hotelName,
+      'roomType': roomType,
+      'hotelPrice': hotelPrice,
+      'hotelCheckIn': hotelCheckIn?.toIso8601String(),
+      'hotelCheckOut': hotelCheckOut?.toIso8601String(),
+      'syncStatus': syncStatus,
     };
   }
 
@@ -184,6 +208,12 @@ class Trip {
     String? notes,
     bool? wantFlight,
     bool? wantHotel,
+    String? hotelName,
+    String? roomType,
+    double? hotelPrice,
+    DateTime? hotelCheckIn,
+    DateTime? hotelCheckOut,
+    String? syncStatus,
   }) {
     return Trip(
       id: id ?? this.id,
@@ -200,6 +230,12 @@ class Trip {
       notes: notes ?? this.notes,
       wantFlight: wantFlight ?? this.wantFlight,
       wantHotel: wantHotel ?? this.wantHotel,
+      hotelName: hotelName ?? this.hotelName,
+      roomType: roomType ?? this.roomType,
+      hotelPrice: hotelPrice ?? this.hotelPrice,
+      hotelCheckIn: hotelCheckIn ?? this.hotelCheckIn,
+      hotelCheckOut: hotelCheckOut ?? this.hotelCheckOut,
+      syncStatus: syncStatus ?? this.syncStatus,
     );
   }
 

@@ -1,9 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/trip_model.dart';
 import '../../providers/app_providers.dart';
-import '../../services/trip_service.dart';
 import '../../widgets/common/custom_bottom_nav.dart';
 import '../../widgets/trip_card.dart';
 import 'create_trip.dart';
@@ -17,25 +18,13 @@ class TripList extends ConsumerStatefulWidget {
 }
 
 class _TripListState extends ConsumerState<TripList> {
-  final TripService _tripService = TripService();
 
   @override
   void initState() {
     super.initState();
-    _tripService.addListener(_onTripsChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(bottomNavIndexProvider.notifier).state = 2;
     });
-  }
-
-  @override
-  void dispose() {
-    _tripService.removeListener(_onTripsChanged);
-    super.dispose();
-  }
-
-  void _onTripsChanged() {
-    setState(() {});
   }
 
   void _navigateToTripDetail(Trip trip) {
@@ -61,7 +50,7 @@ class _TripListState extends ConsumerState<TripList> {
 
   @override
   Widget build(BuildContext context) {
-    final trips = _tripService.trips;
+    final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -78,22 +67,58 @@ class _TripListState extends ConsumerState<TripList> {
           ),
         ),
       ),
-      body: trips.isEmpty
-          ? _buildEmptyState()
-          : RefreshIndicator(
-              onRefresh: () async {
-                setState(() {});
+      body: user == null 
+          ? const Center(child: Text("Please login to view trips"))
+          : StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('trips')
+                  .where('userId', isEqualTo: user.uid)
+                  .orderBy('createdAt', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final docs = snapshot.data?.docs ?? [];
+                if (docs.isEmpty) {
+                  return _buildEmptyState();
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final doc = docs[index];
+                    final data = doc.data() as Map<String, dynamic>;
+                    // Ensure ID is included
+                    data['id'] = doc.id;
+                    
+                    // Handle potential date parsing issues if fields are missing or different types
+                    // Trip.fromJson handles string parsing for dates, but Firestore returns Timestamp
+                    // We need to convert Timestamps to Strings or update Trip.fromJson to handle Timestamps.
+                    // Let's update the data map to convert Timestamps to ISO strings for Trip.fromJson
+                    _convertTimestamps(data);
+
+                    Trip trip;
+                    try {
+                      trip = Trip.fromJson(data);
+                    } catch (e) {
+                      print("Error parsing trip ${doc.id}: $e");
+                      return const SizedBox.shrink(); // Skip invalid trips
+                    }
+
+                    return TripCard(
+                      trip: trip,
+                      onTap: () => _navigateToTripDetail(trip),
+                    );
+                  },
+                );
               },
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                itemCount: trips.length,
-                itemBuilder: (context, index) {
-                  return TripCard(
-                    trip: trips[index],
-                    onTap: () => _navigateToTripDetail(trips[index]),
-                  );
-                },
-              ),
             ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _createNewTrip,
@@ -109,6 +134,15 @@ class _TripListState extends ConsumerState<TripList> {
       ),
       bottomNavigationBar: const CustomBottomNav(),
     );
+  }
+
+  void _convertTimestamps(Map<String, dynamic> data) {
+    final keys = ['startDate', 'endDate', 'hotelCheckIn', 'hotelCheckOut', 'createdAt', 'updatedAt'];
+    for (final key in keys) {
+      if (data[key] is Timestamp) {
+        data[key] = (data[key] as Timestamp).toDate().toIso8601String();
+      }
+    }
   }
 
   Widget _buildEmptyState() {

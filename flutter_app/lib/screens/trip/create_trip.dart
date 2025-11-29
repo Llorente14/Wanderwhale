@@ -1,7 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/trip_model.dart';
+import '../../models/simple_flight_model.dart';
 import '../../services/trip_service.dart';
+import '../flight/flight_list_page.dart';
+
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
+import '../../models/hotel_offer_model.dart';
+import '../hotel/hotel_recommendations.dart';
+import '../../utils/formatters.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/api_service.dart';
 
 class CreateTripPage extends StatefulWidget {
   final Trip? existingTrip; // For editing existing trips
@@ -31,6 +42,14 @@ class _CreateTripPageState extends State<CreateTripPage> {
   final TextEditingController _notesController = TextEditingController();
   bool _wantFlight = false;
   bool _wantHotel = false;
+  SimpleFlightModel? _chosenFlight;
+  List<String> _chosenSeats = [];
+  HotelOfferGroup? _chosenHotel;
+  HotelOffer? _chosenRoom;
+
+  String? autoCity;
+  bool locationLoaded = false;
+  bool _isSaving = false;
 
   static const List<_FlightOption> _mockFlights = [
     _FlightOption(airline: 'AirFast', departureTime: '08:00', priceText: '\$120'),
@@ -67,7 +86,52 @@ class _CreateTripPageState extends State<CreateTripPage> {
     super.initState();
     if (widget.existingTrip != null) {
       _loadExistingTrip();
+      locationLoaded = true; // Skip auto-detect if editing
+    } else {
+      loadCity();
     }
+  }
+
+  void loadCity() async {
+    String? city = await getUserCity();
+    if (mounted) {
+      setState(() {
+        autoCity = city;
+        locationLoaded = true;
+      });
+    }
+  }
+
+  Future<String?> getUserCity() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.deniedForever ||
+        permission == LocationPermission.denied) {
+      return null; // location blocked or rejected
+    }
+
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        return placemarks.first.locality; // City name
+      }
+    } catch (e) {
+      debugPrint('Error getting location: $e');
+    }
+
+    return null;
   }
 
   void _loadExistingTrip() {
@@ -88,6 +152,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
     if (trip.notes != null) {
       _notesController.text = trip.notes!;
     }
+    // Future: load persisted chosen flight once wired to backend model
   }
 
   @override
@@ -134,7 +199,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
   bool _canProceedToNextStep() {
     switch (_currentStep) {
       case 0:
-        return _originController.text.trim().isNotEmpty &&
+        return (autoCity != null || _originController.text.trim().isNotEmpty) &&
             _destinationController.text.trim().isNotEmpty;
       case 1:
         return _startDate != null && _endDate != null && _calculatedDuration > 0;
@@ -152,7 +217,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
     }
   }
 
-  void _saveTrip() {
+  Future<void> _saveTrip() async {
     if (!_canProceedToNextStep()) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please complete all required fields')),
@@ -160,42 +225,139 @@ class _CreateTripPageState extends State<CreateTripPage> {
       return;
     }
 
-    final tripId = widget.existingTrip?.id ?? DateTime.now().millisecondsSinceEpoch.toString();
-    
-    final trip = Trip(
-      id: tripId,
-      destination: _destinationController.text.trim(),
-      originCity: _originController.text.trim(),
-      destinationCity: _destinationController.text.trim(),
-      startDate: _startDate!,
-      endDate: _endDate!,
-      durationInDays: _calculatedDuration,
-      travelers: _travelers,
-      tripType: _tripType!,
-      accommodationType: _accommodationType!,
-      budget: _budgetController.text.trim().isNotEmpty
-          ? double.tryParse(_budgetController.text.trim())
-          : null,
-      notes: _notesController.text.trim().isNotEmpty
-          ? _notesController.text.trim()
-          : null,
-      wantFlight: _wantFlight,
-      wantHotel: _wantHotel,
-    );
+    setState(() {
+      _isSaving = true;
+    });
 
-    if (widget.existingTrip != null) {
-      _tripService.updateTrip(trip);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Trip updated successfully')),
-      );
-    } else {
-      _tripService.addTrip(trip);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Trip created successfully')),
-      );
+    try {
+      final originCity = autoCity ?? _originController.text.trim();
+      final destinationCity = _destinationController.text.trim();
+      
+      // Prepare Flight Data
+      Map<String, dynamic>? flightData;
+      if (_wantFlight && _chosenFlight != null) {
+        flightData = {
+          "airline": _chosenFlight!.airline,
+          "flightNumber": _chosenFlight!.flightNumber,
+          "aircraft": _chosenFlight!.aircraft,
+          "origin": _chosenFlight!.origin,
+          "destination": _chosenFlight!.destination,
+          "departure": _chosenFlight!.departureTime.toIso8601String(),
+          "arrival": _chosenFlight!.arrivalTime.toIso8601String(),
+          "price": _chosenFlight!.price,
+        };
+      }
+
+      // Prepare Hotel Data
+      Map<String, dynamic>? hotelData;
+      Map<String, dynamic>? roomData;
+      if (_wantHotel && _chosenHotel != null && _chosenRoom != null) {
+        hotelData = {
+          "hotelName": _chosenHotel!.hotel.name,
+          "hotelId": _chosenHotel!.hotel.hotelId,
+          "rating": _chosenHotel!.hotel.rating,
+          "address": _chosenHotel!.hotel.address?.lines,
+        };
+        
+        roomData = {
+          "roomType": _chosenRoom!.room?.type ?? 'Standard',
+          "description": _chosenRoom!.room?.description,
+          "pricePerNight": _chosenRoom!.price.total, // Assuming total is per night or total for stay, usually total for stay in Amadeus
+          "totalPrice": _chosenRoom!.price.total,
+          "checkIn": _chosenRoom!.checkInDate?.toIso8601String(),
+          "checkOut": _chosenRoom!.checkOutDate?.toIso8601String(),
+        };
+      }
+
+      final tripData = {
+        "title": "Trip to $destinationCity",
+        "origin": originCity,
+        "destination": destinationCity,
+        "startDate": _startDate!.toIso8601String(),
+        "endDate": _endDate!.toIso8601String(),
+        "passengers": _travelers,
+        "tripType": _tripType,
+        "accommodationType": _accommodationType,
+        "budget": _budgetController.text.trim().isNotEmpty
+            ? double.tryParse(_budgetController.text.trim())
+            : null,
+        "notes": _notesController.text.trim().isNotEmpty
+            ? _notesController.text.trim()
+            : null,
+        
+        // Flight
+        "flight": flightData,
+        "seats": _wantFlight ? _chosenSeats : null,
+
+        // Hotel
+        "hotel": hotelData,
+        "room": roomData,
+      };
+
+      // 1. Send to backend
+      final apiService = ApiService();
+      dynamic backendResponse;
+      String syncStatus = 'pending';
+
+      try {
+         if (widget.existingTrip != null) {
+            final result = await apiService.updateTrip(widget.existingTrip!.id, tripData);
+            backendResponse = result.toJson();
+            syncStatus = 'synced';
+         } else {
+            final result = await apiService.createTrip(tripData);
+            backendResponse = result.toJson();
+            syncStatus = 'synced';
+         }
+      } catch (e) {
+        print("Backend error: $e");
+        backendResponse = {"error": e.toString()};
+        syncStatus = 'failed';
+        // We continue to save to Firebase even if backend fails
+      }
+
+      // 2. Save to Firebase
+      final user = FirebaseAuth.instance.currentUser;
+      final firestoreData = {
+        ...tripData,
+        "backend_response": backendResponse,
+        "syncStatus": syncStatus,
+        "userId": user?.uid,
+        if (widget.existingTrip == null) "createdAt": FieldValue.serverTimestamp(),
+        "updatedAt": FieldValue.serverTimestamp(),
+      };
+
+      if (widget.existingTrip != null) {
+         await FirebaseFirestore.instance.collection("trips").doc(widget.existingTrip!.id).set(firestoreData, SetOptions(merge: true));
+      } else {
+         await FirebaseFirestore.instance.collection("trips").add(firestoreData);
+      }
+
+      // 3. Show success
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(syncStatus == 'synced' 
+              ? "Trip saved and synced successfully!" 
+              : "Trip saved locally (Sync failed)"),
+            backgroundColor: syncStatus == 'synced' ? Colors.green : Colors.orange,
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error saving trip: $e")),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
-
-    Navigator.pop(context);
   }
 
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
@@ -334,9 +496,11 @@ class _CreateTripPageState extends State<CreateTripPage> {
                   Expanded(
                     flex: 2,
                     child: ElevatedButton(
-                      onPressed: _currentStep == _totalSteps - 1
-                          ? _saveTrip
-                          : (_canProceedToNextStep() ? _nextStep : null),
+                      onPressed: _isSaving
+                          ? null
+                          : (_currentStep == _totalSteps - 1
+                              ? _saveTrip
+                              : (_canProceedToNextStep() ? _nextStep : null)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2196F3),
                         foregroundColor: Colors.white,
@@ -346,17 +510,26 @@ class _CreateTripPageState extends State<CreateTripPage> {
                         ),
                         elevation: 2,
                       ),
-                      child: Text(
-                        _currentStep == _totalSteps - 1
-                            ? widget.existingTrip != null
-                                ? 'Update Trip'
-                                : 'Create Trip'
-                            : 'Next',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      child: _isSaving
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text(
+                              _currentStep == _totalSteps - 1
+                                  ? widget.existingTrip != null
+                                      ? 'Update Trip'
+                                      : 'Create Trip'
+                                  : 'Next',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ),
                 ],
@@ -370,7 +543,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
 
   // Step 1: Destination
   Widget _buildStep1Destination() {
-    final originFilled = _originController.text.trim().isNotEmpty;
+    final originFilled = autoCity != null || _originController.text.trim().isNotEmpty;
     final destinationFilled = _destinationController.text.trim().isNotEmpty;
     final canShowResults = originFilled && destinationFilled;
 
@@ -396,26 +569,41 @@ class _CreateTripPageState extends State<CreateTripPage> {
             ),
           ),
           const SizedBox(height: 24),
-          TextField(
-            controller: _originController,
-            decoration: InputDecoration(
-              labelText: 'Where are you coming from?',
-              hintText: 'e.g., Jakarta, Indonesia',
-              prefixIcon:
-                  const Icon(Icons.my_location, color: Color(0xFF2196F3)),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Color(0xFF2196F3),
-                  width: 2,
-                ),
-              ),
-            ),
-            onChanged: (_) => setState(() {}),
-          ),
+          locationLoaded == false
+              ? const Center(child: CircularProgressIndicator())
+              : autoCity != null
+                  ? TextFormField(
+                      controller: TextEditingController(text: autoCity),
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: "Where are you coming from?",
+                        suffixIcon: Icon(Icons.location_on, color: Color(0xFF2196F3)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
+                      ),
+                    )
+                  : TextField(
+                      controller: _originController,
+                      decoration: InputDecoration(
+                        labelText: 'Where are you coming from?',
+                        hintText: 'e.g., Jakarta, Indonesia',
+                        helperText: "Location permission denied — enter manually",
+                        prefixIcon:
+                            const Icon(Icons.my_location, color: Color(0xFF2196F3)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF2196F3),
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    ),
           const SizedBox(height: 16),
           TextField(
             controller: _destinationController,
@@ -435,82 +623,11 @@ class _CreateTripPageState extends State<CreateTripPage> {
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 24),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                SwitchListTile.adaptive(
-                  value: _wantFlight,
-                  onChanged: (value) => setState(() => _wantFlight = value),
-                  title: const Text(
-                    'Do you want to buy a flight ticket?',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF2C3E50),
-                    ),
-                  ),
-                  subtitle: const Text('Show the best flight options'),
-                  activeColor: const Color(0xFF2196F3),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                ),
-                const Divider(height: 0),
-                SwitchListTile.adaptive(
-                  value: _wantHotel,
-                  onChanged: (value) => setState(() => _wantHotel = value),
-                  title: const Text(
-                    'Do you want to book a hotel?',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF2C3E50),
-                    ),
-                  ),
-                  subtitle: const Text('Discover places to stay'),
-                  activeColor: const Color(0xFF2196F3),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                ),
-              ],
-            ),
-          ),
-          if ((_wantFlight || _wantHotel) && !canShowResults) ...[
-            const SizedBox(height: 18),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF2196F3).withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text(
-                'Enter both origin and destination to see personalized suggestions.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF2C3E50),
-                ),
-              ),
-            ),
-          ],
-          const SizedBox(height: 12),
-          if (_wantFlight && canShowResults) _buildFlightSuggestions(),
-          if (_wantHotel && canShowResults) ...[
-            const SizedBox(height: 20),
-            _buildHotelSuggestions(),
-          ],
         ],
       ),
     );
   }
+
 
   Widget _buildFlightSuggestions() {
     return Column(
@@ -682,6 +799,118 @@ class _CreateTripPageState extends State<CreateTripPage> {
               color: Color(0xFF2C3E50),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChosenFlightSummary() {
+    final flight = _chosenFlight!;
+    String fmtTime(DateTime t) =>
+        '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2196F3).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.flight, color: Color(0xFF2196F3)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${flight.origin} → ${flight.destination}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF2C3E50),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${flight.airline} • ${flight.flightNumber} • ${flight.aircraft}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Seats: ${_chosenSeats.join(', ')}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2196F3),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '\$${flight.price}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF2C3E50),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Icon(Icons.schedule, size: 16, color: Color(0xFF2196F3)),
+              const SizedBox(width: 6),
+              Text(
+                '${fmtTime(flight.departureTime)} – ${fmtTime(flight.arrivalTime)}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ],
+          ),
+          if (_chosenSeats.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Icon(Icons.event_seat, size: 16, color: Color(0xFF2196F3)),
+                const SizedBox(width: 6),
+                Text(
+                  'Seats: ${_chosenSeats.join(', ')}',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF2C3E50),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -876,6 +1105,80 @@ class _CreateTripPageState extends State<CreateTripPage> {
               ],
             ),
           ),
+          const SizedBox(height: 48),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: SwitchListTile.adaptive(
+              value: _wantFlight,
+              onChanged: (value) => setState(() {
+                _wantFlight = value;
+                if (!value) {
+                  _chosenFlight = null;
+                  _chosenSeats = [];
+                }
+              }),
+              title: const Text(
+                'Do you want to buy flight tickets?',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF2C3E50),
+                ),
+              ),
+              activeColor: const Color(0xFF2196F3),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+          ),
+          if (_wantFlight) ...[
+            const SizedBox(height: 24),
+            if (_chosenFlight == null)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final result = await Navigator.push<Map<String, dynamic>>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => FlightListPage(
+                          originCity: _originController.text.trim(),
+                          destinationCity: _destinationController.text.trim(),
+                          passengers: _travelers,
+                          departureDate: _startDate,
+                        ),
+                      ),
+                    );
+                    if (result != null && mounted) {
+                      setState(() {
+                        _chosenFlight = result['flight'] as SimpleFlightModel?;
+                        _chosenSeats = result['seats'] as List<String>;
+                      });
+                    }
+                  },
+                  icon: const Icon(Icons.flight),
+                  label: const Text('Choose Flight'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2196F3),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              )
+            else
+              _buildChosenFlightSummary(),
+          ],
         ],
       ),
     );
@@ -930,6 +1233,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
     );
   }
 
+
+
   // Step 5: Accommodation
   Widget _buildStep5Accommodation() {
     return SingleChildScrollView(
@@ -947,32 +1252,207 @@ class _CreateTripPageState extends State<CreateTripPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Select accommodation type',
+            'Book a hotel or select accommodation type',
             style: TextStyle(
               fontSize: 16,
               color: Colors.grey[600],
             ),
           ),
           const SizedBox(height: 32),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 2.5,
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
-            itemCount: _accommodationTypes.length,
-            itemBuilder: (context, index) {
-              final type = _accommodationTypes[index];
-              final isSelected = _accommodationType == type;
-              return _buildTypeChip(
-                label: type,
-                isSelected: isSelected,
-                onTap: () => setState(() => _accommodationType = type),
-              );
-            },
+            child: SwitchListTile.adaptive(
+              value: _wantHotel,
+              onChanged: (value) => setState(() {
+                _wantHotel = value;
+                if (!value) {
+                  _chosenHotel = null;
+                  _chosenRoom = null;
+                }
+              }),
+              title: const Text(
+                'Do you want to book a hotel?',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF2C3E50),
+                ),
+              ),
+              activeColor: const Color(0xFF2196F3),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+          ),
+          const SizedBox(height: 24),
+          if (_wantHotel) ...[
+            if (_chosenHotel == null)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final result = await Navigator.push<Map<String, dynamic>>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => HotelRecommendations(
+                          destination: _destinationController.text.trim(),
+                          checkIn: _startDate,
+                          checkOut: _endDate,
+                          guests: _travelers,
+                        ),
+                      ),
+                    );
+                    if (result != null && mounted) {
+                      setState(() {
+                        _chosenHotel = result['hotel'] as HotelOfferGroup;
+                        _chosenRoom = result['room'] as HotelOffer;
+                        _accommodationType = 'Hotel'; // Auto-select Hotel
+                      });
+                    }
+                  },
+                  icon: const Icon(Icons.hotel),
+                  label: const Text('Select Hotel'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2196F3),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              )
+            else
+              _buildChosenHotelSummary(),
+          ] else ...[
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 2.5,
+              ),
+              itemCount: _accommodationTypes.length,
+              itemBuilder: (context, index) {
+                final type = _accommodationTypes[index];
+                final isSelected = _accommodationType == type;
+                return _buildTypeChip(
+                  label: type,
+                  isSelected: isSelected,
+                  onTap: () => setState(() => _accommodationType = type),
+                );
+              },
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChosenHotelSummary() {
+    if (_chosenHotel == null || _chosenRoom == null) return const SizedBox.shrink();
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Selected Hotel',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Color(0xFF2C3E50),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.edit, color: Color(0xFF2196F3)),
+                onPressed: () async {
+                   final result = await Navigator.push<Map<String, dynamic>>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => HotelRecommendations(
+                          destination: _destinationController.text.trim(),
+                          checkIn: _startDate,
+                          checkOut: _endDate,
+                          guests: _travelers,
+                        ),
+                      ),
+                    );
+                    if (result != null && mounted) {
+                      setState(() {
+                        _chosenHotel = result['hotel'] as HotelOfferGroup;
+                        _chosenRoom = result['room'] as HotelOffer;
+                      });
+                    }
+                },
+              ),
+            ],
+          ),
+          const Divider(),
+          const SizedBox(height: 8),
+          Text(
+            _chosenHotel!.hotel.name,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _chosenRoom!.room?.type ?? 'Room',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
+              const SizedBox(width: 4),
+              Text(
+                '${_chosenRoom!.checkInDate != null ? DateFormat('MMM dd').format(_chosenRoom!.checkInDate!) : 'TBA'} - ${_chosenRoom!.checkOutDate != null ? DateFormat('MMM dd').format(_chosenRoom!.checkOutDate!) : 'TBA'}',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _chosenRoom!.price.total.toIDR(),
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2196F3),
+            ),
           ),
         ],
       ),
@@ -1146,6 +1626,15 @@ class _HotelOption {
     required this.priceText,
   });
 }
+
+/*
+TESTING INSTRUCTIONS:
+1. Launch Trip Creation Page
+2. App asks for location permission
+3. If allowed -> field autofills with user's city
+4. If denied -> manual input appears
+5. Trip creation uses that origin city
+*/
 
 
 

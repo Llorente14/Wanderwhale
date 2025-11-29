@@ -164,7 +164,7 @@ class ApiService {
   ) async {
     try {
       final response =
-          await _dio.put(ApiConstants.tripDetail(tripId), data: payload);
+          await _dio.patch(ApiConstants.tripDetail(tripId), data: payload);
       return _parseResponse(response, (json) => TripModel.fromJson(json));
     } catch (e) {
       rethrow;

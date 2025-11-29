@@ -3,6 +3,10 @@ import '../../models/trip_model.dart';
 import '../../services/trip_service.dart';
 import '../../widgets/section_title.dart';
 import 'create_trip.dart';
+import 'package:intl/intl.dart';
+import '../../utils/formatters.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../services/api_service.dart';
 
 class TripDetailPage extends StatefulWidget {
   final String tripId;
@@ -16,31 +20,142 @@ class TripDetailPage extends StatefulWidget {
   State<TripDetailPage> createState() => _TripDetailPageState();
 }
 
+
 class _TripDetailPageState extends State<TripDetailPage> {
-  final TripService _tripService = TripService();
   Trip? _trip;
+  bool _isLoading = true;
+  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
     super.initState();
     _loadTrip();
-    _tripService.addListener(_onTripsChanged);
+    _syncFromBackend();
   }
 
-  @override
-  void dispose() {
-    _tripService.removeListener(_onTripsChanged);
-    super.dispose();
+  Future<void> _loadTrip() async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('trips')
+          .doc(widget.tripId)
+          .get();
+
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        data['id'] = doc.id;
+        _convertTimestamps(data);
+        if (mounted) {
+          setState(() {
+            _trip = Trip.fromJson(data);
+            _isLoading = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      print("Error loading trip: $e");
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
-  void _loadTrip() {
-    setState(() {
-      _trip = _tripService.getTripById(widget.tripId);
-    });
+  void _convertTimestamps(Map<String, dynamic> data) {
+    final keys = ['startDate', 'endDate', 'hotelCheckIn', 'hotelCheckOut', 'createdAt', 'updatedAt'];
+    for (final key in keys) {
+      if (data[key] is Timestamp) {
+        data[key] = (data[key] as Timestamp).toDate().toIso8601String();
+      }
+    }
   }
 
-  void _onTripsChanged() {
-    _loadTrip();
+  Future<void> _syncFromBackend() async {
+    try {
+      // Fetch updated details from backend
+      // Note: getTripDetail might return TripModel or Map depending on implementation. 
+      // Assuming it returns TripModel based on previous context.
+      // If getTripDetail is not implemented in ApiService yet, we might skip this or implement it.
+      // Checking ApiService... it has getTripDetail(String tripId).
+      
+      // However, ApiService.getTripDetail returns Future<TripModel>.
+      // We need to convert it to JSON to store in Firestore.
+      
+      // Also, we might want to update the local _trip object with backend data if it's newer?
+      // For now, following instructions: "Update Firestore with the latest backend data"
+      
+      // We only sync if we have a valid tripId that exists in backend. 
+      // Since we are using Firestore ID as tripId, we assume it matches or we stored backend ID.
+      // Wait, Firestore ID is auto-generated. Backend ID might be different if we didn't send Firestore ID to backend.
+      // In CreateTripPage, we sent tripData to backend. Backend likely assigned its own ID?
+      // Or did we send an ID?
+      // In CreateTripPage: `final result = await apiService.createTrip(tripData);`
+      // The result has `tripId`. We stored `backend_response` in Firestore.
+      // So we should probably use the ID from `backend_response` to fetch from backend?
+      // Or did we use Firestore ID as backend ID?
+      // The user instruction says: `final response = await TripController().getTripDetail(tripId);`
+      // This implies `tripId` is the identifier.
+      // If `tripId` passed to this page is Firestore ID, we should check if it works with backend.
+      // If not, we might need to look up backend ID from Firestore doc.
+      
+      // Let's assume for now tripId works or we just try to sync.
+      // Actually, looking at `_saveTrip`, we didn't pass an ID to `createTrip`.
+      // So backend generated one.
+      // We stored `backend_response` which contains `tripId`.
+      // We should probably use THAT id.
+      
+      // But first we need to load the trip from Firestore to get the backend ID.
+      // _loadTrip does that.
+      
+      // Let's refine _syncFromBackend to wait for _loadTrip or fetch doc again.
+      
+      final doc = await FirebaseFirestore.instance.collection('trips').doc(widget.tripId).get();
+      if (!doc.exists) return;
+      
+      final data = doc.data()!;
+      final backendResponse = data['backend_response'];
+      String? backendId;
+      
+      if (backendResponse is Map && backendResponse.containsKey('tripId')) {
+        backendId = backendResponse['tripId'];
+      } else if (backendResponse is Map && backendResponse.containsKey('id')) {
+        backendId = backendResponse['id'];
+      }
+      
+      // If we don't have a backend ID, maybe we use the Firestore ID?
+      // Or maybe we can't sync.
+      final idToUse = backendId ?? widget.tripId;
+
+      try {
+        final response = await _apiService.getTripDetail(idToUse);
+        
+        await FirebaseFirestore.instance
+            .collection("trips")
+            .doc(widget.tripId)
+            .update({
+              "backend_response": response.toJson(),
+              "syncStatus": "synced",
+              "updatedAt": FieldValue.serverTimestamp(),
+            });
+            
+        // Reload local trip to reflect changes
+        _loadTrip();
+      } catch (e) {
+        print("Backend sync error: $e");
+        await FirebaseFirestore.instance
+            .collection("trips")
+            .doc(widget.tripId)
+            .update({"syncStatus": "failed"});
+      }
+    } catch (e) {
+      print("Sync error: $e");
+    }
   }
 
   void _editTrip() {
@@ -54,6 +169,7 @@ class _TripDetailPageState extends State<TripDetailPage> {
     ).then((_) {
       // Reload trip data when returning from edit page
       _loadTrip();
+      _syncFromBackend();
     });
   }
 
@@ -86,13 +202,47 @@ class _TripDetailPageState extends State<TripDetailPage> {
             ),
           ),
           TextButton(
-            onPressed: () {
-              _tripService.deleteTrip(widget.tripId);
+            onPressed: () async {
+              // Delete logic
               Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Return to trip list
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Trip deleted successfully')),
-              );
+              
+              try {
+                // 1. Delete from Backend
+                // We need backend ID again
+                 final doc = await FirebaseFirestore.instance.collection('trips').doc(widget.tripId).get();
+                 final backendResponse = doc.data()?['backend_response'];
+                 String? backendId;
+                 if (backendResponse is Map) {
+                   backendId = backendResponse['tripId'] ?? backendResponse['id'];
+                 }
+                 final idToUse = backendId ?? widget.tripId;
+
+                try {
+                  await _apiService.deleteTrip(idToUse);
+                } catch (e) {
+                  print("Backend delete error: $e");
+                  // Continue to delete from Firestore? Yes, usually.
+                }
+
+                // 2. Delete from Firestore
+                await FirebaseFirestore.instance
+                    .collection("trips")
+                    .doc(widget.tripId)
+                    .delete();
+
+                if (mounted) {
+                  Navigator.pop(context); // Return to trip list
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Trip deleted successfully')),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error deleting trip: $e')),
+                  );
+                }
+              }
             },
             child: const Text(
               'Delete',
@@ -109,6 +259,14 @@ class _TripDetailPageState extends State<TripDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     if (_trip == null) {
       return Scaffold(
         appBar: AppBar(
@@ -336,6 +494,57 @@ class _TripDetailPageState extends State<TripDetailPage> {
                 ],
               ),
             ),
+            
+            // Hotel Booking Summary
+            if (_trip!.wantHotel && _trip!.hotelName != null) ...[
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionTitle(
+                      title: 'Hotel Booking',
+                      icon: Icons.hotel,
+                    ),
+                    const Divider(),
+                    const SizedBox(height: 12),
+                    Text(
+                      _trip!.hotelName!,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2C3E50),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildDateRow('Room Type', _trip!.roomType ?? 'Standard'),
+                    const SizedBox(height: 8),
+                    if (_trip!.hotelCheckIn != null && _trip!.hotelCheckOut != null)
+                      _buildDateRow(
+                        'Dates',
+                        '${DateFormat('MMM dd').format(_trip!.hotelCheckIn!)} - ${DateFormat('MMM dd').format(_trip!.hotelCheckOut!)}',
+                      ),
+                    const SizedBox(height: 8),
+                    if (_trip!.hotelPrice != null)
+                      _buildDateRow('Total Price', _trip!.hotelPrice!.toIDR()),
+                  ],
+                ),
+              ),
+            ],
             
             const SizedBox(height: 16),
             

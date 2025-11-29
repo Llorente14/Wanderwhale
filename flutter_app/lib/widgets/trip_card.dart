@@ -45,6 +45,8 @@ class TripCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   _buildTripTypeTag(trip.tripType),
+                  const SizedBox(width: 8),
+                  _buildSyncStatus(trip.syncStatus),
                 ],
               ),
               if (trip.originCity.isNotEmpty ||
@@ -275,6 +277,39 @@ class TripCard extends StatelessWidget {
     } else {
       return Icons.home;
     }
+  }
+
+  Widget _buildSyncStatus(String status) {
+    Color color;
+    switch (status) {
+      case 'synced':
+        color = Colors.green;
+        break;
+      case 'failed':
+        color = Colors.red;
+        break;
+      case 'pending':
+      default:
+        color = Colors.orange;
+        break;
+    }
+
+    return Container(
+      width: 12,
+      height: 12,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.4),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+    );
   }
 }
 

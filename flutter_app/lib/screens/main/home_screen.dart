@@ -1,21 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:flutter_app/core/navigation/app_routes.dart';
 import 'package:flutter_app/core/theme/app_colors.dart';
 import 'package:flutter_app/widgets/common/custom_bottom_nav.dart';
-import 'package:flutter_app/providers/app_providers.dart';
-
-import '../discount/discount_page.dart';
-import '../explore/search_page.dart';
-import '../tips/tipstravel.dart';
+import 'package:flutter_app/screens/flight/flight_recommendation.dart';
+import 'package:flutter_app/screens/hotel/hotel_recommendations.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.read(bottomNavIndexProvider.notifier).state = 0;
     return Scaffold(
       backgroundColor: AppColors.white,
       body: SafeArea(
@@ -40,8 +35,6 @@ class HomeScreen extends ConsumerWidget {
                 const _SearchBar(),
                 const SizedBox(height: 18),
                 const _QuickMenuRow(),
-                const SizedBox(height: 18),
-                const _AiAssistantBanner(),
                 const SizedBox(height: 24),
                 const _UpcomingTripsSection(),
                 const SizedBox(height: 24),
@@ -52,12 +45,6 @@ class HomeScreen extends ConsumerWidget {
                 const _RecommendedFlightsSection(),
                 const SizedBox(height: 24),
                 const _DestinationByCountrySection(),
-                const SizedBox(height: 24),
-                const _TravelTipsCarouselSection(),
-                const SizedBox(height: 24),
-                const _DiscountCarouselSection(),
-                const SizedBox(height: 24),
-                const _ExploreCarouselSection(),
                 const SizedBox(height: 24),
               ],
             ),
@@ -78,74 +65,76 @@ class _HeaderSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        // Avatar
         Container(
-          width: 46,
-          height: 46,
+          width: 50,
+          height: 50,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: AppColors.white,
+            gradient: const LinearGradient(
+              colors: [AppColors.primaryLight1, AppColors.primary],
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 14,
-                offset: const Offset(0, 6),
+                color: AppColors.primary.withOpacity(0.25),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
           child: const CircleAvatar(
+            backgroundColor: Colors.transparent,
             backgroundImage: AssetImage('assets/images/avatar_placeholder.png'),
           ),
         ),
-        const SizedBox(width: 12),
-        // Greeting & location
+        const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
+            children: [
+              const Text(
                 'Hello, Traveler',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 22,
                   fontWeight: FontWeight.w700,
                   color: AppColors.gray5,
                 ),
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 6),
               Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+                children: const [
                   Icon(Icons.location_on, size: 16, color: AppColors.primary),
                   SizedBox(width: 4),
                   Text(
                     'Jakarta, Indonesia',
-                    style: TextStyle(fontSize: 12, color: AppColors.gray3),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.gray3,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
             ],
           ),
         ),
-        const SizedBox(width: 12),
-        // Notification button
         Container(
-          width: 40,
-          height: 40,
+          width: 44,
+          height: 44,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
             color: AppColors.white,
+            shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.08),
-                blurRadius: 14,
+                blurRadius: 16,
                 offset: const Offset(0, 6),
               ),
             ],
           ),
           child: IconButton(
-            icon: const Icon(Icons.notifications_none),
-            color: AppColors.gray5,
             onPressed: () {},
+            icon: const Icon(Icons.notifications_none),
+            color: AppColors.primary,
           ),
         ),
       ],
@@ -172,29 +161,35 @@ class _SearchBar extends StatelessWidget {
           ),
         ],
       ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         children: [
-          const SizedBox(width: 16),
           const Icon(Icons.search, color: AppColors.gray3),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           const Expanded(
             child: TextField(
               decoration: InputDecoration(
                 hintText: 'Mau jalan ke mana?',
+                hintStyle: TextStyle(
+                  color: AppColors.gray3,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
                 border: InputBorder.none,
               ),
             ),
           ),
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
+              gradient: const LinearGradient(
+                colors: [AppColors.primaryLight1, AppColors.primaryDark1],
+              ),
             ),
             child: IconButton(
-              icon: const Icon(Icons.tune, size: 20, color: Colors.white),
+              icon: const Icon(Icons.tune, color: Colors.white, size: 22),
               onPressed: () {},
             ),
           ),
@@ -217,15 +212,15 @@ class _HeroSummaryBanner extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
         gradient: const LinearGradient(
+          colors: [Color(0xFF0F6DC2), Color(0xFF0BC5EA)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.primaryLight1, AppColors.primaryDark1],
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryDark1.withOpacity(0.35),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+            color: const Color(0xFF0F6DC2).withOpacity(0.35),
+            blurRadius: 24,
+            offset: const Offset(0, 14),
           ),
         ],
       ),
@@ -234,7 +229,7 @@ class _HeroSummaryBanner extends StatelessWidget {
         children: [
           Row(
             children: const [
-              Icon(Icons.flight_takeoff, color: Colors.white, size: 22),
+              Icon(Icons.flight_takeoff, color: Colors.white70, size: 22),
               SizedBox(width: 8),
               Text(
                 'Rencana Penerbanganmu',
@@ -251,7 +246,7 @@ class _HeroSummaryBanner extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
               _FlightPoint(code: 'DPS', city: 'Bali'),
-              Icon(Icons.flight, color: Colors.white70, size: 18),
+              Icon(Icons.flight, color: Colors.white, size: 26),
               _FlightPoint(code: 'CGK', city: 'Jakarta'),
             ],
           ),
@@ -302,105 +297,129 @@ class _FlightPoint extends StatelessWidget {
 
 // ================= QUICK MENU =================
 
-class _QuickMenuRow extends ConsumerWidget {
+class _QuickMenuRow extends StatelessWidget {
   const _QuickMenuRow();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final totalWidth =
-        MediaQuery.of(context).size.width - 40; // padding horizontal 20+20
-    final itemWidth = (totalWidth - 2 * 12) / 3; // 3 item, 2 gap @12
+  Widget build(BuildContext context) {
+    final items = [
+      _MenuItemData(
+        icon: Icons.flight_takeoff,
+        label: 'Flight',
+        gradient: const [Color(0xFF0F6DC2), Color(0xFF00B2FF)],
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const FlightRecommendation(),
+            ),
+          );
+        },
+      ),
+      _MenuItemData(
+        icon: Icons.hotel,
+        label: 'Hotel',
+        gradient: const [Color(0xFF0BB5D4), Color(0xFF00E0B6)],
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const HotelRecommendations(),
+            ),
+          );
+        },
+      ),
+      _MenuItemData(
+        icon: Icons.favorite,
+        label: 'Wishlist',
+        gradient: const [Color(0xFF6A4CFF), Color(0xFF9D7CFF)],
+        onTap: null,
+      ),
+      _MenuItemData(
+        icon: Icons.explore,
+        label: 'Trip',
+        gradient: const [Color(0xFF005C97), Color(0xFF363795)],
+        onTap: null,
+      ),
+    ];
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: itemWidth,
-          child: _QuickMenuItem(
-            icon: Icons.flight_takeoff,
-            label: 'Trip',
-            color: AppColors.primary,
-            onTap: () {
-              ref.read(bottomNavIndexProvider.notifier).state = 2;
-              Navigator.of(context).pushNamed(AppRoutes.tripList);
-            },
-          ),
-        ),
-        const SizedBox(width: 12),
-        SizedBox(
-          width: itemWidth,
-          child: _QuickMenuItem(
-            icon: Icons.hotel,
-            label: 'Hotel',
-            color: AppColors.primaryLight1,
-            onTap: () {},
-          ),
-        ),
-        const SizedBox(width: 12),
-        SizedBox(
-          width: itemWidth,
-          child: _QuickMenuItem(
-            icon: Icons.chat_bubble_outline,
-            label: 'AI Chat',
-            color: AppColors.primaryDark1,
-            onTap: () {
-              ref.read(bottomNavIndexProvider.notifier).state = 3;
-              Navigator.of(context).pushNamed(AppRoutes.aiChat);
-            },
-          ),
-        ),
-      ],
+      children: items
+          .map(
+            (item) => Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: _QuickMenuItem(data: item),
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 }
 
-class _QuickMenuItem extends StatelessWidget {
+class _MenuItemData {
   final IconData icon;
   final String label;
-  final Color color;
+  final List<Color> gradient;
   final VoidCallback? onTap;
 
-  const _QuickMenuItem({
+  const _MenuItemData({
     required this.icon,
     required this.label,
-    required this.color,
+    required this.gradient,
     this.onTap,
   });
+}
+
+class _QuickMenuItem extends StatelessWidget {
+  final _MenuItemData data;
+
+  const _QuickMenuItem({required this.data});
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 72,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 2),
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
+    return GestureDetector(
+      onTap: data.onTap,
+      child: Container(
+        height: 82,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            colors: data.gradient,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: Colors.white, size: 22),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
+          boxShadow: [
+            BoxShadow(
+              color: data.gradient.last.withOpacity(0.3),
+              blurRadius: 14,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(12),
               ),
-            ],
-          ),
+              child: Icon(data.icon, color: Colors.white, size: 20),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              data.label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -409,57 +428,37 @@ class _QuickMenuItem extends StatelessWidget {
 
 // ================= TOP RECOMMENDATION =================
 
-class _UpcomingTripsSection extends ConsumerWidget {
+class _UpcomingTripsSection extends StatelessWidget {
   const _UpcomingTripsSection();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    void openTripList() {
-      ref.read(bottomNavIndexProvider.notifier).state = 2;
-      Navigator.of(context).pushNamed(AppRoutes.tripList);
-    }
-
+  Widget build(BuildContext context) {
     // Dummy data untuk sekarang
     final trips = [
-      _TripTicketCard(
+      const _TripTicketCard(
         country: 'Indonesia',
         city: 'Bali',
         distanceKm: 2.9,
         dateTimeText: '27 Oct 2025 09:00',
-        onTap: openTripList,
       ),
-      _TripTicketCard(
+      const _TripTicketCard(
         country: 'Japan',
         city: 'Tokyo',
         distanceKm: 5.1,
         dateTimeText: '01 Nov 2025 08:30',
-        onTap: openTripList,
       ),
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            const Text(
-              'Upcoming Trips',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.gray5,
-              ),
-            ),
-            const Spacer(),
-            TextButton(
-              onPressed: openTripList,
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                textStyle: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              child: const Text('View all'),
-            ),
-          ],
+        const Text(
+          'Upcoming Trips',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppColors.gray5,
+          ),
         ),
         const SizedBox(height: 12),
         SizedBox(
@@ -642,21 +641,17 @@ class _TripTicketCard extends StatelessWidget {
   final String city;
   final double distanceKm;
   final String dateTimeText;
-  final VoidCallback? onTap;
 
   const _TripTicketCard({
     required this.country,
     required this.city,
     required this.distanceKm,
     required this.dateTimeText,
-    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
+    return Container(
       width: 220,
       decoration: BoxDecoration(
         color: Colors.white,
@@ -805,7 +800,7 @@ class _TripTicketCard extends StatelessWidget {
           ),
         ],
       ),
-    ));
+    );
   }
 }
 
@@ -1020,76 +1015,30 @@ class _DestinationByCountrySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final highlightsByCountry = {
-      'Indonesia': const [
-        _DestinationHighlight(
-          title: 'Sunrise Resort',
-          city: 'Bali',
-          country: 'Indonesia',
-          imageUrl:
-              'https://images.unsplash.com/photo-1501117716987-c8e1ecb210cc?auto=format&fit=crop&w=800&q=80',
-        ),
-        _DestinationHighlight(
-          title: 'Hidden Bay Villa',
-          city: 'Lombok',
-          country: 'Indonesia',
-          imageUrl:
-              'https://images.unsplash.com/photo-1470246973918-29a93221c455?auto=format&fit=crop&w=800&q=80',
-        ),
-      ],
-      'Japan': const [
-        _DestinationHighlight(
-          title: 'City Lights Hotel',
-          city: 'Tokyo',
-          country: 'Japan',
-          imageUrl:
-              'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
-        ),
-        _DestinationHighlight(
-          title: 'Osaka Sky Suites',
-          city: 'Osaka',
-          country: 'Japan',
-          imageUrl:
-              'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=800&q=80',
-        ),
-      ],
-      'Italy': const [
-        _DestinationHighlight(
-          title: 'Venetian Escape',
-          city: 'Venice',
-          country: 'Italy',
-          imageUrl:
-              'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80',
-        ),
-        _DestinationHighlight(
-          title: 'Tuscan Dreams',
-          city: 'Florence',
-          country: 'Italy',
-          imageUrl:
-              'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=800&q=80',
-        ),
-      ],
+    final data = <String, List<String>>{
+      'Indonesia': ['Bali', 'Lombok', 'Yogyakarta'],
+      'Japan': ['Tokyo', 'Osaka', 'Kyoto'],
+      'Italy': ['Rome', 'Venice', 'Florence'],
     };
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Destinasi Pilihan',
+          'Destinasi per Negara',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
             color: AppColors.gray5,
           ),
         ),
-        const SizedBox(height: 14),
-        const SizedBox(height: 14),
-        ...highlightsByCountry.entries.map(
+        const SizedBox(height: 12),
+        ...data.entries.map(
           (entry) => Padding(
-            padding: const EdgeInsets.only(bottom: 18),
-            child: _CountryHighlightColumn(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _CountryDestinationsRow(
               country: entry.key,
-              highlights: entry.value,
+              cities: entry.value,
             ),
           ),
         ),
@@ -1098,312 +1047,82 @@ class _DestinationByCountrySection extends StatelessWidget {
   }
 }
 
-class _CountryHighlightColumn extends StatelessWidget {
+class _CountryDestinationsRow extends StatelessWidget {
   final String country;
-  final List<_DestinationHighlight> highlights;
+  final List<String> cities;
 
-  const _CountryHighlightColumn({
-    required this.country,
-    required this.highlights,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          country,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppColors.gray5,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Column(
-          children: highlights
-              .map(
-                (highlight) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _DestinationHighlightCard(data: highlight),
-                ),
-              )
-              .toList(),
-        ),
-      ],
-    );
-  }
-}
-
-class _DestinationHighlight {
-  final String title;
-  final String city;
-  final String country;
-  final String imageUrl;
-
-  const _DestinationHighlight({
-    required this.title,
-    required this.city,
-    required this.country,
-    required this.imageUrl,
-  });
-}
-
-class _DestinationHighlightCard extends StatelessWidget {
-  final _DestinationHighlight data;
-
-  const _DestinationHighlightCard({required this.data});
+  const _CountryDestinationsRow({required this.country, required this.cities});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      height: 150,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.12),
-            blurRadius: 20,
-            offset: const Offset(0, 12),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.network(
-              data.imageUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                color: AppColors.gray1,
-                alignment: Alignment.center,
-                child: const Icon(
-                  Icons.image_not_supported_outlined,
-                  color: AppColors.gray3,
-                  size: 32,
-                ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [AppColors.primaryLight1, AppColors.primary],
               ),
             ),
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.05),
-                    Colors.black.withOpacity(0.75),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    data.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
+            child: const Icon(Icons.public, size: 20, color: Colors.white),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  country,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.gray5,
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${data.city}, ${data.country}',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.85),
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 4),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: -4,
+                  children: cities
+                      .map(
+                        (city) => Chip(
+                          label: Text(
+                            city,
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                          backgroundColor: AppColors.primaryLight3,
+                          padding: EdgeInsets.zero,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: const VisualDensity(
+                            horizontal: 0,
+                            vertical: -2,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
-  }
-}
-
-// ================= CAROUSEL ACTION SECTIONS =================
-
-class _ActionCardData {
-  final String title;
-  final String description;
-  final Widget Function() destinationBuilder;
-  final List<Color> gradientColors;
-
-  const _ActionCardData({
-    required this.title,
-    required this.description,
-    required this.destinationBuilder,
-    this.gradientColors = const [
-      AppColors.primaryLight1,
-      AppColors.primaryDark2,
-    ],
-  });
-}
-
-class _GradientActionCarousel extends StatelessWidget {
-  final String title;
-  final List<_ActionCardData> cards;
-
-  const _GradientActionCarousel({required this.title, required this.cards});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.gray5,
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 150,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: cards.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 16),
-            itemBuilder: (context, index) {
-              final card = cards[index];
-              return GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => card.destinationBuilder(),
-                    ),
-                  );
-                },
-                child: Container(
-                  width: 260,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    gradient: LinearGradient(
-                      colors: card.gradientColors,
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: card.gradientColors.last.withOpacity(0.35),
-                        blurRadius: 16,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        card.title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        card.description,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _TravelTipsCarouselSection extends StatelessWidget {
-  const _TravelTipsCarouselSection();
-
-  @override
-  Widget build(BuildContext context) {
-    final cards = [
-      _ActionCardData(
-        title: 'Travel Tips',
-        description: 'Packing hacks & itinerary ideas untuk liburanmu.',
-        destinationBuilder: () => const TipsTravelPage(),
-      ),
-      _ActionCardData(
-        title: 'Solo Traveler Guide',
-        description: 'Belajar cara eksplor dunia dengan aman & seru.',
-        destinationBuilder: () => const TipsTravelPage(),
-      ),
-    ];
-
-    return _GradientActionCarousel(title: 'Travel Tips Carousel', cards: cards);
-  }
-}
-
-class _DiscountCarouselSection extends StatelessWidget {
-  const _DiscountCarouselSection();
-
-  @override
-  Widget build(BuildContext context) {
-    final cards = [
-      _ActionCardData(
-        title: 'Diskon Hotel 30%',
-        description: 'Klaim voucher akomodasi favoritmu sekarang.',
-        destinationBuilder: () => const DiscountPage(),
-        gradientColors: const [Color(0xFF4FACFE), Color(0xFF00F2FE)],
-      ),
-      _ActionCardData(
-        title: 'Flash Sale Flight',
-        description: 'Terbang murah ke kota impian setiap weekend.',
-        destinationBuilder: () => const DiscountPage(),
-        gradientColors: const [Color(0xFFFFA948), Color(0xFFFF5F6D)],
-      ),
-    ];
-
-    return _GradientActionCarousel(title: 'Diskon & Voucher', cards: cards);
-  }
-}
-
-class _ExploreCarouselSection extends StatelessWidget {
-  const _ExploreCarouselSection();
-
-  @override
-  Widget build(BuildContext context) {
-    final cards = [
-      _ActionCardData(
-        title: 'Explore Your Journey',
-        description: 'Cari destinasi baru dan buat rencana perjalanan.',
-        destinationBuilder: () => const SearchPage(),
-        gradientColors: const [Color(0xFF43E97B), Color(0xFF38F9D7)],
-      ),
-      _ActionCardData(
-        title: 'Inspire Me',
-        description: 'Temukan rekomendasi unik dari WanderWhale.',
-        destinationBuilder: () => const SearchPage(),
-        gradientColors: const [Color(0xFFFA8BFF), Color(0xFF2BD2FF)],
-      ),
-    ];
-
-    return _GradientActionCarousel(title: 'Explore Lebih Jauh', cards: cards);
   }
 }
 
@@ -1507,83 +1226,6 @@ class _RecommendationCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _AiAssistantBanner extends ConsumerWidget {
-  const _AiAssistantBanner();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
-          colors: [AppColors.primaryLight1, AppColors.primaryDark1],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryDark1.withOpacity(0.25),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  'Need trip inspiration?',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                SizedBox(height: 6),
-                Text(
-                  'Ask our AI travel assistant anything about your next journey.',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          ElevatedButton(
-            onPressed: () {
-              ref.read(bottomNavIndexProvider.notifier).state = 3;
-              Navigator.of(context).pushNamed(AppRoutes.aiChat);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: AppColors.primaryDark1,
-              elevation: 0,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            child: const Text(
-              'Chat now',
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
