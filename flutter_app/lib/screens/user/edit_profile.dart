@@ -1,35 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../models/user_profile.dart';
+import '../../providers/user_profile_provider.dart';
 
-class EditProfileScreen extends StatefulWidget {
+class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
 
   @override
-  State<EditProfileScreen> createState() => _EditProfileScreenState();
+  ConsumerState<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-class _EditProfileScreenState extends State<EditProfileScreen> {
-  static const UserProfile _mockProfile = UserProfile(
-    id: 'user-001',
-    email: 'user@example.com',
-    displayName: 'Username',
-    photoUrl: null,
-    phoneNumber: null,
-    dateOfBirth: null,
-    language: 'id',
-    currency: 'IDR',
-    createdAt: null,
-    updatedAt: null,
-    points: 0,
-    membershipLevel: 'Bronze',
-    postCount: 0,
-    followerCount: 0,
-    followingCount: 0,
-  );
-
-
+class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late final TextEditingController _displayNameController;
   late final TextEditingController _cityController;
   DateTime? _selectedBirthDate;
@@ -38,15 +21,31 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-
-    _displayNameController = TextEditingController(text: _mockProfile.displayName);
+    _displayNameController = TextEditingController();
     _cityController = TextEditingController();
-    _selectedBirthDate = DateTime(2005, 11, 13);
+
+    // Initialize with current profile data or fetch it
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = ref.read(userProfileProvider);
+      if (provider.profile == null) {
+        provider.loadProfile();
+      } else {
+        _populateFields(provider.profile!);
+      }
+    });
+  }
+
+  void _populateFields(UserProfile profile) {
+    _displayNameController.text = profile.displayName ?? '';
+    if (profile.dateOfBirth != null) {
+      setState(() {
+        _selectedBirthDate = profile.dateOfBirth;
+      });
+    }
   }
 
   @override
   void dispose() {
-
     _displayNameController.dispose();
     _cityController.dispose();
     super.dispose();
@@ -66,8 +65,46 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  Future<void> _saveProfile() async {
+    final provider = ref.read(userProfileProvider);
+    
+    // Construct payload
+    final payload = {
+      'displayName': _displayNameController.text,
+      'dateOfBirth': _selectedBirthDate?.toIso8601String(),
+      // 'gender': _selectedGender, 
+      // 'city': _cityController.text, 
+    };
+
+    try {
+      await provider.updateProfile(payload);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profil berhasil diperbarui')),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memperbarui profil: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    ref.listen<UserProfileProvider>(userProfileProvider, (previous, next) {
+      if (previous?.profile != next.profile && next.profile != null) {
+        _populateFields(next.profile!);
+      }
+    });
+
+    final provider = ref.watch(userProfileProvider);
+    final profile = provider.profile;
+    final isLoading = provider.isLoading;
+
     return Scaffold(
       backgroundColor: AppColors.gray0,
       appBar: AppBar(
@@ -87,130 +124,144 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         centerTitle: false,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _ProfileAvatar(
-              profile: _mockProfile,
-              onEdit: () {},
-            ),
-
-            const SizedBox(height: 24),
-            _SectionHeader(
-              title: 'Data Pribadi',
-              actionText: 'Ubah',
-              onAction: () {},
-            ),
-            const SizedBox(height: 12),
-            _FormCard(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _LabeledField(
-                    label: 'Username',
-                    child: TextField(
-                      controller: _displayNameController,
+                  if (profile != null)
+                    _ProfileAvatar(
+                      profile: profile,
+                      onEdit: () {},
                     ),
+
+                  const SizedBox(height: 24),
+                  _SectionHeader(
+                    title: 'Data Pribadi',
+                    actionText: 'Ubah',
+                    onAction: () {},
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _LabeledField(
-                          label: 'Tanggal Lahir',
-                          child: GestureDetector(
-                            onTap: _pickDate,
-                            child: InputDecorator(
-                              decoration: const InputDecoration(
-                                suffixIcon: Icon(Icons.calendar_today),
-                              ),
-                              child: Text(
-                                _selectedBirthDate != null
-                                    ? _formatDate(_selectedBirthDate!)
-                                    : 'Pilih tanggal',
-                                style: TextStyle(
-                                  color: _selectedBirthDate != null
-                                      ? AppColors.gray5
-                                      : AppColors.gray3,
-                                  fontWeight: FontWeight.w600,
+                  const SizedBox(height: 12),
+                  _FormCard(
+                    child: Column(
+                      children: [
+                        _LabeledField(
+                          label: 'Username',
+                          child: TextField(
+                            controller: _displayNameController,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _LabeledField(
+                                label: 'Tanggal Lahir',
+                                child: GestureDetector(
+                                  onTap: _pickDate,
+                                  child: InputDecorator(
+                                    decoration: const InputDecoration(
+                                      suffixIcon: Icon(Icons.calendar_today),
+                                    ),
+                                    child: Text(
+                                      _selectedBirthDate != null
+                                          ? _formatDate(_selectedBirthDate!)
+                                          : 'Pilih tanggal',
+                                      style: TextStyle(
+                                        color: _selectedBirthDate != null
+                                            ? AppColors.gray5
+                                            : AppColors.gray3,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _LabeledField(
+                                label: 'Kelamin',
+                                child: DropdownButtonFormField<String>(
+                                  value: _selectedGender,
+                                  items: const [
+                                    DropdownMenuItem(
+                                      value: 'Laki-laki',
+                                      child: Text('Laki-laki'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'Perempuan',
+                                      child: Text('Perempuan'),
+                                    ),
+                                  ],
+                                  onChanged: (value) {
+                                    if (value != null) {
+                                      setState(() {
+                                        _selectedGender = value;
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        _LabeledField(
+                          label: 'Kota Tempat Tinggal',
+                          child: TextField(
+                            controller: _cityController,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _LabeledField(
-                          label: 'Kelamin',
-                          child: DropdownButtonFormField<String>(
-                            value: _selectedGender,
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'Laki-laki',
-                                child: Text('Laki-laki'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'Perempuan',
-                                child: Text('Perempuan'),
-                              ),
-                            ],
-                            onChanged: (value) {
-                              if (value != null) {
-                                setState(() {
-                                  _selectedGender = value;
-                                });
-                              }
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  _LabeledField(
-                    label: 'Kota Tempat Tinggal',
-                    child: TextField(
-                      controller: _cityController,
+                  const SizedBox(height: 28),
+                  _SectionHeader(
+                    title: 'Email',
+                  ),
+                  const SizedBox(height: 8),
+                  if (profile != null)
+                    _InfoBlock(
+                      message:
+                          'Email digunakan untuk login dan menerima notifikasi.',
+                      value: profile.email,
+                      statusLabel: 'Penerima notifikasi',
+                    ),
+                  const SizedBox(height: 28),
+                  _SectionHeader(
+                    title: 'No. Handphone',
+                  ),
+                  const SizedBox(height: 8),
+                  if (profile != null)
+                    _InfoBlock(
+                      message:
+                          'No. handphone digunakan untuk login dan menerima notifikasi.',
+                      value: profile.phoneNumber ?? '-',
+                      statusLabel: 'Utama',
+                    ),
+                  const SizedBox(height: 40),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: isLoading ? null : _saveProfile,
+                      child: isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Simpan Perubahan'),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 28),
-            _SectionHeader(
-              title: 'Email',
-            ),
-            const SizedBox(height: 8),
-            _InfoBlock(
-              message:
-                  'Email digunakan untuk login dan menerima notifikasi.',
-              value: _mockProfile.email,
-              statusLabel: 'Penerima notifikasi',
-            ),
-            const SizedBox(height: 28),
-            _SectionHeader(
-              title: 'No. Handphone',
-            ),
-            const SizedBox(height: 8),
-            _InfoBlock(
-              message:
-                  'No. handphone digunakan untuk login dan menerima notifikasi.',
-              value: _mockProfile.phoneNumber ?? '-',
-              statusLabel: 'Utama',
-            ),
-            const SizedBox(height: 40),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {},
-                child: const Text('Simpan Perubahan'),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -266,11 +317,23 @@ class _ProfileAvatar extends StatelessWidget {
                     end: Alignment.bottomRight,
                   ),
                 ),
-                child: const Icon(
-                  Icons.person,
-                  color: Colors.white,
-                  size: 48,
-                ),
+                child: profile.photoUrl != null
+                    ? ClipOval(
+                        child: Image.network(
+                          profile.photoUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (ctx, err, stack) => const Icon(
+                            Icons.person,
+                            color: Colors.white,
+                            size: 48,
+                          ),
+                        ),
+                      )
+                    : const Icon(
+                        Icons.person,
+                        color: Colors.white,
+                        size: 48,
+                      ),
               ),
               Positioned(
                 bottom: -4,

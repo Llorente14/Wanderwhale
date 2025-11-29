@@ -9,8 +9,8 @@ import '../main/settings_screen.dart';
 import 'edit_profile.dart';
 
 /// Static profile screen that mimics the provided wireframe.
-class ProfileScreen extends ConsumerWidget {
-  const ProfileScreen({super.key});
+class ProfileScreens extends ConsumerWidget {
+  const ProfileScreens({super.key});
 
   static const UserProfile _mockProfile = UserProfile(
     id: 'user-001',

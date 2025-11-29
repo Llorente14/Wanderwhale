@@ -9,4 +9,5 @@ export 'flight_providers.dart';
 export 'wishlist_providers.dart';
 export 'notification_providers.dart';
 export 'booking_providers.dart';
+export 'user_profile_provider.dart';
 
