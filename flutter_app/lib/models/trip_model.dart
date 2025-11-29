@@ -116,6 +116,9 @@ class Trip {
   final DateTime? hotelCheckIn;
   final DateTime? hotelCheckOut;
   final String syncStatus; // synced, pending, failed
+  final Map<String, dynamic>? flight;
+  final Map<String, dynamic>? hotel;
+  final Map<String, dynamic>? room;
 
   Trip({
     required this.id,
@@ -138,6 +141,9 @@ class Trip {
     this.hotelCheckIn,
     this.hotelCheckOut,
     this.syncStatus = 'pending',
+    this.flight,
+    this.hotel,
+    this.room,
   });
 
   // Factory constructor for creating a Trip from JSON
@@ -149,10 +155,10 @@ class Trip {
       destinationCity: json['destinationCity'] as String? ?? '',
       startDate: DateTime.parse(json['startDate'] as String),
       endDate: DateTime.parse(json['endDate'] as String),
-      durationInDays: json['durationInDays'] as int,
-      travelers: json['travelers'] as int,
-      tripType: json['tripType'] as String,
-      accommodationType: json['accommodationType'] as String,
+      durationInDays: (json['durationInDays'] as num?)?.toInt() ?? 0,
+      travelers: (json['travelers'] as num?)?.toInt() ?? 1,
+      tripType: json['tripType'] as String? ?? 'Vacation',
+      accommodationType: json['accommodationType'] as String? ?? 'Hotel',
       budget: json['budget'] != null ? (json['budget'] as num).toDouble() : null,
       notes: json['notes'] as String?,
       wantFlight: json['wantFlight'] as bool? ?? false,
@@ -163,6 +169,9 @@ class Trip {
       hotelCheckIn: json['hotelCheckIn'] != null ? DateTime.parse(json['hotelCheckIn'] as String) : null,
       hotelCheckOut: json['hotelCheckOut'] != null ? DateTime.parse(json['hotelCheckOut'] as String) : null,
       syncStatus: json['syncStatus'] as String? ?? 'pending',
+      flight: json['flight'] as Map<String, dynamic>?,
+      hotel: json['hotel'] as Map<String, dynamic>?,
+      room: json['room'] as Map<String, dynamic>?,
     );
   }
 
@@ -188,7 +197,11 @@ class Trip {
       'hotelPrice': hotelPrice,
       'hotelCheckIn': hotelCheckIn?.toIso8601String(),
       'hotelCheckOut': hotelCheckOut?.toIso8601String(),
+      'hotelCheckOut': hotelCheckOut?.toIso8601String(),
       'syncStatus': syncStatus,
+      'flight': flight,
+      'hotel': hotel,
+      'room': room,
     };
   }
 
@@ -214,6 +227,9 @@ class Trip {
     DateTime? hotelCheckIn,
     DateTime? hotelCheckOut,
     String? syncStatus,
+    Map<String, dynamic>? flight,
+    Map<String, dynamic>? hotel,
+    Map<String, dynamic>? room,
   }) {
     return Trip(
       id: id ?? this.id,
@@ -236,6 +252,9 @@ class Trip {
       hotelCheckIn: hotelCheckIn ?? this.hotelCheckIn,
       hotelCheckOut: hotelCheckOut ?? this.hotelCheckOut,
       syncStatus: syncStatus ?? this.syncStatus,
+      flight: flight ?? this.flight,
+      hotel: hotel ?? this.hotel,
+      room: room ?? this.room,
     );
   }
 

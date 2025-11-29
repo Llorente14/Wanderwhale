@@ -26,6 +26,13 @@ const authCheck = require("../middleware/authCheck");
  */
 router.get("/search/locations", flightSearchController.searchLocations);
 
+/**
+ * @route   GET /api/flights/search/city
+ * @desc    Search for cities/airports by keyword (Autocomplete)
+ * @access  Public
+ */
+router.get("/search/city", flightSearchController.searchCity);
+
 // ============================================================================
 // STEP 1: FLIGHT OFFERS SEARCH (Public)
 // ============================================================================

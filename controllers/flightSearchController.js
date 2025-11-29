@@ -112,7 +112,53 @@ exports.searchLocations = async (req, res) => {
 };
 
 // ============================================================================
-// STEP 1: SEARCH FLIGHT OFFERS - Pencarian Penerbangan
+// STEP 0.5: SEARCH CITY (Simplified for Autocomplete)
+// ============================================================================
+/**
+ * @desc    Search for cities/airports by keyword (Simplified)
+ * @route   GET /api/flights/search/city
+ * @access  Public
+ * @query   ?keyword=jakarta
+ */
+exports.searchCity = async (req, res) => {
+  try {
+    const { keyword } = req.query;
+
+    if (!keyword || keyword.length < 3) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+      });
+    }
+
+    // Call Amadeus service with both CITY and AIRPORT
+    const data = await amadeusService.searchFlightLocations(keyword, "CITY,AIRPORT");
+
+    if (!data.data) {
+      return res.status(200).json({ success: true, data: [] });
+    }
+
+    // Map to simplified format
+    const suggestions = data.data.map((loc) => ({
+      name: loc.name,
+      iataCode: loc.iataCode,
+      cityName: loc.address?.cityName || loc.name,
+      type: loc.subType,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data: suggestions,
+    });
+  } catch (error) {
+    console.error("Error searching city:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to search city",
+      error: error.message,
+    });
+  }
+};
 // ============================================================================
 /**
  * @desc    Search for flight offers
@@ -206,18 +252,16 @@ exports.searchFlightOffers = async (req, res) => {
       if (!od.originLocationCode || !od.destinationLocationCode) {
         return res.status(400).json({
           success: false,
-          message: `originDestination ${
-            i + 1
-          }: originLocationCode and destinationLocationCode are required`,
+          message: `originDestination ${i + 1
+            }: originLocationCode and destinationLocationCode are required`,
         });
       }
 
       if (!od.departureDateTimeRange?.date) {
         return res.status(400).json({
           success: false,
-          message: `originDestination ${
-            i + 1
-          }: departureDateTimeRange.date is required (format: YYYY-MM-DD)`,
+          message: `originDestination ${i + 1
+            }: departureDateTimeRange.date is required (format: YYYY-MM-DD)`,
         });
       }
 
@@ -226,9 +270,8 @@ exports.searchFlightOffers = async (req, res) => {
       if (!dateRegex.test(od.departureDateTimeRange.date)) {
         return res.status(400).json({
           success: false,
-          message: `originDestination ${
-            i + 1
-          }: Invalid date format. Use YYYY-MM-DD`,
+          message: `originDestination ${i + 1
+            }: Invalid date format. Use YYYY-MM-DD`,
         });
       }
 
@@ -240,9 +283,8 @@ exports.searchFlightOffers = async (req, res) => {
       if (departureDate < today) {
         return res.status(400).json({
           success: false,
-          message: `originDestination ${
-            i + 1
-          }: Departure date cannot be in the past`,
+          message: `originDestination ${i + 1
+            }: Departure date cannot be in the past`,
         });
       }
     }
@@ -352,6 +394,8 @@ exports.searchFlightOffers = async (req, res) => {
       success: false,
       message: "Failed to search flight offers",
       error: error.message,
+      stack: error.stack, // Helpful for debugging
+      details: error.response?.data || "No external API response details", // Capture Amadeus API error details if available
     });
   }
 };

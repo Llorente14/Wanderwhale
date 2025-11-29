@@ -1,6 +1,7 @@
 // lib/services/api_service.dart
 
 import 'package:dio/dio.dart';
+import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_app/models/booking_model.dart';
 import 'package:flutter_app/models/destination_master_model.dart';
@@ -101,6 +102,58 @@ class ApiService {
       requestOptions: response.requestOptions,
       message: "Respon 'data' bukan List.",
     );
+  }
+
+  // === FLIGHTS ===
+  Future<List<FlightOfferModel>> searchFlights({
+    required String origin,
+    required String destination,
+    required DateTime date,
+    int travelers = 1,
+  }) async {
+    final payload = {
+      "originDestinations": [
+        {
+          "id": "1",
+          "originLocationCode": origin,
+          "destinationLocationCode": destination,
+          "departureDateTimeRange": {
+            "date": DateFormat('yyyy-MM-dd').format(date),
+          }
+        }
+      ],
+      "travelers": List.generate(travelers, (index) => {
+        "id": "${index + 1}",
+        "travelerType": "ADULT"
+      }),
+      "sources": ["GDS"],
+      "searchCriteria": {
+        "maxFlightOffers": 50
+      }
+    };
+
+    try {
+      final response = await _dio.post(ApiConstants.searchFlightOffers, data: payload);
+      return _parseResponseList(response, (json) => FlightOfferModel.fromJson(json));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> searchCity(String keyword) async {
+    try {
+      final response = await _dio.get(
+        '/flights/search/city',
+        queryParameters: {'keyword': keyword},
+      );
+      if (response.data['success'] == true) {
+        return List<Map<String, dynamic>>.from(response.data['data']);
+      }
+      return [];
+    } catch (e) {
+      print("Error searching city: $e");
+      return [];
+    }
   }
 
   // ==================== AUTH / USER ====================

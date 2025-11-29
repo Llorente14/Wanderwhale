@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import '../../models/trip_model.dart';
 import '../../models/simple_flight_model.dart';
 import '../../services/trip_service.dart';
 import '../flight/flight_list_page.dart';
 
-import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
+import 'dart:async';
 import '../../models/hotel_offer_model.dart';
 import '../hotel/hotel_recommendations.dart';
 import '../../utils/formatters.dart';
@@ -47,8 +47,18 @@ class _CreateTripPageState extends State<CreateTripPage> {
   HotelOfferGroup? _chosenHotel;
   HotelOffer? _chosenRoom;
 
-  String? autoCity;
-  bool locationLoaded = false;
+  String? _selectedOriginIata;
+  String? _selectedDestinationIata;
+  String? _selectedDestinationCityName;
+  
+  Timer? _originDebounce;
+  Completer<Iterable<Map<String, dynamic>>>? _originCompleter;
+  bool _isSearchingOrigin = false;
+
+  Timer? _destinationDebounce;
+  Completer<Iterable<Map<String, dynamic>>>? _destinationCompleter;
+  bool _isSearchingDestination = false;
+
   bool _isSaving = false;
 
   static const List<_FlightOption> _mockFlights = [
@@ -86,53 +96,10 @@ class _CreateTripPageState extends State<CreateTripPage> {
     super.initState();
     if (widget.existingTrip != null) {
       _loadExistingTrip();
-      locationLoaded = true; // Skip auto-detect if editing
-    } else {
-      loadCity();
     }
   }
 
-  void loadCity() async {
-    String? city = await getUserCity();
-    if (mounted) {
-      setState(() {
-        autoCity = city;
-        locationLoaded = true;
-      });
-    }
-  }
 
-  Future<String?> getUserCity() async {
-    LocationPermission permission = await Geolocator.checkPermission();
-
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-
-    if (permission == LocationPermission.deniedForever ||
-        permission == LocationPermission.denied) {
-      return null; // location blocked or rejected
-    }
-
-    try {
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-
-      final placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-
-      if (placemarks.isNotEmpty) {
-        return placemarks.first.locality; // City name
-      }
-    } catch (e) {
-      debugPrint('Error getting location: $e');
-    }
-
-    return null;
-  }
 
   void _loadExistingTrip() {
     final trip = widget.existingTrip!;
@@ -199,7 +166,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
   bool _canProceedToNextStep() {
     switch (_currentStep) {
       case 0:
-        return (autoCity != null || _originController.text.trim().isNotEmpty) &&
+        return _originController.text.trim().isNotEmpty &&
             _destinationController.text.trim().isNotEmpty;
       case 1:
         return _startDate != null && _endDate != null && _calculatedDuration > 0;
@@ -230,8 +197,10 @@ class _CreateTripPageState extends State<CreateTripPage> {
     });
 
     try {
-      final originCity = autoCity ?? _originController.text.trim();
-      final destinationCity = _destinationController.text.trim();
+      // Use selected IATA codes if available, otherwise fallback to text (though text might fail if not IATA)
+      // Ideally we force selection, but for robustness:
+      final originCity = _selectedOriginIata ?? _originController.text.trim();
+      final destinationCity = _selectedDestinationIata ?? _destinationController.text.trim();
       
       // Prepare Flight Data
       Map<String, dynamic>? flightData;
@@ -269,8 +238,23 @@ class _CreateTripPageState extends State<CreateTripPage> {
         };
       }
 
+      // Determine Trip Name for Display
+      String displayDestinationName;
+      if (_selectedDestinationCityName != null) {
+        displayDestinationName = _selectedDestinationCityName!;
+      } else {
+        // Try to parse "City (IATA)" from controller text
+        final text = _destinationController.text.trim();
+        final match = RegExp(r'^(.*?)\s*\([A-Z]{3}\)$').firstMatch(text);
+        if (match != null) {
+          displayDestinationName = match.group(1) ?? text;
+        } else {
+          displayDestinationName = text; // Fallback to whatever user typed
+        }
+      }
+
       final tripData = {
-        "title": "Trip to $destinationCity",
+        "tripName": "Trip to $displayDestinationName",
         "origin": originCity,
         "destination": destinationCity,
         "startDate": _startDate!.toIso8601String(),
@@ -285,6 +269,9 @@ class _CreateTripPageState extends State<CreateTripPage> {
             ? _notesController.text.trim()
             : null,
         
+        "wantFlight": _wantFlight,
+        "wantHotel": _wantHotel,
+        
         // Flight
         "flight": flightData,
         "seats": _wantFlight ? _chosenSeats : null,
@@ -298,15 +285,18 @@ class _CreateTripPageState extends State<CreateTripPage> {
       final apiService = ApiService();
       dynamic backendResponse;
       String syncStatus = 'pending';
+      String? backendTripId;
 
       try {
          if (widget.existingTrip != null) {
             final result = await apiService.updateTrip(widget.existingTrip!.id, tripData);
             backendResponse = result.toJson();
+            backendTripId = result.tripId;
             syncStatus = 'synced';
          } else {
             final result = await apiService.createTrip(tripData);
             backendResponse = result.toJson();
+            backendTripId = result.tripId;
             syncStatus = 'synced';
          }
       } catch (e) {
@@ -328,9 +318,16 @@ class _CreateTripPageState extends State<CreateTripPage> {
       };
 
       if (widget.existingTrip != null) {
+         // Edit mode: Update existing doc
          await FirebaseFirestore.instance.collection("trips").doc(widget.existingTrip!.id).set(firestoreData, SetOptions(merge: true));
       } else {
-         await FirebaseFirestore.instance.collection("trips").add(firestoreData);
+         if (backendTripId != null && backendTripId.isNotEmpty) {
+           // Success: Use backend ID to prevent duplicates
+           await FirebaseFirestore.instance.collection("trips").doc(backendTripId).set(firestoreData, SetOptions(merge: true));
+         } else {
+           // Fallback: Backend failed, generate new ID
+           await FirebaseFirestore.instance.collection("trips").add(firestoreData);
+         }
       }
 
       // 3. Show success
@@ -543,7 +540,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
 
   // Step 1: Destination
   Widget _buildStep1Destination() {
-    final originFilled = autoCity != null || _originController.text.trim().isNotEmpty;
+    final originFilled = _originController.text.trim().isNotEmpty;
     final destinationFilled = _destinationController.text.trim().isNotEmpty;
     final canShowResults = originFilled && destinationFilled;
 
@@ -569,58 +566,184 @@ class _CreateTripPageState extends State<CreateTripPage> {
             ),
           ),
           const SizedBox(height: 24),
-          locationLoaded == false
-              ? const Center(child: CircularProgressIndicator())
-              : autoCity != null
-                  ? TextFormField(
-                      controller: TextEditingController(text: autoCity),
-                      readOnly: true,
-                      decoration: const InputDecoration(
-                        labelText: "Where are you coming from?",
-                        suffixIcon: Icon(Icons.location_on, color: Color(0xFF2196F3)),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
-                        ),
-                      ),
-                    )
-                  : TextField(
-                      controller: _originController,
-                      decoration: InputDecoration(
-                        labelText: 'Where are you coming from?',
-                        hintText: 'e.g., Jakarta, Indonesia',
-                        helperText: "Location permission denied — enter manually",
-                        prefixIcon:
-                            const Icon(Icons.my_location, color: Color(0xFF2196F3)),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: Color(0xFF2196F3),
-                            width: 2,
+          Autocomplete<Map<String, dynamic>>(
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text.length < 3) {
+                          return const Iterable<Map<String, dynamic>>.empty();
+                        }
+                        
+                        // Debounce Logic
+                        if (_originDebounce?.isActive ?? false) _originDebounce!.cancel();
+                        _originCompleter = Completer();
+                        
+                        setState(() => _isSearchingOrigin = true);
+
+                        _originDebounce = Timer(const Duration(milliseconds: 1000), () async {
+                          try {
+                            final results = await ApiService().searchCity(textEditingValue.text);
+                            if (!_originCompleter!.isCompleted) {
+                              _originCompleter!.complete(results);
+                            }
+                          } catch (e) {
+                            if (!_originCompleter!.isCompleted) {
+                              _originCompleter!.complete([]);
+                            }
+                          } finally {
+                            if (mounted) setState(() => _isSearchingOrigin = false);
+                          }
+                        });
+
+                        return _originCompleter!.future;
+                      },
+                      displayStringForOption: (option) => '${option['cityName'] ?? option['name']} (${option['iataCode']})',
+                      onSelected: (Map<String, dynamic> selection) {
+                        _selectedOriginIata = selection['iataCode'];
+                        // Sync our controller for validation
+                        _originController.text = '${selection['cityName'] ?? selection['name']} (${selection['iataCode']})';
+                        setState(() {});
+                      },
+                      fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
+                        return TextField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          onEditingComplete: onEditingComplete,
+                          onChanged: (value) {
+                            _originController.text = value;
+                            setState(() {});
+                          },
+                          decoration: InputDecoration(
+                            labelText: 'Where are you coming from?',
+                            hintText: 'e.g., Jakarta',
+                            helperText: "Enter city name (min 3 chars)",
+                            prefixIcon: const Icon(Icons.my_location, color: Color(0xFF2196F3)),
+                            suffixIcon: _isSearchingOrigin
+                                ? const Padding(
+                                    padding: EdgeInsets.all(12.0),
+                                    child: SizedBox(
+                                      width: 20, 
+                                      height: 20, 
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    ),
+                                  )
+                                : null,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                        ),
-                      ),
-                      onChanged: (_) => setState(() {}),
+                        );
+                      },
+                      optionsViewBuilder: (context, onSelected, options) {
+                        return Align(
+                          alignment: Alignment.topLeft,
+                          child: Material(
+                            elevation: 4.0,
+                            child: SizedBox(
+                              width: MediaQuery.of(context).size.width - 48,
+                              child: ListView.builder(
+                                padding: EdgeInsets.zero,
+                                shrinkWrap: true,
+                                itemCount: options.length,
+                                itemBuilder: (BuildContext context, int index) {
+                                  final option = options.elementAt(index);
+                                  return ListTile(
+                                    title: Text('${option['cityName'] ?? option['name']} (${option['iataCode']})'),
+                                    subtitle: Text(option['name']),
+                                    onTap: () => onSelected(option),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
           const SizedBox(height: 16),
-          TextField(
-            controller: _destinationController,
-            decoration: InputDecoration(
-              labelText: 'Where do you want to go?',
-              hintText: 'e.g., Paris, France',
-              prefixIcon:
-                  const Icon(Icons.location_on, color: Color(0xFF2196F3)),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
-              ),
-            ),
-            onChanged: (_) => setState(() {}),
+          Autocomplete<Map<String, dynamic>>(
+            optionsBuilder: (TextEditingValue textEditingValue) {
+              if (textEditingValue.text.length < 3) {
+                return const Iterable<Map<String, dynamic>>.empty();
+              }
+
+              // Debounce Logic
+              if (_destinationDebounce?.isActive ?? false) _destinationDebounce!.cancel();
+              _destinationCompleter = Completer();
+              
+              setState(() => _isSearchingDestination = true);
+
+              _destinationDebounce = Timer(const Duration(milliseconds: 1000), () async {
+                try {
+                  final results = await ApiService().searchCity(textEditingValue.text);
+                  if (!_destinationCompleter!.isCompleted) {
+                    _destinationCompleter!.complete(results);
+                  }
+                } catch (e) {
+                  if (!_destinationCompleter!.isCompleted) {
+                    _destinationCompleter!.complete([]);
+                  }
+                } finally {
+                  if (mounted) setState(() => _isSearchingDestination = false);
+                }
+              });
+
+              return _destinationCompleter!.future;
+            },
+            displayStringForOption: (option) => '${option['cityName'] ?? option['name']} (${option['iataCode']})',
+            onSelected: (Map<String, dynamic> selection) {
+              _selectedDestinationIata = selection['iataCode'];
+              _selectedDestinationCityName = selection['cityName'] ?? selection['name'];
+              _destinationController.text = '${selection['cityName'] ?? selection['name']} (${selection['iataCode']})';
+              setState(() {});
+            },
+            fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
+              return TextField(
+                controller: controller,
+                focusNode: focusNode,
+                onEditingComplete: onEditingComplete,
+                onChanged: (value) {
+                  _destinationController.text = value;
+                  setState(() {});
+                },
+                decoration: InputDecoration(
+                  labelText: 'Where do you want to go?',
+                  hintText: 'e.g., Paris',
+                  helperText: "Enter city name (min 3 chars)",
+                  prefixIcon: const Icon(Icons.location_on, color: Color(0xFF2196F3)),
+                  suffixIcon: _isSearchingDestination
+                      ? const Padding(
+                          padding: EdgeInsets.all(12.0),
+                          child: SizedBox(
+                            width: 20, 
+                            height: 20, 
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      : null,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              );
+            },
+            optionsViewBuilder: (context, onSelected, options) {
+              return Align(
+                alignment: Alignment.topLeft,
+                child: Material(
+                  elevation: 4.0,
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width - 48,
+                    child: ListView.builder(
+                      padding: EdgeInsets.zero,
+                      shrinkWrap: true,
+                      itemCount: options.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        final option = options.elementAt(index);
+                        return ListTile(
+                          title: Text('${option['cityName'] ?? option['name']} (${option['iataCode']})'),
+                          subtitle: Text(option['name']),
+                          onTap: () => onSelected(option),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 24),
         ],
@@ -1146,12 +1269,28 @@ class _CreateTripPageState extends State<CreateTripPage> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () async {
+                    // Helper to extract IATA code
+                    String getIata(String? selected, String text) {
+                      if (selected != null && selected.isNotEmpty) return selected;
+                      // Try to extract from "City (ABC)" format
+                      final match = RegExp(r'\(([A-Z]{3})\)').firstMatch(text);
+                      if (match != null) return match.group(1)!;
+                      // Fallback to text if it looks like an IATA code (3 letters)
+                      if (RegExp(r'^[A-Z]{3}$', caseSensitive: false).hasMatch(text.trim())) {
+                        return text.trim().toUpperCase();
+                      }
+                      return text.trim(); // Fallback to whatever is there
+                    }
+
+                    final originCode = getIata(_selectedOriginIata, _originController.text);
+                    final destinationCode = getIata(_selectedDestinationIata, _destinationController.text);
+
                     final result = await Navigator.push<Map<String, dynamic>>(
                       context,
                       MaterialPageRoute(
                         builder: (_) => FlightListPage(
-                          originCity: _originController.text.trim(),
-                          destinationCity: _destinationController.text.trim(),
+                          origin: originCode,
+                          destination: destinationCode,
                           passengers: _travelers,
                           departureDate: _startDate,
                         ),

@@ -455,48 +455,8 @@ class _TripDetailPageState extends State<TripDetailPage> {
             
             const SizedBox(height: 16),
             
-            // Preferences Section
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SectionTitle(
-                    title: 'Travel preferences',
-                    icon: Icons.tune,
-                  ),
-                  const Divider(),
-                  const SizedBox(height: 12),
-                  _buildPreferenceRow(
-                    icon: Icons.flight_takeoff,
-                    label: 'Flight assistance',
-                    isEnabled: _trip!.wantFlight,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildPreferenceRow(
-                    icon: Icons.hotel,
-                    label: 'Hotel booking',
-                    isEnabled: _trip!.wantHotel,
-                  ),
-                ],
-              ),
-            ),
-            
-            // Hotel Booking Summary
-            if (_trip!.wantHotel && _trip!.hotelName != null) ...[
+            // Flight Details Section
+            if (_trip!.wantFlight) ...[
               const SizedBox(height: 16),
               Container(
                 width: double.infinity,
@@ -517,34 +477,64 @@ class _TripDetailPageState extends State<TripDetailPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SectionTitle(
-                      title: 'Hotel Booking',
-                      icon: Icons.hotel,
+                      title: 'Flight Details',
+                      icon: Icons.flight_takeoff,
                     ),
                     const Divider(),
                     const SizedBox(height: 12),
-                    Text(
-                      _trip!.hotelName!,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2C3E50),
+                    if (_trip!.flight != null) ...[
+                      _buildFlightDetailsCard(_trip!.flight!),
+                    ] else ...[
+                      const Text(
+                        'Flight assistance enabled, but no flight selected yet.',
+                        style: TextStyle(color: Colors.grey),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    _buildDateRow('Room Type', _trip!.roomType ?? 'Standard'),
-                    const SizedBox(height: 8),
-                    if (_trip!.hotelCheckIn != null && _trip!.hotelCheckOut != null)
-                      _buildDateRow(
-                        'Dates',
-                        '${DateFormat('MMM dd').format(_trip!.hotelCheckIn!)} - ${DateFormat('MMM dd').format(_trip!.hotelCheckOut!)}',
-                      ),
-                    const SizedBox(height: 8),
-                    if (_trip!.hotelPrice != null)
-                      _buildDateRow('Total Price', _trip!.hotelPrice!.toIDR()),
+                    ],
                   ],
                 ),
               ),
             ],
+
+            // Hotel Details Section
+            if (_trip!.wantHotel) ...[
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionTitle(
+                      title: 'Hotel Details',
+                      icon: Icons.hotel,
+                    ),
+                    const Divider(),
+                    const SizedBox(height: 12),
+                    if (_trip!.hotel != null) ...[
+                      _buildHotelDetailsCard(_trip!.hotel!, _trip!.room),
+                    ] else ...[
+                      const Text(
+                        'Hotel booking enabled, but no hotel selected yet.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+            
             
             const SizedBox(height: 16),
             
@@ -862,6 +852,174 @@ class _TripDetailPageState extends State<TripDetailPage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildFlightDetailsCard(Map<String, dynamic> flight) {
+    final airline = flight['airline'] ?? 'Unknown Airline';
+    final flightNumber = flight['flightNumber'] ?? '';
+    final origin = flight['origin'] ?? 'Origin';
+    final destination = flight['destination'] ?? 'Dest';
+    final price = flight['price'] as num?;
+    final currency = flight['currency'] ?? 'IDR';
+    
+    DateTime? depTime;
+    DateTime? arrTime;
+    try {
+      if (flight['departureTime'] != null) depTime = DateTime.parse(flight['departureTime']);
+      if (flight['arrivalTime'] != null) arrTime = DateTime.parse(flight['arrivalTime']);
+    } catch (e) {
+      print("Error parsing flight times: $e");
+    }
+
+    return Card(
+      elevation: 0,
+      color: Colors.blue[50],
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      airline,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    Text(
+                      flightNumber,
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    ),
+                  ],
+                ),
+                if (price != null)
+                  Text(
+                    NumberFormat.currency(locale: 'id_ID', symbol: currency, decimalDigits: 0).format(price),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF2196F3)),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(origin, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    if (depTime != null)
+                      Text(DateFormat('HH:mm').format(depTime), style: const TextStyle(fontSize: 14)),
+                  ],
+                ),
+                const Icon(Icons.flight_takeoff, color: Colors.grey),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(destination, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    if (arrTime != null)
+                      Text(DateFormat('HH:mm').format(arrTime), style: const TextStyle(fontSize: 14)),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHotelDetailsCard(Map<String, dynamic> hotel, Map<String, dynamic>? room) {
+    final hotelName = hotel['hotelName'] ?? 'Unknown Hotel';
+    final rating = hotel['rating']?.toString();
+    final rawAddress = hotel['address'];
+    final address = rawAddress is List 
+        ? rawAddress.join(', ') 
+        : rawAddress?.toString() ?? 'No address';
+    
+    final roomType = room?['roomType'] ?? 'Standard';
+    final price = room?['totalPrice'] as num?;
+    
+    DateTime? checkIn;
+    DateTime? checkOut;
+    try {
+      if (room?['checkIn'] != null) checkIn = DateTime.parse(room!['checkIn']);
+      if (room?['checkOut'] != null) checkOut = DateTime.parse(room!['checkOut']);
+    } catch (e) {
+      print("Error parsing hotel dates: $e");
+    }
+
+    return Card(
+      elevation: 0,
+      color: Colors.orange[50],
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    hotelName,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+                if (rating != null)
+                  Row(
+                    children: [
+                      const Icon(Icons.star, color: Colors.orange, size: 16),
+                      const SizedBox(width: 4),
+                      Text(rating, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    address,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Room: $roomType', style: const TextStyle(fontWeight: FontWeight.w500)),
+                    if (checkIn != null && checkOut != null)
+                      Text(
+                        '${DateFormat('dd MMM').format(checkIn)} - ${DateFormat('dd MMM').format(checkOut)}',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      ),
+                  ],
+                ),
+                if (price != null)
+                  Text(
+                    NumberFormat.currency(locale: 'id_ID', symbol: 'IDR', decimalDigits: 0).format(price),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.orange),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -10,6 +10,8 @@ import '../../widgets/trip_card.dart';
 import 'create_trip.dart';
 import 'trip_detail.dart';
 
+import '../../core/navigation/app_routes.dart';
+
 class TripList extends ConsumerStatefulWidget {
   const TripList({super.key});
 
@@ -66,6 +68,20 @@ class _TripListState extends ConsumerState<TripList> {
             color: Color(0xFF2C3E50),
           ),
         ),
+        // here
+        actions: [
+          // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          // !!! TEMPORARY LOGIN BUTTON FOR TESTING - REMOVE BEFORE PUSHING !!!
+          // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          IconButton(
+            icon: const Icon(Icons.login, color: Colors.red),
+            tooltip: 'Go to Login (TESTING ONLY)',
+            onPressed: () {
+              Navigator.pushNamed(context, AppRoutes.login);
+            },
+          ),
+        ],
+        //  to here
       ),
       body: user == null 
           ? const Center(child: Text("Please login to view trips"))
@@ -77,6 +93,7 @@ class _TripListState extends ConsumerState<TripList> {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
+                  print("TripList Error: ${snapshot.error}");
                   return Center(child: Text('Error: ${snapshot.error}'));
                 }
 
@@ -85,6 +102,8 @@ class _TripListState extends ConsumerState<TripList> {
                 }
 
                 final docs = snapshot.data?.docs ?? [];
+                print("TripList: Found ${docs.length} trips for user ${user.uid}");
+                
                 if (docs.isEmpty) {
                   return _buildEmptyState();
                 }

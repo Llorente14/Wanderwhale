@@ -1,11 +1,22 @@
 // lib/core/utils/constants.dart
+import 'package:flutter/foundation.dart';
 
 class ApiConstants {
   // Ganti ke "http://localhost:5000/api" jika pakai iOS Simulator
   // 10.0.2.2 adalah alamat IP khusus emulator Android untuk mengakses 'localhost'
-  static const String baseUrl = "http://10.0.2.2:5000/api";
-  static const Duration connectTimeout = Duration(seconds: 15);
-  static const Duration receiveTimeout = Duration(seconds: 15);
+ static String get baseUrl {
+    if (kIsWeb) {
+      return "http://localhost:5000/api"; 
+    } else if (defaultTargetPlatform == TargetPlatform.android) {
+      return "http://10.0.2.2:5000/api";
+    } else {
+      return "http://localhost:5000/api"; // Untuk iOS
+    }
+  }
+
+  // Naikkan durasi jadi 60 detik (1 menit) biar aman
+  static const Duration connectTimeout = Duration(seconds: 60);
+  static const Duration receiveTimeout = Duration(seconds: 60);
 
   // === AUTH ===
   // (Login/Register ditangani oleh Firebase Auth, bukan API kita)

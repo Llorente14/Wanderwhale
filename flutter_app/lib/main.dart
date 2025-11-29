@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_app/screens/auth/login_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'screens/main/welcome_screen.dart';
+import 'screens/hotel/checkout_hotel.dart';
+import 'screens/flight/checkout_flight.dart';
+
 
 import 'core/navigation/app_routes.dart';
 import 'core/theme/app_colors.dart';
@@ -8,6 +14,7 @@ import 'screens/chatbot/ai_chat.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'screens/main/home_screen.dart';
 import 'screens/trip/trip_list.dart';
+
 import 'core/theme/app_colors.dart';
 import 'firebase_options.dart';
 
@@ -79,11 +86,19 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      initialRoute: AppRoutes.home,
+      // initialRoute: AppRoutes.home,
+      // routes: {
+      //   AppRoutes.home: (_) => const HomeScreen(),
+      //   AppRoutes.tripList: (_) => const TripList(),
+      //   AppRoutes.aiChat: (_) => const AiChat(),
+      // },
+      initialRoute: AppRoutes.home, 
       routes: {
         AppRoutes.home: (_) => const HomeScreen(),
         AppRoutes.tripList: (_) => const TripList(),
         AppRoutes.aiChat: (_) => const AiChat(),
+        AppRoutes.login: (_) => const LoginScreen(),
+        // AppRoutes.checkout: (_) => const CheckoutFlightScreen(),
       },
     );
   }
