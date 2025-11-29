@@ -14,8 +14,7 @@ class ApiConstants {
   static const String userAccount = "/users/account"; // DELETE
   static const String userFcmToken = "/users/fcm-token"; // PUT
 
-  // OAuth endpoint (backend expects Firebase ID Token)
-  static const String authOAuth = "/auth/oauth"; // POST { idToken, fcmToken? }
+  // Note: OAuth backend endpoint removed from client config
 
   // === TRIPS (Internal Database) ===
   static const String trips = "/trips"; // GET, POST

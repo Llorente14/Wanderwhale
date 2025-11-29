@@ -256,88 +256,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         SocialButton(
                           text: "Continue with Google",
                           imagePath: 'assets/logo_google.png',
-                          onTap: () async {
-                            setState(() => _isLoading = true);
-                            try {
-                              await ref
-                                  .read(authControllerProvider)
-                                  .signInWithGoogle();
-                              if (!mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Signed in with Google'),
-                                ),
-                              );
-                            } catch (e) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Google sign-in failed: ${e.toString()}',
-                                  ),
-                                ),
-                              );
-                            } finally {
-                              if (mounted) setState(() => _isLoading = false);
-                            }
-                          },
+                          onTap: () {},
                         ),
                         const SizedBox(height: 16),
                         SocialButton(
                           text: "Continue with Facebook",
                           imagePath: 'assets/logo_facebook.png',
-                          onTap: () async {
-                            setState(() => _isLoading = true);
-                            try {
-                              await ref
-                                  .read(authControllerProvider)
-                                  .signInWithFacebook();
-                              if (!mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Signed in with Facebook'),
-                                ),
-                              );
-                            } catch (e) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Facebook sign-in failed: ${e.toString()}',
-                                  ),
-                                ),
-                              );
-                            } finally {
-                              if (mounted) setState(() => _isLoading = false);
-                            }
-                          },
+                          onTap: () {},
                         ),
                         const SizedBox(height: 16),
                         SocialButton(
                           text: "Continue with Apple",
                           imagePath: 'assets/logo_apple.png',
-                          onTap: () async {
-                            setState(() => _isLoading = true);
-                            try {
-                              await ref
-                                  .read(authControllerProvider)
-                                  .signInWithApple();
-                              if (!mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Signed in with Apple'),
-                                ),
-                              );
-                            } catch (e) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Apple sign-in failed: ${e.toString()}',
-                                  ),
-                                ),
-                              );
-                            } finally {
-                              if (mounted) setState(() => _isLoading = false);
-                            }
-                          },
+                          onTap: () {},
                         ),
                       ],
                     ),

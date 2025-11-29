@@ -40,7 +40,7 @@ dependencies:
   firebase_messaging: ^15.2.10
   google_sign_in: ^6.1.0
   flutter_facebook_auth: ^6.0.0
-  sign_in_with_apple: ^4.1.0
+  # sign_in_with_apple removed — social buttons decorative only
 
   # Icons
   flutter_svg: ^2.0.9
