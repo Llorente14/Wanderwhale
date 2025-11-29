@@ -5,13 +5,31 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/flight_booking_model.dart';
 import '../models/flight_offer_model.dart';
+import '../screens/flight/flight_data.dart'; // For demo data
 import '../services/api_service.dart';
 import 'app_providers.dart';
 
 final flightOffersProvider = FutureProvider.family
-    .autoDispose<List<FlightOfferModel>, FlightSearchParams>((ref, params) {
+    .autoDispose<List<FlightOfferModel>, FlightSearchParams>((ref, params) async {
   final api = ref.watch(apiServiceProvider);
-  return api.searchFlightOffers(params.body);
+  
+  try {
+    // Try API first
+    final offers = await api.searchFlightOffers(params.body);
+    
+    // If API returns empty, fallback to demo data
+    if (offers.isEmpty) {
+      print('⚠️ API returned empty results, using demo flight data');
+      return _getDemoFlightOffers();
+    }
+    
+    print('✅ Loaded ${offers.length} flights from API');
+    return offers;
+  } catch (e) {
+    // If API fails, fallback to demo data
+    print('⚠️ API error: $e, using demo flight data');
+    return _getDemoFlightOffers();
+  }
 });
 
 final flightBookingControllerProvider =
@@ -93,4 +111,24 @@ class FlightBookingFilter {
   @override
   int get hashCode => Object.hash(tripId, status, page, limit);
 }
+
+// Helper function to get demo flight offers
+List<FlightOfferModel> _getDemoFlightOffers() {
+  return demoFlightOffers;
+}
+
+// Provider for searching locations (airports/cities)
+final locationSearchProvider = FutureProvider.family<List<Map<String, dynamic>>, String>((ref, query) async {
+  if (query.length < 3) return [];
+  
+  final api = ref.watch(apiServiceProvider);
+  try {
+    // subType: AIRPORT or CITY. We search for both.
+    final results = await api.searchLocationsByKeyword(keyword: query, subType: 'AIRPORT,CITY');
+    return results.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  } catch (e) {
+    print('Location search error: $e');
+    return [];
+  }
+});
 

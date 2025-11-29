@@ -1,26 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/models/hotel_offer_model.dart';
 import 'package:flutter_app/utils/formatters.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../providers/hotel_providers.dart';
+import '../../providers/flight_providers.dart'; // For locationSearchProvider
 import 'hotel_rooms.dart';
 
-class HotelRecommendations extends StatefulWidget {
+class HotelRecommendations extends ConsumerStatefulWidget {
   const HotelRecommendations({super.key});
 
   @override
-  State<HotelRecommendations> createState() =>
+  ConsumerState<HotelRecommendations> createState() =>
       _HotelRecommendationsState();
 }
 
-class _HotelRecommendationsState extends State<HotelRecommendations> {
+class _HotelRecommendationsState extends ConsumerState<HotelRecommendations> {
   bool isNational = true;
-  late String selectedCity;
-
-  late final List<HotelOfferGroup> hotels = _mockHotelOfferGroups
-      .map((json) => HotelOfferGroup.fromJson(json))
-      .toList();
-
-  late final List<String> cities = _buildCityFilters();
+  
+  // Nullable to indicate no search performed yet
+  String? selectedCityCode;
+  String selectedCityName = '';
 
   final Map<String, String> _hotelImages = {
     'JKT001':
@@ -37,37 +37,14 @@ class _HotelRecommendationsState extends State<HotelRecommendations> {
   @override
   void initState() {
     super.initState();
-    selectedCity = cities.isNotEmpty ? cities.first : '';
+    selectedCityCode = null;
   }
 
-  List<String> _buildCityFilters() {
-    final uniqueCities = <String>{};
-    for (final group in hotels) {
-      final city = group.hotel.address?.cityName;
-      if (city != null && city.isNotEmpty) {
-        uniqueCities.add(city);
-      }
-    }
-    final sorted = uniqueCities.toList()..sort();
-    return sorted.isNotEmpty ? sorted : ['Jakarta'];
-  }
-
-  List<HotelOfferGroup> get filteredHotels {
-    return hotels.where((group) {
-      final city = _cityOf(group);
-      final matchesCity =
-          selectedCity.isEmpty ? true : city.toLowerCase() == selectedCity.toLowerCase();
-      final matchesRegion = isNational ? _isNational(group) : !_isNational(group);
-      return matchesCity && matchesRegion;
-    }).toList();
-  }
-
-  bool _isNational(HotelOfferGroup group) {
-    return (group.hotel.address?.countryCode ?? 'ID').toUpperCase() == 'ID';
-  }
-
-  String _cityOf(HotelOfferGroup group) {
-    return group.hotel.address?.cityName ?? 'Unknown City';
+  void _updateCity(String code, String name) {
+    setState(() {
+      selectedCityCode = code;
+      selectedCityName = name;
+    });
   }
 
   HotelOffer? _primaryOffer(HotelOfferGroup group) {
@@ -77,9 +54,17 @@ class _HotelRecommendationsState extends State<HotelRecommendations> {
   String _imageFor(HotelOfferGroup group) {
     return _hotelImages[group.hotel.hotelId] ?? _fallbackImage;
   }
+  
+  String _cityOf(HotelOfferGroup group) {
+    return group.hotel.address?.cityName ?? 'Unknown City';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final AsyncValue<List<HotelOfferGroup>>? offersAsync = selectedCityCode != null
+        ? ref.watch(hotelSearchByCityProvider(selectedCityCode!))
+        : null;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F9),
       body: SafeArea(
@@ -88,22 +73,64 @@ class _HotelRecommendationsState extends State<HotelRecommendations> {
             _buildHeader(),
             _buildSearchBar(),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildJustForYouSection(),
-                    const SizedBox(height: 24),
-                    _buildBestPriceSection(),
-                  ],
-                ),
-              ),
+              child: offersAsync == null
+                  ? _buildEmptyState()
+                  : offersAsync.when(
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (err, stack) =>
+                          Center(child: Text('Error: $err')),
+                      data: (hotels) {
+                        if (hotels.isEmpty) {
+                          return const Center(
+                              child: Text('No hotels found in this city.'));
+                        }
+
+                        return SingleChildScrollView(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildJustForYouSection(hotels),
+                              const SizedBox(height: 24),
+                              _buildBestPriceSection(hotels),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
       ),
       bottomNavigationBar: _buildBottomNavBar(),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.hotel, size: 80, color: Colors.grey[300]),
+          const SizedBox(height: 16),
+          Text(
+            'Where do you want to stay?',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Search for a city to see hotel offers',
+            style: TextStyle(
+              color: Colors.grey[500],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -133,9 +160,9 @@ class _HotelRecommendationsState extends State<HotelRecommendations> {
                   children: [
                     Icon(Icons.location_on, size: 16, color: Colors.blue[400]),
                     const SizedBox(width: 4),
-                    const Text(
-                      'Jakarta, NY 112',
-                      style: TextStyle(
+                    Text(
+                      selectedCityName.isNotEmpty ? selectedCityName : 'Select Location',
+                      style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -169,12 +196,68 @@ class _HotelRecommendationsState extends State<HotelRecommendations> {
             Icon(Icons.search, color: Colors.grey[500]),
             const SizedBox(width: 12),
             Expanded(
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search hotels...',
-                  hintStyle: TextStyle(color: Colors.grey[400]),
-                  border: InputBorder.none,
-                ),
+              child: Autocomplete<Map<String, dynamic>>(
+                optionsBuilder: (TextEditingValue textEditingValue) {
+                  if (textEditingValue.text.length < 3) {
+                    return const Iterable<Map<String, dynamic>>.empty();
+                  }
+                  return ref.read(locationSearchProvider(textEditingValue.text).future);
+                },
+                displayStringForOption: (Map<String, dynamic> option) {
+                  final address = option['address'] ?? {};
+                  final city = address['cityName'] ?? option['name'] ?? '';
+                  final code = option['iataCode'] ?? '';
+                  return '$city ($code)';
+                },
+                onSelected: (Map<String, dynamic> selection) {
+                  final code = selection['iataCode']; // This is usually City Code for cities
+                  final address = selection['address'] ?? {};
+                  final city = address['cityName'] ?? selection['name'] ?? '';
+                  
+                  if (code != null) {
+                    _updateCity(code, city);
+                  }
+                },
+                fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+                  return TextField(
+                    controller: textEditingController,
+                    focusNode: focusNode,
+                    decoration: InputDecoration(
+                      hintText: 'Search city (e.g. Bali, Paris)...',
+                      hintStyle: TextStyle(color: Colors.grey[400]),
+                      border: InputBorder.none,
+                    ),
+                  );
+                },
+                optionsViewBuilder: (context, onSelected, options) {
+                  return Align(
+                    alignment: Alignment.topLeft,
+                    child: Material(
+                      elevation: 4.0,
+                      child: SizedBox(
+                        width: MediaQuery.of(context).size.width - 32,
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: options.length,
+                          itemBuilder: (BuildContext context, int index) {
+                            final option = options.elementAt(index);
+                            final address = option['address'] ?? {};
+                            final city = address['cityName'] ?? option['name'] ?? '';
+                            final code = option['iataCode'] ?? '';
+                            return ListTile(
+                              title: Text('$city ($code)'),
+                              subtitle: Text(address['countryName'] ?? ''),
+                              onTap: () {
+                                onSelected(option);
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
             Container(
@@ -193,7 +276,7 @@ class _HotelRecommendationsState extends State<HotelRecommendations> {
     );
   }
 
-  Widget _buildJustForYouSection() {
+  Widget _buildJustForYouSection(List<HotelOfferGroup> hotels) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       child: Column(
@@ -207,56 +290,9 @@ class _HotelRecommendationsState extends State<HotelRecommendations> {
             ),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              _buildToggleButton('National', isNational, () {
-                setState(() => isNational = true);
-              }),
-              const SizedBox(width: 10),
-              _buildToggleButton('International', !isNational, () {
-                setState(() => isNational = false);
-              }),
-            ],
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 38,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: cities.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final city = cities[index];
-                final isSelected = selectedCity == city;
-                return GestureDetector(
-                  onTap: () => setState(() => selectedCity = city),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? const Color(0xFFE5F0FF)
-                          : Colors.grey[200],
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Center(
-                      child: Text(
-                        city,
-                        style: TextStyle(
-                          color: isSelected
-                              ? Colors.blue[700]
-                              : Colors.grey[700],
-                          fontWeight:
-                              isSelected ? FontWeight.w600 : FontWeight.w400,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 18),
+          // Filter buttons removed for simplicity in search-first flow, 
+          // or can be re-added to filter the RESULT list.
+          // For now, just show the results.
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -266,9 +302,9 @@ class _HotelRecommendationsState extends State<HotelRecommendations> {
               crossAxisSpacing: 12,
               childAspectRatio: 0.85,
             ),
-            itemCount: filteredHotels.length,
+            itemCount: hotels.length,
             itemBuilder: (context, index) {
-              final hotel = filteredHotels[index];
+              final hotel = hotels[index];
               return _buildHotelCard(hotel);
             },
           ),
@@ -311,6 +347,9 @@ class _HotelRecommendationsState extends State<HotelRecommendations> {
                     Image.network(
                       imageUrl,
                       fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(color: Colors.grey[300]);
+                      },
                     ),
                     Positioned(
                       top: 8,
@@ -384,7 +423,15 @@ class _HotelRecommendationsState extends State<HotelRecommendations> {
     );
   }
 
-  Widget _buildBestPriceSection() {
+  Widget _buildBestPriceSection(List<HotelOfferGroup> hotels) {
+    // Sort by price
+    final sorted = [...hotels];
+    sorted.sort((a, b) {
+      final priceA = _primaryOffer(a)?.price.total ?? double.infinity;
+      final priceB = _primaryOffer(b)?.price.total ?? double.infinity;
+      return priceA.compareTo(priceB);
+    });
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -402,10 +449,10 @@ class _HotelRecommendationsState extends State<HotelRecommendations> {
             height: 170,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: hotels.length,
+              itemCount: sorted.length,
               separatorBuilder: (_, __) => const SizedBox(width: 12),
               itemBuilder: (context, index) {
-                final hotel = hotels[index];
+                final hotel = sorted[index];
                 return _buildPriceCard(hotel);
               },
             ),
@@ -468,6 +515,8 @@ class _HotelRecommendationsState extends State<HotelRecommendations> {
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -492,35 +541,13 @@ class _HotelRecommendationsState extends State<HotelRecommendations> {
                   imageUrl,
                   fit: BoxFit.cover,
                   height: double.infinity,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(color: Colors.white.withOpacity(0.2));
+                  },
                 ),
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildToggleButton(
-      String label, bool selected, VoidCallback onPressed) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onPressed,
-        child: Container(
-          height: 38,
-          decoration: BoxDecoration(
-            color: selected ? Colors.blue[100] : Colors.grey[200],
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: selected ? Colors.blue[700] : Colors.grey[700],
-                fontWeight: selected ? FontWeight.bold : FontWeight.w500,
-              ),
-            ),
-          ),
         ),
       ),
     );
@@ -557,206 +584,6 @@ class _HotelRecommendationsState extends State<HotelRecommendations> {
   }
 
 }
-
-final List<Map<String, dynamic>> _mockHotelOfferGroups = [
-  {
-    'hotel': {
-      'hotelId': 'JKT001',
-      'name': 'Hotel Borobudur Jakarta',
-      'cityCode': 'JKT',
-      'latitude': -6.1702,
-      'longitude': 106.8326,
-      'rating': 4.8,
-      'address': {
-        'lines': 'Jl. Lapangan Banteng Selatan No.1',
-        'cityName': 'Jakarta',
-        'postalCode': '10710',
-        'countryCode': 'ID',
-        'stateCode': 'JK',
-      },
-      'contact': {'phone': '+62 21 1234 5678'}
-    },
-    'available': true,
-    'offers': [
-      {
-        'id': 'JKT001-OFFER1',
-        'checkInDate': DateTime.now().add(const Duration(days: 7)).toIso8601String().split('T')[0],
-        'checkOutDate': DateTime.now().add(const Duration(days: 9)).toIso8601String().split('T')[0],
-        'room': {
-          'type': 'Superior Twin',
-          'description': {'text': 'Paket populer termasuk sarapan'},
-          'typeEstimated': {'category': 'SUPERIOR', 'beds': 2, 'bedType': 'TWIN'}
-        },
-        'guests': {'adults': 2},
-        'price': {
-          'currency': 'IDR',
-          'base': '1100000',
-          'total': '1250000',
-          'taxes': [
-            {'currency': 'IDR', 'amount': '150000'}
-          ]
-        },
-        'boardType': 'Breakfast Included',
-        'policies': {
-          'cancellation': 'Gratis hingga 24 jam sebelum check-in',
-        },
-        'paymentPolicy': 'PREPAID',
-      },
-      {
-        'id': 'JKT001-OFFER2',
-        'checkInDate': DateTime.now().add(const Duration(days: 7)).toIso8601String().split('T')[0],
-        'checkOutDate': DateTime.now().add(const Duration(days: 10)).toIso8601String().split('T')[0],
-        'room': {
-          'type': 'Deluxe King',
-          'description': {'text': 'Kamar luas dengan city view'},
-          'typeEstimated': {'category': 'DELUXE', 'beds': 1, 'bedType': 'KING'}
-        },
-        'guests': {'adults': 2},
-        'price': {
-          'currency': 'IDR',
-          'base': '1350000',
-          'total': '1520000',
-          'taxes': [
-            {'currency': 'IDR', 'amount': '170000'}
-          ]
-        },
-        'boardType': 'Club Access',
-        'paymentPolicy': 'PAY_LATER',
-      },
-    ],
-  },
-  {
-    'hotel': {
-      'hotelId': 'JKT002',
-      'name': 'The Langham Jakarta',
-      'cityCode': 'JKT',
-      'latitude': -6.2297,
-      'longitude': 106.8082,
-      'rating': 4.9,
-      'address': {
-        'lines': 'District 8 SCBD Lot 28',
-        'cityName': 'Jakarta',
-        'postalCode': '12190',
-        'countryCode': 'ID',
-        'stateCode': 'JK',
-      },
-      'contact': {'phone': '+62 21 9876 5432'}
-    },
-    'available': true,
-    'offers': [
-      {
-        'id': 'JKT002-OFFER1',
-        'checkInDate': DateTime.now().add(const Duration(days: 14)).toIso8601String().split('T')[0],
-        'checkOutDate': DateTime.now().add(const Duration(days: 16)).toIso8601String().split('T')[0],
-        'room': {
-          'type': 'Executive Suite',
-          'description': {'text': 'Termasuk akses lounge eksklusif'},
-          'typeEstimated': {'category': 'SUITE', 'beds': 1, 'bedType': 'KING'}
-        },
-        'guests': {'adults': 3},
-        'price': {
-          'currency': 'IDR',
-          'base': '2350000',
-          'total': '2580000',
-          'taxes': [
-            {'currency': 'IDR', 'amount': '230000'}
-          ]
-        },
-        'boardType': 'Executive Lounge',
-        'policies': {
-          'cancellation': '50% fee jika dibatalkan <48 jam',
-        },
-        'paymentPolicy': 'PREPAID',
-      },
-      {
-        'id': 'JKT002-OFFER2',
-        'checkInDate': DateTime.now().add(const Duration(days: 14)).toIso8601String().split('T')[0],
-        'checkOutDate': DateTime.now().add(const Duration(days: 17)).toIso8601String().split('T')[0],
-        'room': {
-          'type': 'Premier Twin',
-          'description': {'text': 'Pilihan favorit pebisnis'},
-          'typeEstimated': {'category': 'PREMIUM', 'beds': 2, 'bedType': 'TWIN'}
-        },
-        'guests': {'adults': 2},
-        'price': {
-          'currency': 'IDR',
-          'base': '1985000',
-          'total': '2130000',
-          'taxes': [
-            {'currency': 'IDR', 'amount': '145000'}
-          ]
-        },
-        'boardType': 'Breakfast Included',
-        'paymentPolicy': 'PAY_LATER',
-      },
-    ],
-  },
-  {
-    'hotel': {
-      'hotelId': 'DPS001',
-      'name': 'Alila Villas Uluwatu',
-      'cityCode': 'DPS',
-      'latitude': -8.8283,
-      'longitude': 115.092,
-      'rating': 4.7,
-      'address': {
-        'lines': 'Jl. Belimbing Sari, Uluwatu',
-        'cityName': 'Bali',
-        'postalCode': '80364',
-        'countryCode': 'ID',
-        'stateCode': 'BA',
-      },
-    },
-    'available': true,
-    'offers': [
-      {
-        'id': 'DPS001-OFFER1',
-        'checkInDate': DateTime.now().add(const Duration(days: 21)).toIso8601String().split('T')[0],
-        'checkOutDate': DateTime.now().add(const Duration(days: 24)).toIso8601String().split('T')[0],
-        'room': {
-          'type': 'Ocean View Villa',
-          'description': {'text': 'Vila privat dengan pemandangan laut'},
-          'typeEstimated': {'category': 'VILLA', 'beds': 1, 'bedType': 'KING'}
-        },
-        'guests': {'adults': 2},
-        'price': {
-          'currency': 'IDR',
-          'base': '3150000',
-          'total': '3450000',
-          'taxes': [
-            {'currency': 'IDR', 'amount': '300000'}
-          ]
-        },
-        'boardType': 'Breakfast & Butler',
-        'policies': {
-          'cancellation': 'Non refundable',
-        },
-        'paymentPolicy': 'PREPAID',
-      },
-      {
-        'id': 'DPS001-OFFER2',
-        'checkInDate': DateTime.now().add(const Duration(days: 21)).toIso8601String().split('T')[0],
-        'checkOutDate': DateTime.now().add(const Duration(days: 25)).toIso8601String().split('T')[0],
-        'room': {
-          'type': 'Family Villa',
-          'description': {'text': 'Pilihan terbaik untuk keluarga'},
-          'typeEstimated': {'category': 'VILLA', 'beds': 3, 'bedType': 'KING'}
-        },
-        'guests': {'adults': 4},
-        'price': {
-          'currency': 'IDR',
-          'base': '3350000',
-          'total': '3670000',
-          'taxes': [
-            {'currency': 'IDR', 'amount': '320000'}
-          ]
-        },
-        'boardType': 'Half Board',
-        'paymentPolicy': 'PAY_LATER',
-      },
-    ],
-  },
-];
 
 class _NavItem extends StatelessWidget {
   const _NavItem({

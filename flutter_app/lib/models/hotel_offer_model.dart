@@ -212,7 +212,7 @@ class HotelPrice {
 
   factory HotelPrice.fromJson(Map<String, dynamic> json) {
     return HotelPrice(
-      currency: json['currency'] ?? 'USD',
+      currency: json['currency'] ?? 'IDR',
       base: double.tryParse(json['base']?.toString() ?? '') ?? 0,
       total: double.tryParse(json['total']?.toString() ?? '') ?? 0,
       taxes: List<Map<String, dynamic>>.from(json['taxes'] ?? []),
