@@ -6,6 +6,7 @@ import 'package:wanderwhale/services/auth_service.dart';
 import 'package:wanderwhale/providers/app_providers.dart';
 import 'package:wanderwhale/services/fcm_service.dart';
 import 'package:wanderwhale/services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService();
@@ -32,6 +33,12 @@ class AuthController {
 
     // Refresh user profile provider so UI can read fresh data
     ref.invalidate(userProvider);
+
+    // Persist simple flag so app can remember login state across restarts
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('is_logged_in', true);
+    } catch (_) {}
 
     // Try to register device FCM token after successful login
     try {
@@ -70,6 +77,11 @@ class AuthController {
 
     // Refresh profile
     ref.invalidate(userProvider);
+    // Persist login flag
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('is_logged_in', true);
+    } catch (_) {}
     // After sign-up, register FCM token as well
     try {
       final fcmService = ref.read(fcmServiceProvider);
@@ -83,6 +95,10 @@ class AuthController {
   Future<void> signOut() async {
     await _authService.signOut();
     ref.invalidate(userProvider);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('is_logged_in', false);
+    } catch (_) {}
   }
 
   Future<void> sendFcmToken(String fcmToken) async {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lottie/lottie.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/theme/app_colors.dart';
 import '../providers/auth_provider.dart';
@@ -42,20 +43,27 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     _animationController.forward();
   }
 
-  void _navigateAfterSplash() {
+  void _navigateAfterSplash() async {
     // Check current user directly from FirebaseAuth
     final user = ref.read(authStateProvider).valueOrNull;
 
+    // Also check SharedPreferences flag 'is_logged_in' as a fallback
+    bool prefLoggedIn = false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      prefLoggedIn = prefs.getBool('is_logged_in') ?? false;
+    } catch (_) {}
+
     if (mounted) {
-      if (user == null) {
-        // User belum login, redirect ke welcome screen dengan login state
+      if (user == null && !prefLoggedIn) {
+        // User belum login and no stored flag, redirect ke welcome screen
         ref.read(authScreenProvider.notifier).state = AuthScreenType.login;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const WelcomeScreen()),
         );
       } else {
-        // User sudah login, redirect ke main navigation
+        // Either Firebase user exists OR we have pref flag set -> go to main
         // Pastikan index bottom nav diatur ke 0 (Home) sebelum navigasi
         ref.read(bottomNavIndexProvider.notifier).state = 0;
         Navigator.pushReplacement(

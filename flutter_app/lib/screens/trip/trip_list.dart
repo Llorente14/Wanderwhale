@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/trip_model.dart';
 import '../../widgets/trip_card.dart';
 import '../../widgets/common/custom_bottom_nav.dart';
-import '../../providers/providers.dart';
+// providers import removed: TripList no longer mutates global providers during init
 import 'create_trip.dart';
 import 'trip_detail.dart';
 
@@ -24,9 +24,12 @@ class _TripListState extends ConsumerState<TripList> {
   void initState() {
     super.initState();
     // Set bottom nav index ke 2 (Trip) ketika halaman ini ditampilkan
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(bottomNavIndexProvider.notifier).state = 2;
-    });
+    // NOTE: Removed automatic bottom-nav index change here because
+    // TripList is a child of an IndexedStack in MainNavigationScreen.
+    // IndexedStack builds all children at once (including offscreen ones),
+    // so setting the bottom nav here causes the app to jump to the Trip tab
+    // immediately after startup. Bottom nav index should be controlled by
+    // the bottom navigation widget or by explicit navigation code.
   }
 
   void _navigateToTripDetail(Trip trip) {
