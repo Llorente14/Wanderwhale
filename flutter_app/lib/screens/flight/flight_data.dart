@@ -128,12 +128,10 @@ final List<Map<String, dynamic>> _mockFlightOffers = [
             'departure': {
               'iataCode': 'CGK',
               'terminal': '3',
-              'at': DateTime.now().add(const Duration(days: 21)).toIso8601String()
             },
             'arrival': {
               'iataCode': 'DPS',
               'terminal': '1',
-              'at': DateTime.now().add(const Duration(days: 21, hours: 3)).toIso8601String()
             },
             'aircraft': {'code': '738'},
             'duration': 'PT1H50M',

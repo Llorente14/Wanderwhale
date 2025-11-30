@@ -6,13 +6,34 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/flight_booking_model.dart';
 import '../models/flight_offer_model.dart';
+import '../screens/flight/flight_data.dart'; // For demo data
 import '../services/api_service.dart';
 import 'app_providers.dart';
 
 final flightOffersProvider = FutureProvider.family
-    .autoDispose<List<FlightOfferModel>, FlightSearchParams>((ref, params) {
+    .autoDispose<List<FlightOfferModel>, FlightSearchParams>((
+      ref,
+      params,
+    ) async {
       final api = ref.watch(apiServiceProvider);
-      return api.searchFlightOffers(params.body);
+
+      try {
+        // Try API first
+        final offers = await api.searchFlightOffers(params.body);
+
+        // If API returns empty, fallback to demo data
+        if (offers.isEmpty) {
+          print('⚠️ API returned empty results, using demo flight data');
+          return _getDemoFlightOffers();
+        }
+
+        print('✅ Loaded ${offers.length} flights from API');
+        return offers;
+      } catch (e) {
+        // If API fails, fallback to demo data
+        print('⚠️ API error: $e, using demo flight data');
+        return _getDemoFlightOffers();
+      }
     });
 
 final flightBookingControllerProvider = Provider<FlightBookingController>((
@@ -40,7 +61,9 @@ final latestFlightFromTripsProvider = FutureProvider.autoDispose<FlightBookingMo
   final api = ref.watch(apiServiceProvider);
 
   try {
-    debugPrint('🔍 latestFlightFromTripsProvider: Starting to fetch flights...');
+    debugPrint(
+      '🔍 latestFlightFromTripsProvider: Starting to fetch flights...',
+    );
 
     // Ambil semua trips
     final trips = await api.getTrips();
@@ -91,7 +114,9 @@ final latestFlightFromTripsProvider = FutureProvider.autoDispose<FlightBookingMo
     );
 
     if (allFlights.isEmpty) {
-      debugPrint('⚠️ latestFlightFromTripsProvider: No flights found in any trip');
+      debugPrint(
+        '⚠️ latestFlightFromTripsProvider: No flights found in any trip',
+      );
       return null;
     }
 
@@ -100,12 +125,14 @@ final latestFlightFromTripsProvider = FutureProvider.autoDispose<FlightBookingMo
     final validFlights = allFlights.where((flight) {
       return flight.departureDate != null;
     }).toList();
-    
+
     // Jika tidak ada yang punya departureDate, gunakan semua flights (sort by createdAt)
     final flightsToSort = validFlights.isNotEmpty ? validFlights : allFlights;
 
     if (flightsToSort.isEmpty) {
-      debugPrint('⚠️ latestFlightFromTripsProvider: No valid flights with dates found');
+      debugPrint(
+        '⚠️ latestFlightFromTripsProvider: No valid flights with dates found',
+      );
       return null;
     }
 
@@ -122,7 +149,9 @@ final latestFlightFromTripsProvider = FutureProvider.autoDispose<FlightBookingMo
     debugPrint('✅ latestFlightFromTripsProvider: Latest flight selected:');
     debugPrint('   - Airline: ${latestFlight.airline}');
     debugPrint('   - Flight Number: ${latestFlight.flightNumber}');
-    debugPrint('   - Route: ${latestFlight.origin} → ${latestFlight.destination}');
+    debugPrint(
+      '   - Route: ${latestFlight.origin} → ${latestFlight.destination}',
+    );
     debugPrint('   - Departure: ${latestFlight.departureDate}');
     debugPrint('   - Created: ${latestFlight.createdAt}');
 
@@ -130,11 +159,15 @@ final latestFlightFromTripsProvider = FutureProvider.autoDispose<FlightBookingMo
   } on DioException catch (e) {
     // Handle specific DioException
     if (e.response?.statusCode == 404) {
-      debugPrint('⚠️ latestFlightFromTripsProvider: 404 - No trips or flights found');
+      debugPrint(
+        '⚠️ latestFlightFromTripsProvider: 404 - No trips or flights found',
+      );
       return null;
     }
     if (e.response?.statusCode == 401) {
-      debugPrint('⚠️ latestFlightFromTripsProvider: 401 - User not authenticated');
+      debugPrint(
+        '⚠️ latestFlightFromTripsProvider: 401 - User not authenticated',
+      );
       return null;
     }
     debugPrint('❌ latestFlightFromTripsProvider: DioException - ${e.message}');
@@ -203,3 +236,30 @@ class FlightBookingFilter {
   @override
   int get hashCode => Object.hash(tripId, status, page, limit);
 }
+
+// Helper function to get demo flight offers
+List<FlightOfferModel> _getDemoFlightOffers() {
+  return demoFlightOffers;
+}
+
+// Provider for searching locations (airports/cities)
+final locationSearchProvider =
+    FutureProvider.family<List<Map<String, dynamic>>, String>((
+      ref,
+      query,
+    ) async {
+      if (query.length < 3) return [];
+
+      final api = ref.watch(apiServiceProvider);
+      try {
+        // subType: AIRPORT or CITY. We search for both.
+        final results = await api.searchLocationsByKeyword(
+          keyword: query,
+          subType: 'AIRPORT,CITY',
+        );
+        return results.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      } catch (e) {
+        print('Location search error: $e');
+        return [];
+      }
+    });

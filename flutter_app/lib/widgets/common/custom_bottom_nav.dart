@@ -6,7 +6,9 @@ import '../../core/theme/app_colors.dart';
 import '../../providers/providers.dart';
 
 class CustomBottomNav extends ConsumerWidget {
-  const CustomBottomNav({Key? key}) : super(key: key);
+  const CustomBottomNav({Key? key, this.onIndexChanged}) : super(key: key);
+
+  final Function(int)? onIndexChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
