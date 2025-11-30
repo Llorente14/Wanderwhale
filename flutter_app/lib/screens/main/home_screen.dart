@@ -10,11 +10,9 @@ import 'package:wanderwhale/core/theme/app_colors.dart';
 import 'package:wanderwhale/models/destination_master_model.dart';
 import 'package:wanderwhale/models/flight_booking_model.dart';
 import 'package:wanderwhale/models/flight_offer_model.dart';
-import 'package:wanderwhale/models/hotel_booking_model.dart';
 import 'package:wanderwhale/models/trip_model.dart';
 import 'package:wanderwhale/models/wishlist_model.dart';
 import 'package:wanderwhale/providers/flight_providers.dart';
-import 'package:wanderwhale/providers/hotel_providers.dart';
 import 'package:wanderwhale/providers/providers.dart';
 import 'package:wanderwhale/providers/trip_providers.dart';
 import 'package:wanderwhale/providers/wishlist_providers.dart';
@@ -32,7 +30,6 @@ import '../trip/trip_list.dart';
 import '../destination/destination_detail.dart';
 import '../tips/tipstravel.dart';
 
-const _homeHotelFilter = HotelBookingFilter(limit: 5);
 const _homeFlightBookingFilter = FlightBookingFilter(
   status: 'CONFIRMED',
   limit: 3,
@@ -142,7 +139,7 @@ Future<void> _refreshHomeData(
       ref.refresh(wishlistItemsProvider.future),
       ref.refresh(notificationsProvider.future),
       ref.refresh(unreadNotificationsProvider.future),
-      ref.refresh(hotelBookingsProvider(_homeHotelFilter).future),
+      ref.refresh(hotelsFromTripsProvider.future),
       ref.refresh(flightBookingsProvider(_homeFlightBookingFilter).future),
       ref.refresh(flightOffersProvider(flightParams).future),
     ], eagerError: false);
@@ -1228,12 +1225,25 @@ class _UpcomingTripsSection extends ConsumerWidget {
             const SizedBox(height: 12),
             SizedBox(
               height: 210,
-              child: ListView.separated(
+              child: ListView.builder(
                 scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  top: 10,
+                  bottom: 10,
+                ),
+                clipBehavior: Clip.none,
+                physics: const BouncingScrollPhysics(),
                 itemCount: trips.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 16),
-                itemBuilder: (context, index) =>
-                    _TripTicketCard(trip: trips[index]),
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      right: index < trips.length - 1 ? 16 : 0,
+                    ),
+                    child: _TripTicketCard(trip: trips[index]),
+                  );
+                },
               ),
             ),
           ],
@@ -1271,19 +1281,16 @@ class _HotelDealsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bookingsAsync = ref.watch(hotelBookingsProvider(_homeHotelFilter));
+    final hotelsAsync = ref.watch(hotelsFromTripsProvider);
 
-    return bookingsAsync.when(
-      data: (bookings) {
+    return hotelsAsync.when(
+      data: (hotels) {
         debugPrint(
-          '🔍 _HotelDealsSection: Hotel bookings count: ${bookings.length}',
-        );
-        debugPrint(
-          '🔍 _HotelDealsSection: Filter: status=${_homeHotelFilter.status}, limit=${_homeHotelFilter.limit}',
+          '🔍 _HotelDealsSection: Hotels from trips count: ${hotels.length}',
         );
 
-        if (bookings.isEmpty) {
-          debugPrint('⚠️ _HotelDealsSection: No hotel bookings found');
+        if (hotels.isEmpty) {
+          debugPrint('⚠️ _HotelDealsSection: No hotels found in trips');
           return const _EmptySectionMessage(
             title: 'Hotel Pilihan',
             message: 'Belum ada hotel yang dipesan. Temukan promo terbaik!',
@@ -1291,13 +1298,17 @@ class _HotelDealsSection extends ConsumerWidget {
         }
 
         debugPrint(
-          '✅ _HotelDealsSection: Found ${bookings.length} hotel bookings',
+          '✅ _HotelDealsSection: Found ${hotels.length} hotels from trips',
         );
-        if (bookings.isNotEmpty) {
-          debugPrint('✅ First hotel: ${bookings.first.hotelName}');
-          debugPrint('✅ First hotel check-in: ${bookings.first.checkInDate}');
-          debugPrint('✅ First hotel location: ${bookings.first.hotelAddress}');
+
+        // Take only the first 5 hotels for display
+        final displayHotels = hotels.take(5).toList();
+
+        if (displayHotels.isNotEmpty) {
+          final firstHotel = displayHotels.first;
+          debugPrint('✅ First hotel: ${_extractHotelName(firstHotel)}');
         }
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1314,10 +1325,10 @@ class _HotelDealsSection extends ConsumerWidget {
               height: 190,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                itemCount: bookings.length,
+                itemCount: displayHotels.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 16),
                 itemBuilder: (context, index) =>
-                    _HotelCard(booking: bookings[index]),
+                    _HotelCard(hotel: displayHotels[index]),
               ),
             ),
             const SizedBox(height: 8),
@@ -1341,21 +1352,116 @@ class _HotelDealsSection extends ConsumerWidget {
           ),
         ),
       ),
-      error: (_, __) => const _EmptySectionMessage(
-        title: 'Hotel Pilihan',
-        message: 'Gagal memuat data hotel.',
-      ),
+      error: (err, __) {
+        debugPrint('❌ Error loading hotels from trips: $err');
+        return const _EmptySectionMessage(
+          title: 'Hotel Pilihan',
+          message: 'Gagal memuat data hotel.',
+        );
+      },
     );
+  }
+
+  /// Extract hotel name from dynamic hotel object
+  String _extractHotelName(dynamic hotel) {
+    if (hotel is Map<String, dynamic>) {
+      return hotel['hotelName'] as String? ?? 'Unknown Hotel';
+    }
+    return hotel.toString();
   }
 }
 
 class _HotelCard extends StatelessWidget {
-  const _HotelCard({required this.booking});
+  const _HotelCard({required this.hotel});
 
-  final HotelBookingModel booking;
+  final dynamic hotel;
+
+  /// Extract hotel name safely
+  String _getHotelName() {
+    if (hotel is Map<String, dynamic>) {
+      return hotel['hotelName'] as String? ?? 'Unknown Hotel';
+    }
+    return 'Unknown Hotel';
+  }
+
+  /// Extract city safely
+  String _getCity() {
+    if (hotel is Map<String, dynamic>) {
+      return hotel['city'] as String? ?? '-';
+    }
+    return '-';
+  }
+
+  /// Extract country safely
+  String _getCountry() {
+    if (hotel is Map<String, dynamic>) {
+      return hotel['country'] as String? ?? '';
+    }
+    return '';
+  }
+
+  /// Extract check-in date safely
+  DateTime? _getCheckInDate() {
+    if (hotel is Map<String, dynamic>) {
+      final checkIn = hotel['checkInDate'];
+      if (checkIn is String) {
+        try {
+          return DateTime.parse(checkIn);
+        } catch (e) {
+          return null;
+        }
+      } else if (checkIn is DateTime) {
+        return checkIn;
+      }
+    }
+    return null;
+  }
+
+  /// Extract number of guests safely
+  int _getNumberOfGuests() {
+    if (hotel is Map<String, dynamic>) {
+      return hotel['numberOfGuests'] as int? ?? 1;
+    }
+    return 1;
+  }
+
+  /// Extract total price safely
+  double _getTotalPrice() {
+    if (hotel is Map<String, dynamic>) {
+      final price = hotel['totalPrice'];
+      if (price is double) return price;
+      if (price is int) return price.toDouble();
+      if (price is String) {
+        try {
+          return double.parse(price);
+        } catch (e) {
+          return 0.0;
+        }
+      }
+    }
+    return 0.0;
+  }
+
+  /// Extract currency safely
+  String _getCurrency() {
+    if (hotel is Map<String, dynamic>) {
+      return hotel['currency'] as String? ?? 'IDR';
+    }
+    return 'IDR';
+  }
+
+  /// Extract image URL safely
+  String? _getImageUrl() {
+    if (hotel is Map<String, dynamic>) {
+      return hotel['imageUrl'] as String?;
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final imageUrl = _getImageUrl();
+
     return GestureDetector(
       onTap: () {
         // Navigate to hotel recommendations page
@@ -1378,62 +1484,104 @@ class _HotelCard extends StatelessWidget {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
-          child: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF8E44AD), Color(0xFF3498DB)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Text(
-                  booking.hotelName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${booking.city ?? '-'}, ${booking.country ?? ''}',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '${booking.checkInDate != null ? DateFormat('dd MMM').format(booking.checkInDate!) : '?'} • ${booking.numberOfGuests} tamu',
-                  style: const TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-                const SizedBox(height: 10),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Background Image
+              if (imageUrl != null)
+                Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF8E44AD), Color(0xFF3498DB)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                    );
+                  },
+                )
+              else
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.25),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Text(
-                    '${booking.totalPrice.toIDR()} • ${booking.currency}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF8E44AD), Color(0xFF3498DB)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
                   ),
                 ),
-              ],
-            ),
+              // Overlay gradient for text readability
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+                  ),
+                ),
+              ),
+              // Content
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      _getHotelName(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${_getCity()}, ${_getCountry()}',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${_getCheckInDate() != null ? DateFormat('dd MMM').format(_getCheckInDate()!) : '?'} • ${_getNumberOfGuests()} tamu',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.25),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Text(
+                        '${_getTotalPrice().toIDR()} • ${_getCurrency()}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
