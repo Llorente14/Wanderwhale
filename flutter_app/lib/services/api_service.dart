@@ -112,6 +112,44 @@ class ApiService {
     _onUnauthorized = callback;
   }
 
+  static String getErrorMessage(DioException error) {
+    if (error.type == DioExceptionType.connectionTimeout) {
+      return 'Connection timeout. Please check your internet connection and try again.';
+    }
+    if (error.type == DioExceptionType.receiveTimeout) {
+      return 'Request timeout. The server is taking too long to respond. Please try again.';
+    }
+    if (error.type == DioExceptionType.sendTimeout) {
+      return 'Send timeout. Please check your internet connection and try again.';
+    }
+    if (error.type == DioExceptionType.badResponse) {
+      final statusCode = error.response?.statusCode;
+      if (statusCode == 401) {
+        return 'Unauthorized. Please login again.';
+      }
+      if (statusCode == 403) {
+        return 'Access forbidden. You don\'t have permission to perform this action.';
+      }
+      if (statusCode == 404) {
+        return 'Resource not found.';
+      }
+      if (statusCode == 500) {
+        return 'Server error. Please try again later.';
+      }
+      return 'Request failed with status code $statusCode.';
+    }
+    if (error.type == DioExceptionType.cancel) {
+      return 'Request was cancelled.';
+    }
+    if (error.type == DioExceptionType.connectionError) {
+      return 'Connection error. Please check your internet connection.';
+    }
+    if (error.type == DioExceptionType.unknown) {
+      return 'An unexpected error occurred. Please try again.';
+    }
+    return error.message ?? 'An error occurred. Please try again.';
+  }
+
   // === Helper untuk parsing respons ===
   // Semua respons API kita dibungkus dalam { success: ..., data: ... }
   // Fungsi ini mengekstrak 'data'

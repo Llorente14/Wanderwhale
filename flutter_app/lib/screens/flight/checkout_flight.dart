@@ -6,8 +6,8 @@ import '../../core/theme/app_text_styles.dart';
 import '../../providers/booking_providers.dart';
 import '../../providers/checkout_provider.dart';
 import '../../providers/app_providers.dart';
+import '../../providers/notification_providers.dart';
 import '../../utils/formatters.dart';
-import '../../screens/main/home_screen.dart';
 import '../../services/api_service.dart';
 
 // Import Widget Reusable (Common)
@@ -48,19 +48,17 @@ class _CheckoutFlightScreenState extends ConsumerState<CheckoutFlightScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.pop(context);
       });
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final offer = bookingState.offer!;
     final firstSegment = offer.itineraries.first.segments.first;
-    final lastSegment = offer.itineraries.last.segments.last;
+    final outboundDestination = offer.itineraries.first.segments.last;
     final origin = firstSegment.departure.iataCode;
-    final destination = lastSegment.arrival.iataCode;
+    final destination = outboundDestination.arrival.iataCode;
     final departureTime = firstSegment.departure.at;
-    final arrivalTime = lastSegment.arrival.at;
-    
+    final arrivalTime = outboundDestination.arrival.at;
+
     // Get passenger name from first passenger
     final primaryPassenger = bookingState.passengers.isNotEmpty
         ? bookingState.passengers.first
@@ -70,23 +68,27 @@ class _CheckoutFlightScreenState extends ConsumerState<CheckoutFlightScreen> {
         : '';
 
     // Get contact info from user or first passenger
-    final contactName = checkoutState.contactName ??
+    final contactName =
+        checkoutState.contactName ??
         (bookingState.passengers.isNotEmpty
             ? '${bookingState.passengers.first.firstName} ${bookingState.passengers.first.lastName}'
             : '');
-    final contactEmail = checkoutState.contactEmail ??
+    final contactEmail =
+        checkoutState.contactEmail ??
         (bookingState.passengers.isNotEmpty
             ? bookingState.passengers.first.email
             : '');
-    final contactPhone = checkoutState.contactPhone ??
+    final contactPhone =
+        checkoutState.contactPhone ??
         (bookingState.passengers.isNotEmpty
             ? bookingState.passengers.first.phone
             : '');
 
     // Use user data if available
-    final userContactName = userAsync.value?.displayName ?? contactName;
-    final userContactEmail = userAsync.value?.email ?? contactEmail;
-    final userContactPhone = userAsync.value?.phoneNumber ?? contactPhone;
+    final user = userAsync.valueOrNull;
+    final userContactName = user?.displayName ?? contactName;
+    final userContactEmail = user?.email ?? contactEmail;
+    final userContactPhone = user?.phoneNumber ?? contactPhone;
 
     return Scaffold(
       backgroundColor: AppColors.gray0,
@@ -124,12 +126,15 @@ class _CheckoutFlightScreenState extends ConsumerState<CheckoutFlightScreen> {
               destination: destination,
               departureTime: departureTime,
               arrivalTime: arrivalTime,
-              passengerName: passengerName.isNotEmpty ? passengerName : contactName,
+              passengerName: passengerName.isNotEmpty
+                  ? passengerName
+                  : contactName,
             ),
 
             const SizedBox(height: 25),
 
             // 2. CONTACT DETAILS (Widget Reusable)
+            // Get contact info directly from first passenger (primary passenger)
             const SectionTitle(title: "Contact Details"),
             Container(
               padding: const EdgeInsets.all(16),
@@ -141,25 +146,43 @@ class _CheckoutFlightScreenState extends ConsumerState<CheckoutFlightScreen> {
                 children: [
                   ContactInfoTile(
                     label: "Full Name",
-                    value: userContactName.isNotEmpty
-                        ? userContactName
-                        : "Not provided",
+                    value:
+                        bookingState.passengers.isNotEmpty &&
+                            bookingState
+                                .passengers
+                                .first
+                                .firstName
+                                .isNotEmpty &&
+                            bookingState.passengers.first.lastName.isNotEmpty
+                        ? '${bookingState.passengers.first.firstName} ${bookingState.passengers.first.lastName}'
+                              .trim()
+                        : (userContactName.isNotEmpty
+                              ? userContactName
+                              : "Not provided"),
                     icon: Icons.person_outline,
                   ),
                   const SizedBox(height: 15),
                   ContactInfoTile(
                     label: "Email Address",
-                    value: userContactEmail.isNotEmpty
-                        ? userContactEmail
-                        : "Not provided",
+                    value:
+                        bookingState.passengers.isNotEmpty &&
+                            bookingState.passengers.first.email.isNotEmpty
+                        ? bookingState.passengers.first.email
+                        : (userContactEmail.isNotEmpty
+                              ? userContactEmail
+                              : "Not provided"),
                     icon: Icons.email_outlined,
                   ),
                   const SizedBox(height: 15),
                   ContactInfoTile(
                     label: "Phone Number",
-                    value: userContactPhone?.isNotEmpty == true
-                        ? userContactPhone!
-                        : "Not provided",
+                    value:
+                        bookingState.passengers.isNotEmpty &&
+                            bookingState.passengers.first.phone.isNotEmpty
+                        ? bookingState.passengers.first.phone
+                        : (userContactPhone.isNotEmpty
+                              ? userContactPhone
+                              : "Not provided"),
                     icon: Icons.phone_outlined,
                   ),
                 ],
@@ -188,14 +211,18 @@ class _CheckoutFlightScreenState extends ConsumerState<CheckoutFlightScreen> {
                 // Apply promo code dan generate discount dalam satu operasi atomik
                 final notifier = ref.read(checkoutProvider.notifier);
                 notifier.applyPromoCode(code, bookingState.totalPrice);
-                
+
                 // Get updated state untuk menampilkan persentase diskon
                 final updatedState = ref.read(checkoutProvider);
-                final discountPercent = updatedState.getDiscountPercentage(bookingState.totalPrice);
-                
+                final discountPercent = updatedState.getDiscountPercentage(
+                  bookingState.totalPrice,
+                );
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Promo code applied! You got ${discountPercent.toStringAsFixed(0)}% discount'),
+                    content: Text(
+                      'Promo code applied! You got ${discountPercent.toStringAsFixed(0)}% discount',
+                    ),
                     backgroundColor: Colors.green,
                     duration: const Duration(seconds: 2),
                   ),
@@ -258,9 +285,7 @@ class _CheckoutFlightScreenState extends ConsumerState<CheckoutFlightScreen> {
 
     if (checkoutState.paymentMethod == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a payment method'),
-        ),
+        const SnackBar(content: Text('Please select a payment method')),
       );
       return;
     }
@@ -272,19 +297,59 @@ class _CheckoutFlightScreenState extends ConsumerState<CheckoutFlightScreen> {
       await Future.delayed(const Duration(seconds: 2));
 
       // Calculate final price (dengan diskon jika ada)
-      final finalPrice = checkoutState.getDiscountedPrice(bookingState.totalPrice);
+      final finalPrice = checkoutState.getDiscountedPrice(
+        bookingState.totalPrice,
+      );
+
+      // Build payload for API call
+      final payload = bookingState.buildPayload();
+      if (payload == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Data booking tidak lengkap.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() => _isProcessing = false);
+        return;
+      }
+
+      // Add payment method and discount info to payload
+      payload['paymentMethod'] = checkoutState.paymentMethod;
+      if (checkoutState.discountAmount > 0) {
+        payload['discountAmount'] = checkoutState.discountAmount;
+        payload['promoCode'] = checkoutState.promoCode;
+      }
+
+      // Call API to create booking (this will automatically create notification in backend)
+      final api = ref.read(apiServiceProvider);
+      try {
+        await api.storeFlightBooking(payload);
+        // Invalidate notifications to refresh the list
+        ref.invalidate(notificationsProvider);
+        ref.invalidate(unreadNotificationsProvider);
+      } catch (e) {
+        // Log error but don't fail the payment flow
+        debugPrint('Error creating flight booking: $e');
+      }
 
       // Save transaction to state
+      final offer = bookingState.offer!;
+      final firstSeg = offer.itineraries.first.segments.first;
+      final outboundDest = offer.itineraries.first.segments.last;
       final transaction = Transaction(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         type: 'flight',
-        title: '${bookingState.offer!.itineraries.first.segments.first.departure.iataCode} → ${bookingState.offer!.itineraries.last.segments.last.arrival.iataCode}',
+        title:
+            '${firstSeg.departure.iataCode} → ${outboundDest.arrival.iataCode}',
         totalPrice: finalPrice, // Gunakan harga setelah diskon
         currency: bookingState.offer!.price.currency,
         paymentMethod: checkoutState.paymentMethod!,
         status: 'completed',
         createdAt: DateTime.now(),
-        description: 'Flight booking for ${bookingState.passengerCount} passenger(s)${checkoutState.discountAmount > 0 ? ' (Discounted: ${checkoutState.discountAmount.toIDR()})' : ''}',
+        description:
+            'Flight booking for ${bookingState.passengerCount} passenger(s)${checkoutState.discountAmount > 0 ? ' (Discounted: ${checkoutState.discountAmount.toIDR()})' : ''}',
       );
 
       ref.read(transactionHistoryProvider.notifier).addTransaction(transaction);
@@ -312,12 +377,12 @@ class _CheckoutFlightScreenState extends ConsumerState<CheckoutFlightScreen> {
       // Navigate back to home screen by popping screens
       // Pop checkout screen first
       Navigator.of(context).pop();
-      
+
       // Wait a bit before popping booking details screen
       await Future.delayed(const Duration(milliseconds: 100));
-      
+
       if (!mounted) return;
-      
+
       // Pop booking details screen to return to HomeScreen
       // If we're already at HomeScreen, this will be a no-op
       if (Navigator.of(context).canPop()) {
@@ -477,7 +542,9 @@ class _PriceBreakdownSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasDiscount = discountAmount > 0;
-    final finalPrice = hasDiscount ? (originalPrice - discountAmount) : originalPrice;
+    final finalPrice = hasDiscount
+        ? (originalPrice - discountAmount)
+        : originalPrice;
     final discountPercent = hasDiscount
         ? ((discountAmount / originalPrice) * 100).toStringAsFixed(0)
         : '0';
@@ -497,15 +564,11 @@ class _PriceBreakdownSection extends StatelessWidget {
             children: [
               Text(
                 'Subtotal',
-                style: AppTextStyles.baseS.copyWith(
-                  color: AppColors.gray4,
-                ),
+                style: AppTextStyles.baseS.copyWith(color: AppColors.gray4),
               ),
               Text(
                 originalPrice.toIDR(),
-                style: AppTextStyles.baseM.copyWith(
-                  color: AppColors.gray5,
-                ),
+                style: AppTextStyles.baseM.copyWith(color: AppColors.gray5),
               ),
             ],
           ),
@@ -516,9 +579,7 @@ class _PriceBreakdownSection extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.success.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: AppColors.success.withOpacity(0.3),
-                ),
+                border: Border.all(color: AppColors.success.withOpacity(0.3)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

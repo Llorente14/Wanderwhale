@@ -25,6 +25,7 @@ import 'package:flutter_app/widgets/login_required_popup.dart';
 import '../discount/discount_page.dart';
 import '../explore/search_page.dart';
 import '../flight/flight_recommendation.dart';
+import '../flight/flight_booking_details.dart';
 import '../hotel/hotel_recommendations.dart';
 import '../notification/notification_screen.dart';
 import '../trip/trip_list.dart';
@@ -2459,6 +2460,8 @@ class _RecommendedFlightsSectionState
                 itemCount: tickets.length,
                 itemBuilder: (context, index) {
                   final data = tickets[index];
+                  final offer =
+                      offers[index]; // Get the original FlightOfferModel
                   return Padding(
                     padding: EdgeInsets.only(
                       right: index == tickets.length - 1 ? 0 : 16,
@@ -2469,7 +2472,8 @@ class _RecommendedFlightsSectionState
                       onDetailTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) => FlightDetailPage(ticket: data),
+                            builder: (_) =>
+                                FlightBookingDetailsScreen(offer: offer),
                           ),
                         );
                       },
@@ -2931,58 +2935,6 @@ class _TicketCityCode extends StatelessWidget {
   }
 }
 
-class FlightDetailPage extends StatelessWidget {
-  final _FlightTicketData ticket;
-
-  const FlightDetailPage({super.key, required this.ticket});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Flight Detail'),
-        backgroundColor: const Color(0xFF0B8BD9),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              ticket.airline,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              '${ticket.fromCode} → ${ticket.toCode}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Kelas: ${ticket.travelClass} • Durasi ${ticket.durationText}',
-              style: const TextStyle(color: AppColors.gray4),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${ticket.departureTime} - ${ticket.arrivalTime}',
-              style: const TextStyle(color: AppColors.gray4),
-            ),
-            const Divider(height: 32),
-            Text(
-              'Harga Tiket: ${ticket.priceText}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Detail lengkap penerbangan akan ditampilkan di sini.',
-              style: TextStyle(color: AppColors.gray4),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 // ================= DESTINATIONS BY COUNTRY =================
 
 class _DestinationByCountrySection extends ConsumerWidget {

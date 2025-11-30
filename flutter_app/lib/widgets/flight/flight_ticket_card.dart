@@ -34,7 +34,7 @@ class FlightTicketCard extends StatelessWidget {
     }
 
     final firstSegment = offer!.itineraries.first.segments.first;
-    final lastSegment = offer!.itineraries.last.segments.last;
+    final outboundDestination = offer!.itineraries.first.segments.last;
     
     // Get airline name from mapping
     final carrierCode = firstSegment.carrierCode;
@@ -50,15 +50,15 @@ class FlightTicketCard extends StatelessWidget {
     final travelClass = firstSegment.pricing?.travelClass ?? "ECONOMY";
     final travelClassLabel = _formatTravelClass(travelClass);
     
-    // Get airport codes and city names
+    // Get airport codes and city names (use outboundDestination for destination, not lastSegment)
     final fromCode = origin ?? firstSegment.departure.iataCode;
     final fromCity = _airportLabels[fromCode] ?? fromCode;
-    final toCode = destination ?? lastSegment.arrival.iataCode;
+    final toCode = destination ?? outboundDestination.arrival.iataCode;
     final toCity = _airportLabels[toCode] ?? toCode;
     
-    // Get times
+    // Get times (use outboundDestination for arrival time)
     final depTime = departureTime ?? firstSegment.departure.at;
-    final arrTime = arrivalTime ?? lastSegment.arrival.at;
+    final arrTime = arrivalTime ?? outboundDestination.arrival.at;
     
     final depTimeStr = depTime != null
         ? "${timeFormat.format(depTime)}, ${dateFormat.format(depTime)}"

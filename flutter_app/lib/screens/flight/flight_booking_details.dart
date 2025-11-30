@@ -7,14 +7,9 @@ import 'package:intl/intl.dart';
 import 'checkout_flight.dart';
 
 class FlightBookingDetailsScreen extends ConsumerStatefulWidget {
-  const FlightBookingDetailsScreen({
-    super.key,
-    required this.offer,
-    this.cityNameMap,
-  });
+  const FlightBookingDetailsScreen({super.key, required this.offer});
 
   final FlightOfferModel offer;
-  final Map<String, String>? cityNameMap;
 
   @override
   ConsumerState<FlightBookingDetailsScreen> createState() =>
@@ -30,34 +25,13 @@ class _FlightBookingDetailsScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeBookingState();
+      final notifier = ref.read(flightBookingProvider.notifier);
+      notifier.setOffer(widget.offer);
+      final currentState = ref.read(flightBookingProvider);
+      if (currentState.passengers.isEmpty) {
+        notifier.setPassengers(_buildInitialPassengers(widget.offer));
+      }
     });
-  }
-
-  @override
-  void didUpdateWidget(FlightBookingDetailsScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Jika offer berubah, reset dan set ulang state
-    if (oldWidget.offer.id != widget.offer.id) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _initializeBookingState();
-      });
-    }
-  }
-
-  void _initializeBookingState() {
-    final notifier = ref.read(flightBookingProvider.notifier);
-    // Reset state terlebih dahulu untuk memastikan tidak ada data dari offer sebelumnya
-    notifier.reset();
-    // Set offer yang baru
-    notifier.setOffer(widget.offer);
-    // Set initial passengers berdasarkan offer yang diklik
-    notifier.setPassengers(_buildInitialPassengers(widget.offer));
-    // Set departure date dari offer jika ada
-    final firstSegment = widget.offer.itineraries.first.segments.first;
-    if (firstSegment.departure.at != null) {
-      notifier.setDepartureDate(firstSegment.departure.at);
-    }
   }
 
   @override
@@ -76,7 +50,6 @@ class _FlightBookingDetailsScreenState
                 offer: widget.offer,
                 dateFormat: _dateFormat,
                 timeFormat: _timeFormat,
-                cityNameMap: widget.cityNameMap,
               ),
               const SizedBox(height: 16),
               _DatePickerSection(
@@ -134,9 +107,7 @@ class _FlightBookingDetailsScreenState
     if (!mounted) return;
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const CheckoutFlightScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const CheckoutFlightScreen()),
     );
   }
 
@@ -156,18 +127,17 @@ class _FlightOverview extends StatelessWidget {
     required this.offer,
     required this.dateFormat,
     required this.timeFormat,
-    this.cityNameMap,
   });
 
   final FlightOfferModel offer;
   final DateFormat dateFormat;
   final DateFormat timeFormat;
-  final Map<String, String>? cityNameMap;
 
   @override
   Widget build(BuildContext context) {
     final firstSegment = offer.itineraries.first.segments.first;
     final lastSegment = offer.itineraries.last.segments.last;
+    final outboundDestination = offer.itineraries.first.segments.last;
     final departureDate = firstSegment.departure.at != null
         ? dateFormat.format(firstSegment.departure.at!)
         : '-';
@@ -177,25 +147,6 @@ class _FlightOverview extends StatelessWidget {
     final arrivalTime = lastSegment.arrival.at != null
         ? timeFormat.format(lastSegment.arrival.at!)
         : '--:--';
-
-    // Get airline name dynamically
-    final airlineCode = offer.validatingAirlineCodes.isNotEmpty
-        ? offer.validatingAirlineCodes.first
-        : firstSegment.carrierCode;
-    final airlineName = _getAirlineName(airlineCode);
-    final flightNumber = firstSegment.number;
-
-    // Get city names from map or use IATA code as fallback
-    final originCode = firstSegment.departure.iataCode;
-    final destCode = lastSegment.arrival.iataCode;
-    final originCityName = cityNameMap?[originCode] ?? originCode;
-    final destCityName = cityNameMap?[destCode] ?? destCode;
-
-    // Debug print
-    print('🔍 Flight Overview Debug:');
-    print('   Origin: $originCode -> $originCityName');
-    print('   Destination: $destCode -> $destCityName');
-    print('   City name map: $cityNameMap');
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -207,20 +158,11 @@ class _FlightOverview extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '$originCityName ($originCode) → $destCityName ($destCode)',
+            '${firstSegment.departure.iataCode} → ${outboundDestination.arrival.iataCode}',
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
           Text(departureDate, style: TextStyle(color: Colors.grey[700])),
-          const SizedBox(height: 8),
-          Text(
-            '$airlineName • $airlineCode$flightNumber',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -241,34 +183,6 @@ class _FlightOverview extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _getAirlineName(String code) {
-    const airlineNames = {
-      'GA': 'Garuda Indonesia',
-      'JT': 'Lion Air',
-      'SJ': 'Sriwijaya Air',
-      'ID': 'Batik Air',
-      'QG': 'Citilink',
-      'QZ': 'AirAsia',
-      'SQ': 'Singapore Airlines',
-      'MH': 'Malaysia Airlines',
-      'TG': 'Thai Airways',
-      'JL': 'Japan Airlines',
-      'KE': 'Korean Air',
-      'CX': 'Cathay Pacific',
-      'QF': 'Qantas',
-      'EK': 'Emirates',
-      'QR': 'Qatar Airways',
-      'LH': 'Lufthansa',
-      'BA': 'British Airways',
-      'AF': 'Air France',
-      'KL': 'KLM',
-      'DL': 'Delta Air Lines',
-      'AA': 'American Airlines',
-      'UA': 'United Airlines',
-    };
-    return airlineNames[code] ?? code;
   }
 }
 

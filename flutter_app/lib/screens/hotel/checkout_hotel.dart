@@ -7,8 +7,8 @@ import '../../core/theme/app_text_styles.dart';
 import '../../providers/booking_providers.dart';
 import '../../providers/checkout_provider.dart';
 import '../../providers/app_providers.dart';
+import '../../providers/notification_providers.dart';
 import '../../utils/formatters.dart';
-import '../../screens/main/home_screen.dart';
 import '../../services/api_service.dart';
 
 // Import Widget Reusable
@@ -67,9 +67,10 @@ class _CheckoutHotelScreenState extends ConsumerState<CheckoutHotelScreen> {
         (bookingState.guests.isNotEmpty ? bookingState.guests.first.phone : '');
 
     // Use user data if available
-    final userContactName = userAsync.value?.displayName ?? contactName;
-    final userContactEmail = userAsync.value?.email ?? contactEmail;
-    final userContactPhone = userAsync.value?.phoneNumber ?? contactPhone;
+    final user = userAsync.valueOrNull;
+    final userContactName = user?.displayName ?? contactName;
+    final userContactEmail = user?.email ?? contactEmail;
+    final userContactPhone = user?.phoneNumber ?? contactPhone;
 
     // Calculate duration
     final checkIn = bookingState.checkInDate ?? offer.checkInDate;
@@ -310,8 +311,8 @@ class _CheckoutHotelScreenState extends ConsumerState<CheckoutHotelScreen> {
                   const SizedBox(height: 15),
                   ContactInfoTile(
                     label: "Phone Number",
-                    value: userContactPhone?.isNotEmpty == true
-                        ? userContactPhone!
+                    value: userContactPhone.isNotEmpty
+                        ? userContactPhone
                         : "Not provided",
                     icon: Icons.phone_outlined,
                   ),
@@ -483,6 +484,39 @@ class _CheckoutHotelScreenState extends ConsumerState<CheckoutHotelScreen> {
 
       // Calculate final price (dengan diskon jika ada)
       final finalPrice = checkoutState.getDiscountedPrice(bookingState.totalPrice);
+
+      // Build payload for API call
+      final payload = bookingState.buildPayload();
+      if (payload == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Data booking tidak lengkap.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() => _isProcessing = false);
+        return;
+      }
+
+      // Add payment method and discount info to payload
+      payload['paymentMethod'] = checkoutState.paymentMethod;
+      if (checkoutState.discountAmount > 0) {
+        payload['discountAmount'] = checkoutState.discountAmount;
+        payload['promoCode'] = checkoutState.promoCode;
+      }
+
+      // Call API to create booking (this will automatically create notification in backend)
+      final api = ref.read(apiServiceProvider);
+      try {
+        await api.storeHotelBooking(payload);
+        // Invalidate notifications to refresh the list
+        ref.invalidate(notificationsProvider);
+        ref.invalidate(unreadNotificationsProvider);
+      } catch (e) {
+        // Log error but don't fail the payment flow
+        debugPrint('Error creating hotel booking: $e');
+      }
 
       // Save transaction to state
       final hotel = bookingState.hotel!;

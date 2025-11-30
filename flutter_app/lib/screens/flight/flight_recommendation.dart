@@ -740,10 +740,7 @@ class _FlightRecommendationScreenState
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => FlightBookingDetailsScreen(
-              offer: offer,
-              cityNameMap: _cityNameMap,
-            ),
+            builder: (_) => FlightBookingDetailsScreen(offer: offer),
           ),
         );
       },
@@ -879,10 +876,7 @@ class _FlightRecommendationScreenState
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => FlightBookingDetailsScreen(
-              offer: offer,
-              cityNameMap: _cityNameMap,
-            ),
+            builder: (_) => FlightBookingDetailsScreen(offer: offer),
           ),
         );
       },
