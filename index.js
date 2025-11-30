@@ -5,17 +5,18 @@ const express = require("express");
 const cors = require("cors");
 const admin = require("firebase-admin");
 const cron = require("node-cron");
-require("dotenv").config(); // Memuat variabel dari file .env
+require("dotenv").config(); // Memuat variabel dari file .env (lokal)
 
-// 2. Inisialisasi Firebase Admin SDK
+// 2. Inisialisasi Firebase Admin SDK via ENV (tanpa upload file JSON)
+let serviceAccount;
 try {
-  const serviceAccount = require(process.env.SERVICE_ACCOUNT_PATH);
+  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
-  console.log("Firebase Admin SDK terhubung.");
+  console.log("🔥 Firebase Admin SDK terhubung.");
 } catch (error) {
-  console.error("Error inisialisasi Firebase Admin:", error.message);
+  console.error("❌ Error inisialisasi Firebase Admin:", error.message);
   process.exit(1); // Hentikan aplikasi jika Firebase gagal terhubung
 }
 
@@ -31,29 +32,25 @@ const bookingStatusService = require("./services/bookingStatusService");
 // 5. Gunakan Middleware
 app.use(cors()); // Mengizinkan request dari domain lain (Flutter)
 app.use(express.json()); // Membaca body request sebagai JSON
-app.use(express.urlencoded({ extended: true })); // Membaca body request sebagai URL-encoded (untuk multipart form)
 
 // ============================================================================
 // CRON JOBS (Scheduled Tasks)
 // ============================================================================
-
-// Run every hour at minute 0 (00:00, 01:00, 02:00, etc.)
 cron.schedule("*/30 * * * *", async () => {
-  console.log("⏰ [CRON] Running hourly booking status update...");
+  console.log("⏰ [CRON] Running booking status update...");
   await bookingStatusService.updateExpiredBookings();
 });
 
-// Run every day at 09:00 AM
 cron.schedule("0 9 * * *", async () => {
-  console.log("⏰ [CRON] Running daily trip reminders check...");
+  console.log("⏰ [CRON] Running daily trip reminders...");
   await bookingStatusService.sendTripReminders();
 });
 
 console.log("✅ Cron jobs scheduled:");
-console.log("   - Booking status update: Every hour");
+console.log("   - Booking status update: Every 30 minutes");
 console.log("   - Trip reminders: Daily at 09:00 AM");
 
-// 6. Impor Rute (Routes) Anda
+// 6. Impor Rute (Routes)
 const userRoutes = require("./routes/userRoutes");
 const tripRoutes = require("./routes/tripRoutes");
 const destinationRoutes = require("./routes/destinationRoutes");
@@ -64,9 +61,8 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const wishlistRoutes = require("./routes/wishlistRoutes");
 
 // 7. Definisikan Rute API Utama
-// Memberi tahu Express untuk menggunakan file rute tersebut
-app.use("/api/users", userRoutes); // Langsung /api/users
-app.use("/api/trips", tripRoutes); // Langsung /api/trips
+app.use("/api/users", userRoutes);
+app.use("/api/trips", tripRoutes);
 app.use("/api/destinations", destinationRoutes);
 app.use("/api/hotels", hotelRoutes);
 app.use("/api/auth", authRoutes);
@@ -79,7 +75,7 @@ app.listen(port, () => {
   console.log(`🚀 Server API berjalan di http://localhost:${port}`);
 });
 
-//Welcome Point
+// Welcome Point
 app.get("/", (req, res) => {
   res.json({
     success: true,
@@ -104,7 +100,6 @@ app.get("/", (req, res) => {
   });
 });
 
-//Error Handling
 // 404 Handler
 app.use((req, res) => {
   res.status(404).json({
