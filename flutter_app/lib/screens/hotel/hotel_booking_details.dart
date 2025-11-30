@@ -52,9 +52,7 @@ class _HotelBookingDetailsScreenState
     final tripsAsync = ref.watch(tripsProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Hotel Booking Details'),
-      ),
+      appBar: AppBar(title: const Text('Hotel Booking Details')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
@@ -68,13 +66,20 @@ class _HotelBookingDetailsScreenState
                 dateFormat: _dateFormat,
               ),
               const SizedBox(height: 24),
-              _TripSelector(tripsAsync: tripsAsync, currentTrip: bookingState.tripId),
+              _TripSelector(
+                tripsAsync: tripsAsync,
+                currentTrip: bookingState.tripId,
+              ),
               const SizedBox(height: 24),
               _DateSelectionSection(
                 checkInDate: bookingState.checkInDate,
                 checkOutDate: bookingState.checkOutDate,
-                onCheckInSelected: (date) => ref.read(hotelBookingProvider.notifier).setDates(checkIn: date),
-                onCheckOutSelected: (date) => ref.read(hotelBookingProvider.notifier).setDates(checkOut: date),
+                onCheckInSelected: (date) => ref
+                    .read(hotelBookingProvider.notifier)
+                    .setDates(checkIn: date),
+                onCheckOutSelected: (date) => ref
+                    .read(hotelBookingProvider.notifier)
+                    .setDates(checkOut: date),
                 dateFormat: _dateFormat,
               ),
               const SizedBox(height: 24),
@@ -105,11 +110,7 @@ class _HotelBookingDetailsScreenState
     final payload = state.buildPayload();
     if (payload == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Lengkapi data tamu terlebih dahulu.',
-          ),
-        ),
+        const SnackBar(content: Text('Lengkapi data tamu terlebih dahulu.')),
       );
       return;
     }
@@ -118,9 +119,7 @@ class _HotelBookingDetailsScreenState
     if (!mounted) return;
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const CheckoutHotelScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const CheckoutHotelScreen()),
     );
   }
 
@@ -198,18 +197,13 @@ class _HotelSummaryCard extends StatelessWidget {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    _InfoChip(
-                      icon: Icons.calendar_today,
-                      label: stayLabel,
-                    ),
+                    _InfoChip(icon: Icons.calendar_today, label: stayLabel),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Text(
                   room?.description ?? room?.type ?? 'Room',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -248,10 +242,7 @@ class _InfoChip extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: Colors.blue[700]),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(color: Colors.blue[700]),
-          ),
+          Text(label, style: TextStyle(color: Colors.blue[700])),
         ],
       ),
     );
@@ -259,10 +250,7 @@ class _InfoChip extends StatelessWidget {
 }
 
 class _TripSelector extends ConsumerWidget {
-  const _TripSelector({
-    required this.tripsAsync,
-    required this.currentTrip,
-  });
+  const _TripSelector({required this.tripsAsync, required this.currentTrip});
 
   final AsyncValue<List<TripModel>> tripsAsync;
   final String? currentTrip;
@@ -297,10 +285,7 @@ class _TripSelector extends ConsumerWidget {
           children: [
             const Text(
               'Attach to Trip',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
@@ -330,10 +315,7 @@ class _TripSelector extends ConsumerWidget {
           color: Colors.red[50],
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Text(
-          err.toString(),
-          style: const TextStyle(color: Colors.red),
-        ),
+        child: Text(err.toString(), style: const TextStyle(color: Colors.red)),
       ),
     );
   }
@@ -361,10 +343,7 @@ class _EmptyTripInfo extends StatelessWidget {
               'Belum ada trip yang tersedia. Buat trip di halaman Travel Plan.',
             ),
           ),
-          TextButton(
-            onPressed: onRefresh,
-            child: const Text('Refresh'),
-          ),
+          TextButton(onPressed: onRefresh, child: const Text('Refresh')),
         ],
       ),
     );
@@ -393,10 +372,7 @@ class _DateSelectionSection extends StatelessWidget {
       children: [
         const Text(
           'Stay Duration',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         Row(
@@ -426,8 +402,10 @@ class _DateSelectionSection extends StatelessWidget {
                 date: checkOutDate,
                 dateFormat: dateFormat,
                 onTap: () async {
-                  final initialDate = checkOutDate ?? 
-                      (checkInDate?.add(const Duration(days: 1)) ?? DateTime.now().add(const Duration(days: 1)));
+                  final initialDate =
+                      checkOutDate ??
+                      (checkInDate?.add(const Duration(days: 1)) ??
+                          DateTime.now().add(const Duration(days: 1)));
                   final picked = await showDatePicker(
                     context: context,
                     initialDate: initialDate,
@@ -475,10 +453,7 @@ class _DatePickerTile extends StatelessWidget {
           children: [
             Text(
               label,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
             const SizedBox(height: 4),
             Row(
@@ -519,10 +494,7 @@ class _GuestSection extends ConsumerWidget {
             const Expanded(
               child: Text(
                 'Guest Information',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
             IconButton(
@@ -546,10 +518,7 @@ class _GuestSection extends ConsumerWidget {
             guests.length,
             (index) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _GuestCard(
-                index: index,
-                guest: guests[index],
-              ),
+              child: _GuestCard(index: index, guest: guests[index]),
             ),
           ),
       ],
@@ -558,10 +527,7 @@ class _GuestSection extends ConsumerWidget {
 }
 
 class _GuestCard extends ConsumerStatefulWidget {
-  const _GuestCard({
-    required this.index,
-    required this.guest,
-  });
+  const _GuestCard({required this.index, required this.guest});
 
   final int index;
   final HotelGuestForm guest;
@@ -606,18 +572,12 @@ class _GuestCardState extends ConsumerState<_GuestCard> {
             decoration: const InputDecoration(labelText: 'Title'),
             items: titles
                 .map(
-                  (title) => DropdownMenuItem(
-                    value: title,
-                    child: Text(title),
-                  ),
+                  (title) => DropdownMenuItem(value: title, child: Text(title)),
                 )
                 .toList(),
             onChanged: (value) {
               if (value == null) return;
-              notifier.updateGuest(
-                widget.index,
-                guest.copyWith(title: value),
-              );
+              notifier.updateGuest(widget.index, guest.copyWith(title: value));
             },
           ),
           const SizedBox(height: 12),
@@ -690,10 +650,7 @@ class _PaymentMethodSection extends StatelessWidget {
       children: [
         const Text(
           'Payment Method',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         Wrap(
@@ -741,20 +698,13 @@ class _PriceBreakdown extends StatelessWidget {
         children: [
           const Text(
             'Price Breakdown',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
           _PriceRow(label: 'Base price ($currency)', value: basePrice.toIDR()),
           _PriceRow(label: 'Taxes & fees', value: taxes.toIDR()),
           const Divider(height: 24),
-          _PriceRow(
-            label: 'Total',
-            value: total.toIDR(),
-            emphasize: true,
-          ),
+          _PriceRow(label: 'Total', value: total.toIDR(), emphasize: true),
         ],
       ),
     );
@@ -821,10 +771,7 @@ class _CheckoutButton extends StatelessWidget {
             ),
             child: Text(
               label,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -832,4 +779,3 @@ class _CheckoutButton extends StatelessWidget {
     );
   }
 }
-
