@@ -1,4 +1,4 @@
-name: Wandewhale
+name: wanderwhale
 description: "WanderWhale is a travel app that allows you to book flights, hotels, and tours."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.

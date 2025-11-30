@@ -2,8 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:dotted_line/dotted_line.dart'; // Anda perlu 'npm install dotted_line'
 import 'package:intl/intl.dart'; // Anda perlu 'npm install intl'
-import 'package:flutter_app/models/trip_model.dart';
-import 'package:flutter_app/core/theme/app_colors.dart';
+import 'package:wanderwhale/models/trip_model.dart';
+import 'package:wanderwhale/core/theme/app_colors.dart';
 
 class UpcomingTripCard extends StatelessWidget {
   final TripModel trip;
@@ -70,10 +70,7 @@ class UpcomingTripCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   const Text(
                     "Indonesia, Bali", // TODO: Ganti dengan data asli
-                    style: TextStyle(
-                      color: AppColors.gray3,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: AppColors.gray3, fontSize: 12),
                   ),
                 ],
               ),
@@ -93,10 +90,7 @@ class UpcomingTripCard extends StatelessWidget {
               const SizedBox(width: 4),
               const Text(
                 "Mulai",
-                style: TextStyle(
-                  color: AppColors.gray3,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: AppColors.gray3, fontSize: 12),
               ),
               Expanded(
                 child: Padding(
@@ -108,10 +102,7 @@ class UpcomingTripCard extends StatelessWidget {
               const SizedBox(width: 4),
               const Text(
                 "Tujuan",
-                style: TextStyle(
-                  color: AppColors.gray3,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: AppColors.gray3, fontSize: 12),
               ),
             ],
           ),

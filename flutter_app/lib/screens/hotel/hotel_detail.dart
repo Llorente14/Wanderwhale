@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/models/hotel_booking_model.dart';
-import 'package:flutter_app/models/hotel_offer_model.dart';
-import 'package:flutter_app/utils/formatters.dart';
-import 'package:flutter_app/widgets/common/custom_bottom_nav.dart';
-import 'package:flutter_app/screens/main/main_navigation_screen.dart';
+import 'package:wanderwhale/models/hotel_booking_model.dart';
+import 'package:wanderwhale/models/hotel_offer_model.dart';
+import 'package:wanderwhale/utils/formatters.dart';
+import 'package:wanderwhale/widgets/common/custom_bottom_nav.dart';
+import 'package:wanderwhale/screens/main/main_navigation_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_app/providers/providers.dart';
+import 'package:wanderwhale/providers/providers.dart';
 
 class HotelDetail extends ConsumerWidget {
   const HotelDetail({
@@ -37,10 +37,7 @@ class HotelDetail extends ConsumerWidget {
         centerTitle: true,
         title: const Text(
           'Hotel Confirmation',
-          style: TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
         ),
       ),
       body: Padding(
@@ -50,18 +47,12 @@ class HotelDetail extends ConsumerWidget {
           children: [
             const Text(
               'You picked',
-              style: TextStyle(
-                color: Colors.grey,
-                letterSpacing: 1,
-              ),
+              style: TextStyle(color: Colors.grey, letterSpacing: 1),
             ),
             const SizedBox(height: 8),
             Text(
               booking.roomType ?? 'Room',
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
             _ConfirmationCard(
@@ -227,16 +218,12 @@ class _ConfirmationCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       booking.hotelAddress ?? '-',
-                      style: const TextStyle(
-                        color: Colors.grey,
-                      ),
+                      style: const TextStyle(color: Colors.grey),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       booking.city ?? '',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
@@ -246,15 +233,9 @@ class _ConfirmationCard extends StatelessWidget {
           const SizedBox(height: 20),
           _InfoRow(label: 'Room type', value: booking.roomType ?? '-'),
           const SizedBox(height: 8),
-          _InfoRow(
-            label: 'Guests',
-            value: '${booking.numberOfGuests} pax',
-          ),
+          _InfoRow(label: 'Guests', value: '${booking.numberOfGuests} pax'),
           const SizedBox(height: 8),
-          _InfoRow(
-            label: 'Board',
-            value: offer.boardType ?? 'Room only',
-          ),
+          _InfoRow(label: 'Board', value: offer.boardType ?? 'Room only'),
           const Divider(height: 32, thickness: 1, color: Color(0xFFE8EAF0)),
           _InfoRow(
             label: 'Room price',
@@ -262,16 +243,9 @@ class _ConfirmationCard extends StatelessWidget {
             emphasize: true,
           ),
           const SizedBox(height: 6),
-          _InfoRow(
-            label: 'Tax & service',
-            value: taxes.toIDR(),
-          ),
+          _InfoRow(label: 'Tax & service', value: taxes.toIDR()),
           const SizedBox(height: 6),
-          _InfoRow(
-            label: 'Total',
-            value: total.toIDR(),
-            emphasize: true,
-          ),
+          _InfoRow(label: 'Total', value: total.toIDR(), emphasize: true),
         ],
       ),
     );
@@ -279,8 +253,11 @@ class _ConfirmationCard extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow(
-      {required this.label, required this.value, this.emphasize = false});
+  const _InfoRow({
+    required this.label,
+    required this.value,
+    this.emphasize = false,
+  });
 
   final String label;
   final String value;

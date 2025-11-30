@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/core/theme/app_colors.dart'; // Impor warna Anda
+import 'package:wanderwhale/core/theme/app_colors.dart'; // Impor warna Anda
 
 // Kelas ini memegang semua text style untuk aplikasi
 class AppTextStyles {

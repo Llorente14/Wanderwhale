@@ -3,19 +3,19 @@
 import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_app/models/booking_model.dart';
-import 'package:flutter_app/models/destination_master_model.dart';
-import 'package:flutter_app/models/flight_booking_model.dart';
-import 'package:flutter_app/models/flight_offer_model.dart';
-import 'package:flutter_app/models/hotel_booking_model.dart';
-import 'package:flutter_app/models/hotel_offer_model.dart';
-import 'package:flutter_app/models/notification_model.dart';
-import 'package:flutter_app/models/trip_destination_model.dart';
-import 'package:flutter_app/models/trip_hotel_model.dart';
-import 'package:flutter_app/models/trip_model.dart';
-import 'package:flutter_app/models/user_model.dart';
-import 'package:flutter_app/models/wishlist_model.dart';
-import 'package:flutter_app/utils/constants.dart';
+import 'package:wanderwhale/models/booking_model.dart';
+import 'package:wanderwhale/models/destination_master_model.dart';
+import 'package:wanderwhale/models/flight_booking_model.dart';
+import 'package:wanderwhale/models/flight_offer_model.dart';
+import 'package:wanderwhale/models/hotel_booking_model.dart';
+import 'package:wanderwhale/models/hotel_offer_model.dart';
+import 'package:wanderwhale/models/notification_model.dart';
+import 'package:wanderwhale/models/trip_destination_model.dart';
+import 'package:wanderwhale/models/trip_hotel_model.dart';
+import 'package:wanderwhale/models/trip_model.dart';
+import 'package:wanderwhale/models/user_model.dart';
+import 'package:wanderwhale/models/wishlist_model.dart';
+import 'package:wanderwhale/utils/constants.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();

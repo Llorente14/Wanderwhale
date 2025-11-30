@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/models/hotel_offer_model.dart';
-import 'package:flutter_app/utils/formatters.dart';
+import 'package:wanderwhale/models/hotel_offer_model.dart';
+import 'package:wanderwhale/utils/formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_app/widgets/common/custom_bottom_nav.dart';
-import 'package:flutter_app/screens/main/main_navigation_screen.dart';
-import 'package:flutter_app/providers/providers.dart';
-import 'package:flutter_app/core/theme/app_colors.dart';
-import 'package:flutter_app/screens/user/profile_screens.dart';
-import 'package:flutter_app/screens/notification/notification_screen.dart';
+import 'package:wanderwhale/widgets/common/custom_bottom_nav.dart';
+import 'package:wanderwhale/screens/main/main_navigation_screen.dart';
+import 'package:wanderwhale/providers/providers.dart';
+import 'package:wanderwhale/core/theme/app_colors.dart';
+import 'package:wanderwhale/screens/user/profile_screens.dart';
+import 'package:wanderwhale/screens/notification/notification_screen.dart';
 import 'package:intl/intl.dart';
 
 import 'hotel_booking_details.dart';
@@ -44,13 +44,12 @@ class HotelRooms extends ConsumerWidget {
             ),
             Expanded(
               child: ListView(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 20,
+                ),
                 children: [
-                  _HotelSummaryCard(
-                    hotelGroup: hotelGroup,
-                    imageUrl: imageUrl,
-                  ),
+                  _HotelSummaryCard(hotelGroup: hotelGroup, imageUrl: imageUrl),
                   const SizedBox(height: 24),
                   ...offers.map(
                     (room) => Padding(
@@ -64,7 +63,9 @@ class HotelRooms extends ConsumerWidget {
                               'room': room.copyWith(
                                 checkInDate: checkIn,
                                 checkOutDate: checkOut,
-                                guests: guests != null ? HotelGuests(adults: guests!) : null,
+                                guests: guests != null
+                                    ? HotelGuests(adults: guests!)
+                                    : null,
                               ),
                             });
                           } else {
@@ -112,12 +113,8 @@ class HotelRooms extends ConsumerWidget {
   }
 }
 
-
 class _HotelSummaryCard extends StatelessWidget {
-  const _HotelSummaryCard({
-    required this.hotelGroup,
-    required this.imageUrl,
-  });
+  const _HotelSummaryCard({required this.hotelGroup, required this.imageUrl});
 
   final HotelOfferGroup hotelGroup;
   final String imageUrl;
@@ -174,7 +171,9 @@ class _HotelSummaryCard extends StatelessWidget {
                       .map(
                         (tag) => Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 6),
+                            horizontal: 14,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFEAF2FF),
                             borderRadius: BorderRadius.circular(16),
@@ -275,10 +274,7 @@ class _RoomTile extends StatelessWidget {
                   Text(
                     'Base ${room.price.base.toIDR()}\nTax ${taxes.toIDR()}',
                     textAlign: TextAlign.right,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey,
-                    ),
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
                   ),
                 ],
               ),
@@ -289,8 +285,7 @@ class _RoomTile extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              if (room.boardType != null)
-                _AmenityChip(label: room.boardType!),
+              if (room.boardType != null) _AmenityChip(label: room.boardType!),
               if (room.room?.category != null)
                 _AmenityChip(label: room.room!.category!),
               if (room.policies?['cancellation'] != null)
@@ -325,16 +320,15 @@ class _RoomTile extends StatelessWidget {
                 ),
                 onPressed: onBook,
                 child: const Padding(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-                  child: Text(
-                    'Book',
-                    style: TextStyle(color: Colors.white),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 24.0,
+                    vertical: 12.0,
                   ),
+                  child: Text('Book', style: TextStyle(color: Colors.white)),
                 ),
               ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -655,13 +649,8 @@ class _AmenityChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          fontSize: 12,
-          color: Color(0xFF4A4A4A),
-        ),
+        style: const TextStyle(fontSize: 12, color: Color(0xFF4A4A4A)),
       ),
     );
   }
 }
-
-

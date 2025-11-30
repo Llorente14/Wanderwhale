@@ -1,4 +1,4 @@
-import 'package:flutter_app/models/flight_offer_model.dart';
+import 'package:wanderwhale/models/flight_offer_model.dart';
 
 final List<FlightOfferModel> demoFlightOffers = _mockFlightOffers
     .map((json) => FlightOfferModel.fromJson(json))
@@ -17,12 +17,16 @@ final List<Map<String, dynamic>> _mockFlightOffers = [
             'departure': {
               'iataCode': 'CGK',
               'terminal': '3',
-              'at': DateTime.now().add(const Duration(days: 7)).toIso8601String()
+              'at': DateTime.now()
+                  .add(const Duration(days: 7))
+                  .toIso8601String(),
             },
             'arrival': {
               'iataCode': 'HND',
               'terminal': '2',
-              'at': DateTime.now().add(const Duration(days: 7, hours: 9)).toIso8601String()
+              'at': DateTime.now()
+                  .add(const Duration(days: 7, hours: 9))
+                  .toIso8601String(),
             },
             'aircraft': {'code': '332'},
             'duration': 'PT7H',
@@ -43,10 +47,10 @@ final List<Map<String, dynamic>> _mockFlightOffers = [
       'grandTotal': '17500000',
       'base': '15000000',
       'fees': [
-        {'amount': '250000', 'type': 'ISSUANCE'}
+        {'amount': '250000', 'type': 'ISSUANCE'},
       ],
       'taxes': [
-        {'amount': '2250000', 'type': 'ID'}
+        {'amount': '2250000', 'type': 'ID'},
       ],
     },
     'validatingAirlineCodes': ['GA'],
@@ -70,12 +74,16 @@ final List<Map<String, dynamic>> _mockFlightOffers = [
             'departure': {
               'iataCode': 'CGK',
               'terminal': '3',
-              'at': DateTime.now().add(const Duration(days: 14)).toIso8601String()
+              'at': DateTime.now()
+                  .add(const Duration(days: 14))
+                  .toIso8601String(),
             },
             'arrival': {
               'iataCode': 'SIN',
               'terminal': '1',
-              'at': DateTime.now().add(const Duration(days: 14, hours: 3)).toIso8601String()
+              'at': DateTime.now()
+                  .add(const Duration(days: 14, hours: 3))
+                  .toIso8601String(),
             },
             'aircraft': {'code': '359'},
             'duration': 'PT1H45M',
@@ -96,10 +104,10 @@ final List<Map<String, dynamic>> _mockFlightOffers = [
       'grandTotal': '4400000',
       'base': '3800000',
       'fees': [
-        {'amount': '120000', 'type': 'ISSUANCE'}
+        {'amount': '120000', 'type': 'ISSUANCE'},
       ],
       'taxes': [
-        {'amount': '480000', 'type': 'SG'}
+        {'amount': '480000', 'type': 'SG'},
       ],
     },
     'validatingAirlineCodes': ['SQ'],
@@ -125,14 +133,8 @@ final List<Map<String, dynamic>> _mockFlightOffers = [
           {
             'carrierCode': 'GA',
             'number': '402',
-            'departure': {
-              'iataCode': 'CGK',
-              'terminal': '3',
-            },
-            'arrival': {
-              'iataCode': 'DPS',
-              'terminal': '1',
-            },
+            'departure': {'iataCode': 'CGK', 'terminal': '3'},
+            'arrival': {'iataCode': 'DPS', 'terminal': '1'},
             'aircraft': {'code': '738'},
             'duration': 'PT1H50M',
             'operating': {'carrierCode': 'GA'},
@@ -151,10 +153,10 @@ final List<Map<String, dynamic>> _mockFlightOffers = [
       'grandTotal': '2100000',
       'base': '1800000',
       'fees': [
-        {'amount': '50000', 'type': 'ISSUANCE'}
+        {'amount': '50000', 'type': 'ISSUANCE'},
       ],
       'taxes': [
-        {'amount': '250000', 'type': 'ID'}
+        {'amount': '250000', 'type': 'ID'},
       ],
     },
     'validatingAirlineCodes': ['GA'],

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/models/flight_offer_model.dart';
-import 'package:flutter_app/utils/formatters.dart';
-import 'package:flutter_app/widgets/common/custom_bottom_nav.dart';
-import 'package:flutter_app/screens/main/main_navigation_screen.dart';
-import 'package:flutter_app/providers/providers.dart';
+import 'package:wanderwhale/models/flight_offer_model.dart';
+import 'package:wanderwhale/utils/formatters.dart';
+import 'package:wanderwhale/widgets/common/custom_bottom_nav.dart';
+import 'package:wanderwhale/screens/main/main_navigation_screen.dart';
+import 'package:wanderwhale/providers/providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -40,7 +40,7 @@ class FlightsCardScreen extends ConsumerWidget {
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) =>
-                                  FlightBookingDetailsScreen(offer: offer),
+                                      FlightBookingDetailsScreen(offer: offer),
                                 ),
                               );
                             },
@@ -131,11 +131,12 @@ class _HeaderSection extends ConsumerWidget {
                 userAsync.when(
                   data: (user) {
                     final displayText =
-                        (user.displayName != null && user.displayName!.isNotEmpty)
-                            ? user.displayName!
-                            : (user.email.isNotEmpty
-                                  ? user.email.split('@').first
-                                  : 'Traveler');
+                        (user.displayName != null &&
+                            user.displayName!.isNotEmpty)
+                        ? user.displayName!
+                        : (user.email.isNotEmpty
+                              ? user.email.split('@').first
+                              : 'Traveler');
                     return Text(
                       'Hello, $displayText',
                       style: const TextStyle(
@@ -249,17 +250,11 @@ class _HeaderSection extends ConsumerWidget {
                           ),
                           loading: () => const Text(
                             'Mengambil lokasi...',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
                           ),
                           error: (_, __) => const Text(
                             'Lokasi tidak tersedia',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
                           ),
                         ),
                       ),
@@ -286,17 +281,11 @@ class _HeaderSection extends ConsumerWidget {
                           ),
                           loading: () => const Text(
                             'Mengambil lokasi...',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
                           ),
                           error: (_, __) => const Text(
                             'Lokasi tidak tersedia',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
                           ),
                         ),
                       ),
@@ -378,13 +367,12 @@ class _FlightCard extends StatelessWidget {
         '(${firstSegment.departure.iataCode}) → '
         '${_airportLabels[lastSegment.arrival.iataCode] ?? lastSegment.arrival.iataCode} '
         '(${lastSegment.arrival.iataCode})';
-    final airline = _airlineNames[firstSegment.carrierCode] ??
-        firstSegment.carrierCode;
+    final airline =
+        _airlineNames[firstSegment.carrierCode] ?? firstSegment.carrierCode;
     final departure = firstSegment.departure.at != null
         ? formatter.format(firstSegment.departure.at!)
         : '-';
-    final travelClass =
-        firstSegment.pricing?.travelClass ?? 'ECONOMY';
+    final travelClass = firstSegment.pricing?.travelClass ?? 'ECONOMY';
 
     return GestureDetector(
       onTap: onTap,
@@ -424,10 +412,7 @@ class _FlightCard extends StatelessWidget {
                       ),
                       Text(
                         '${offer.validatingAirlineCodes.join(', ')} • ${_titleCase(travelClass)}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                       ),
                     ],
                   ),
@@ -445,10 +430,7 @@ class _FlightCard extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               route,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Row(
@@ -467,7 +449,6 @@ class _FlightCard extends StatelessWidget {
     );
   }
 }
-
 
 const Map<String, String> _airportLabels = {
   'CGK': 'Jakarta',

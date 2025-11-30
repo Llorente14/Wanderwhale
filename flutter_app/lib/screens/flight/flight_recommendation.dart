@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/models/flight_offer_model.dart';
-import 'package:flutter_app/utils/formatters.dart';
+import 'package:wanderwhale/models/flight_offer_model.dart';
+import 'package:wanderwhale/utils/formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 

@@ -2,10 +2,10 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_app/services/auth_service.dart';
-import 'package:flutter_app/providers/app_providers.dart';
-import 'package:flutter_app/services/fcm_service.dart';
-import 'package:flutter_app/services/api_service.dart';
+import 'package:wanderwhale/services/auth_service.dart';
+import 'package:wanderwhale/providers/app_providers.dart';
+import 'package:wanderwhale/services/fcm_service.dart';
+import 'package:wanderwhale/services/api_service.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService();

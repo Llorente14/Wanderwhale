@@ -1,8 +1,8 @@
 // lib/services/auth_service.dart
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_app/models/user_model.dart';
-import 'package:flutter_app/services/api_service.dart';
+import 'package:wanderwhale/models/user_model.dart';
+import 'package:wanderwhale/services/api_service.dart';
 
 /// AuthService: wrapper yang menyederhanakan penggunaan FirebaseAuth
 /// dan pemanggilan backend terkait profil / fcm token.

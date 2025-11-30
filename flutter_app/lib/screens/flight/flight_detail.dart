@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/models/simple_flight_model.dart';
-import 'package:flutter_app/core/theme/app_colors.dart';
+import 'package:wanderwhale/models/simple_flight_model.dart';
+import 'package:wanderwhale/core/theme/app_colors.dart';
 import 'package:intl/intl.dart';
 
 class FlightBookingDetailsPage extends StatefulWidget {
@@ -151,7 +151,11 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Flight Route Header
-                            _buildFlightRouteHeader(originCityName, destCityName, airlineName),
+                            _buildFlightRouteHeader(
+                              originCityName,
+                              destCityName,
+                              airlineName,
+                            ),
                             const SizedBox(height: 24),
                             // Flight Details Card
                             _buildFlightDetailsCard(),
@@ -169,18 +173,17 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
             ),
           ),
           // Book Button (Fixed at bottom)
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: _buildBookButton(),
-          ),
+          Positioned(left: 0, right: 0, bottom: 0, child: _buildBookButton()),
         ],
       ),
     );
   }
 
-  Widget _buildFlightRouteHeader(String originCityName, String destCityName, String airlineName) {
+  Widget _buildFlightRouteHeader(
+    String originCityName,
+    String destCityName,
+    String airlineName,
+  ) {
     final departureDate = _routeDateFormat.format(widget.flight.departureTime);
     final departureTime = _timeFormat.format(widget.flight.departureTime);
     final arrivalTime = _timeFormat.format(widget.flight.arrivalTime);
@@ -279,15 +282,11 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
         const SizedBox(height: 8),
         Text(
           departureDate,
-          style: const TextStyle(
-            fontSize: 13,
-            color: AppColors.gray3,
-          ),
+          style: const TextStyle(fontSize: 13, color: AppColors.gray3),
         ),
       ],
     );
   }
-
 
   String _getAirlineName(String code) {
     const airlineNames = {
@@ -373,20 +372,12 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
           // Divider with flight icon
           Row(
             children: [
-              Expanded(
-                child: Divider(color: AppColors.gray2),
-              ),
+              Expanded(child: Divider(color: AppColors.gray2)),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Icon(
-                  Icons.flight,
-                  color: AppColors.primary,
-                  size: 20,
-                ),
+                child: Icon(Icons.flight, color: AppColors.primary, size: 20),
               ),
-              Expanded(
-                child: Divider(color: AppColors.gray2),
-              ),
+              Expanded(child: Divider(color: AppColors.gray2)),
             ],
           ),
           const SizedBox(height: 24),
@@ -409,11 +400,7 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
             widget.flight.bookingCode,
           ),
           const SizedBox(height: 12),
-          _buildInfoRow(
-            Icons.check_circle,
-            'Baggage Allowance',
-            '30kg',
-          ),
+          _buildInfoRow(Icons.check_circle, 'Baggage Allowance', '30kg'),
           const SizedBox(height: 12),
           _buildInfoRow(
             Icons.airplanemode_active,
@@ -428,14 +415,11 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: AppColors.primary,),
+        Icon(icon, size: 18, color: AppColors.primary),
         const SizedBox(width: 12),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 14,
-            color: AppColors.gray4,
-          ),
+          style: const TextStyle(fontSize: 14, color: AppColors.gray4),
         ),
         const Spacer(),
         Text(
@@ -510,10 +494,7 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
           padding: const EdgeInsets.only(left: 44),
           child: Text(
             airport,
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.gray4,
-            ),
+            style: const TextStyle(fontSize: 13, color: AppColors.gray4),
           ),
         ),
       ],
@@ -628,14 +609,10 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.primaryLight3
-                : AppColors.gray1,
+            color: isSelected ? AppColors.primaryLight3 : AppColors.gray1,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected
-                  ? AppColors.primary
-                  : AppColors.gray2,
+              color: isSelected ? AppColors.primary : AppColors.gray2,
               width: isSelected ? 2 : 1,
             ),
           ),
@@ -643,12 +620,8 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
             child: Text(
               label,
               style: TextStyle(
-                color: isSelected
-                    ? AppColors.primary
-                    : AppColors.gray4,
-                fontWeight: isSelected
-                    ? FontWeight.w700
-                    : FontWeight.normal,
+                color: isSelected ? AppColors.primary : AppColors.gray4,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
               ),
             ),
           ),
@@ -834,10 +807,7 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Text(
                   'Select ${widget.passengers - selectedSeats.length} more seat(s)',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.gray3,
-                  ),
+                  style: const TextStyle(fontSize: 13, color: AppColors.gray3),
                 ),
               ),
             SizedBox(
@@ -885,10 +855,7 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
 }
 
 class _HeroImage extends StatelessWidget {
-  const _HeroImage({
-    required this.airlineName,
-    required this.flightNumber,
-  });
+  const _HeroImage({required this.airlineName, required this.flightNumber});
 
   final String airlineName;
   final String flightNumber;
@@ -907,19 +874,12 @@ class _HeroImage extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  AppColors.primary,
-                  AppColors.primaryDark1,
-                ],
+                colors: [AppColors.primary, AppColors.primaryDark1],
               ),
             ),
           ),
           // Decorative pattern
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _FlightPatternPainter(),
-            ),
-          ),
+          Positioned.fill(child: CustomPaint(painter: _FlightPatternPainter())),
           // Content
           Positioned.fill(
             child: Column(
@@ -982,22 +942,14 @@ class _FlightPatternPainter extends CustomPainter {
     // Draw flight path lines
     for (int i = 0; i < 5; i++) {
       final y = size.height * (0.2 + i * 0.15);
-      canvas.drawLine(
-        Offset(0, y),
-        Offset(size.width, y),
-        paint,
-      );
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
     }
 
     // Draw circles
     for (int i = 0; i < 8; i++) {
       final x = size.width * (0.1 + i * 0.12);
       final y = size.height * (0.3 + (i % 3) * 0.2);
-      canvas.drawCircle(
-        Offset(x, y),
-        20,
-        paint..style = PaintingStyle.fill,
-      );
+      canvas.drawCircle(Offset(x, y), 20, paint..style = PaintingStyle.fill);
     }
   }
 

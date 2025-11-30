@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/models/hotel_offer_model.dart';
-import 'package:flutter_app/models/trip_model.dart';
-import 'package:flutter_app/providers/booking_providers.dart';
-import 'package:flutter_app/providers/providers.dart';
-import 'package:flutter_app/utils/formatters.dart';
+import 'package:wanderwhale/models/hotel_offer_model.dart';
+import 'package:wanderwhale/models/trip_model.dart';
+import 'package:wanderwhale/providers/booking_providers.dart';
+import 'package:wanderwhale/providers/providers.dart';
+import 'package:wanderwhale/utils/formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'checkout_hotel.dart';

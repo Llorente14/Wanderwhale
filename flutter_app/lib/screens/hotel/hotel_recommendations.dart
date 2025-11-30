@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/models/hotel_offer_model.dart';
-import 'package:flutter_app/utils/formatters.dart';
+import 'package:wanderwhale/models/hotel_offer_model.dart';
+import 'package:wanderwhale/utils/formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -139,17 +139,19 @@ class _HotelRecommendationsState extends ConsumerState<HotelRecommendations> {
               child: offersAsync == null
                   ? _buildEmptyState()
                   : offersAsync.when(
-                      loading: () => const Center(
-                        child: CircularProgressIndicator(),
-                      ),
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
                       error: (err, stack) {
                         print('❌ Hotel search error: $err');
                         return Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.error_outline,
-                                  size: 64, color: Colors.red[300]),
+                              Icon(
+                                Icons.error_outline,
+                                size: 64,
+                                color: Colors.red[300],
+                              ),
                               const SizedBox(height: 16),
                               Text(
                                 'Gagal memuat hotel',
@@ -161,7 +163,9 @@ class _HotelRecommendationsState extends ConsumerState<HotelRecommendations> {
                               ),
                               const SizedBox(height: 8),
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 32),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                ),
                                 child: Text(
                                   err.toString(),
                                   textAlign: TextAlign.center,
@@ -190,8 +194,11 @@ class _HotelRecommendationsState extends ConsumerState<HotelRecommendations> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.hotel_outlined,
-                                    size: 64, color: Colors.grey[300]),
+                                Icon(
+                                  Icons.hotel_outlined,
+                                  size: 64,
+                                  color: Colors.grey[300],
+                                ),
                                 const SizedBox(height: 16),
                                 Text(
                                   'Tidak ada hotel ditemukan',

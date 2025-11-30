@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/services/api_service.dart';
+import 'package:wanderwhale/services/api_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/simple_flight_model.dart';
 import '../../providers/providers.dart';
@@ -41,8 +41,9 @@ class _FlightListPageState extends ConsumerState<FlightListPage> {
 
   Future<void> _fetchFlights() async {
     try {
-      final date = widget.departureDate ?? DateTime.now().add(const Duration(days: 1));
-      
+      final date =
+          widget.departureDate ?? DateTime.now().add(const Duration(days: 1));
+
       // Call API
       final flightOffers = await ApiService().searchFlights(
         origin: widget.origin,
@@ -56,10 +57,10 @@ class _FlightListPageState extends ConsumerState<FlightListPage> {
         final itinerary = offer.itineraries.first;
         final firstSegment = itinerary.segments.first;
         final lastSegment = itinerary.segments.last;
-        
+
         final originCode = firstSegment.departure.iataCode;
         final destCode = lastSegment.arrival.iataCode;
-        
+
         // Store city names for later use
         if (!_cityNameMap.containsKey(originCode)) {
           _cityNameMap[originCode] = _getCityName(originCode);
@@ -67,7 +68,7 @@ class _FlightListPageState extends ConsumerState<FlightListPage> {
         if (!_cityNameMap.containsKey(destCode)) {
           _cityNameMap[destCode] = _getCityName(destCode);
         }
-        
+
         // Debug print
         print('🔍 Flight List Debug:');
         print('   Widget origin: ${widget.origin}');
@@ -81,7 +82,9 @@ class _FlightListPageState extends ConsumerState<FlightListPage> {
           airline: firstSegment.carrierCode,
           flightNumber: '${firstSegment.carrierCode}${firstSegment.number}',
           departureTime: firstSegment.departure.at ?? DateTime.now(),
-          arrivalTime: lastSegment.arrival.at ?? DateTime.now().add(const Duration(hours: 2)),
+          arrivalTime:
+              lastSegment.arrival.at ??
+              DateTime.now().add(const Duration(hours: 2)),
           price: offer.price.total.toInt(),
           currency: offer.price.currency,
           aircraft: firstSegment.aircraft ?? 'Unknown',
@@ -133,9 +136,11 @@ class _FlightListPageState extends ConsumerState<FlightListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final originCityName = _cityNameMap[widget.origin] ?? _getCityName(widget.origin);
-    final destCityName = _cityNameMap[widget.destination] ?? _getCityName(widget.destination);
-    
+    final originCityName =
+        _cityNameMap[widget.origin] ?? _getCityName(widget.origin);
+    final destCityName =
+        _cityNameMap[widget.destination] ?? _getCityName(widget.destination);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       bottomNavigationBar: _buildBottomNav(context),
@@ -143,19 +148,19 @@ class _FlightListPageState extends ConsumerState<FlightListPage> {
         child: Column(
           children: [
             _buildHeader(),
-            Expanded(
-              child: _buildBody(originCityName, destCityName),
-            ),
+            Expanded(child: _buildBody(originCityName, destCityName)),
           ],
         ),
       ),
     );
   }
-  
+
   Widget _buildHeader() {
     final userAsync = ref.watch(userProvider);
-    final originCityName = _cityNameMap[widget.origin] ?? _getCityName(widget.origin);
-    final destCityName = _cityNameMap[widget.destination] ?? _getCityName(widget.destination);
+    final originCityName =
+        _cityNameMap[widget.origin] ?? _getCityName(widget.origin);
+    final destCityName =
+        _cityNameMap[widget.destination] ?? _getCityName(widget.destination);
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -183,10 +188,7 @@ class _FlightListPageState extends ConsumerState<FlightListPage> {
                     const SizedBox(height: 4),
                     Text(
                       '$originCityName (${widget.origin}) → $destCityName (${widget.destination})',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ],
                 ),
@@ -204,11 +206,16 @@ class _FlightListPageState extends ConsumerState<FlightListPage> {
                   child: CircleAvatar(
                     radius: 20,
                     backgroundColor: AppColors.white,
-                    backgroundImage: user.photoURL != null && user.photoURL!.isNotEmpty
+                    backgroundImage:
+                        user.photoURL != null && user.photoURL!.isNotEmpty
                         ? NetworkImage(user.photoURL!)
                         : null,
                     child: user.photoURL == null || user.photoURL!.isEmpty
-                        ? const Icon(Icons.person, color: AppColors.gray4, size: 20)
+                        ? const Icon(
+                            Icons.person,
+                            color: AppColors.gray4,
+                            size: 20,
+                          )
                         : null,
                   ),
                 ),
@@ -229,7 +236,7 @@ class _FlightListPageState extends ConsumerState<FlightListPage> {
       ),
     );
   }
-  
+
   Widget _buildBottomNav(BuildContext context) {
     return CustomBottomNav(
       onIndexChanged: (index) {
@@ -309,10 +316,7 @@ class _FlightListPageState extends ConsumerState<FlightListPage> {
               Text(
                 'Tidak ada penerbangan dari $originCityName ke $destCityName pada tanggal yang dipilih.\nCoba ubah tanggal atau tujuan Anda.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               ),
             ],
           ),
@@ -360,7 +364,7 @@ class _FlightListTile extends StatelessWidget {
     required this.onTap,
     this.cityNameMap,
   });
-  
+
   String _getCityName(String code) {
     const cityNames = {
       'CGK': 'Jakarta',
@@ -430,18 +434,12 @@ class _FlightListTile extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     '${flight.airline} • ${flight.flightNumber} • ${flight.aircraft}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     _formatTimeRange(flight.departureTime, flight.arrivalTime),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[700],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                   ),
                 ],
               ),
