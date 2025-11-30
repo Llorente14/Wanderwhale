@@ -9,9 +9,11 @@ class FlightBookingDetailsScreen extends ConsumerStatefulWidget {
   const FlightBookingDetailsScreen({
     super.key,
     required this.offer,
+    this.cityNameMap,
   });
 
   final FlightOfferModel offer;
+  final Map<String, String>? cityNameMap;
 
   @override
   ConsumerState<FlightBookingDetailsScreen> createState() =>
@@ -27,13 +29,34 @@ class _FlightBookingDetailsScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final notifier = ref.read(flightBookingProvider.notifier);
-      notifier.setOffer(widget.offer);
-      final currentState = ref.read(flightBookingProvider);
-      if (currentState.passengers.isEmpty) {
-        notifier.setPassengers(_buildInitialPassengers(widget.offer));
-      }
+      _initializeBookingState();
     });
+  }
+
+  @override
+  void didUpdateWidget(FlightBookingDetailsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Jika offer berubah, reset dan set ulang state
+    if (oldWidget.offer.id != widget.offer.id) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _initializeBookingState();
+      });
+    }
+  }
+
+  void _initializeBookingState() {
+    final notifier = ref.read(flightBookingProvider.notifier);
+    // Reset state terlebih dahulu untuk memastikan tidak ada data dari offer sebelumnya
+    notifier.reset();
+    // Set offer yang baru
+    notifier.setOffer(widget.offer);
+    // Set initial passengers berdasarkan offer yang diklik
+    notifier.setPassengers(_buildInitialPassengers(widget.offer));
+    // Set departure date dari offer jika ada
+    final firstSegment = widget.offer.itineraries.first.segments.first;
+    if (firstSegment.departure.at != null) {
+      notifier.setDepartureDate(firstSegment.departure.at);
+    }
   }
 
   @override
@@ -41,9 +64,7 @@ class _FlightBookingDetailsScreenState
     final bookingState = ref.watch(flightBookingProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Flight Booking Details'),
-      ),
+      appBar: AppBar(title: const Text('Flight Booking Details')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
@@ -54,11 +75,14 @@ class _FlightBookingDetailsScreenState
                 offer: widget.offer,
                 dateFormat: _dateFormat,
                 timeFormat: _timeFormat,
+                cityNameMap: widget.cityNameMap,
               ),
               const SizedBox(height: 16),
               _DatePickerSection(
                 selectedDate: bookingState.departureDate,
-                onDateSelected: ref.read(flightBookingProvider.notifier).setDepartureDate,
+                onDateSelected: ref
+                    .read(flightBookingProvider.notifier)
+                    .setDepartureDate,
               ),
               const SizedBox(height: 16),
               _TripNoteField(currentValue: bookingState.tripId),
@@ -128,22 +152,46 @@ class _FlightOverview extends StatelessWidget {
     required this.offer,
     required this.dateFormat,
     required this.timeFormat,
+    this.cityNameMap,
   });
 
   final FlightOfferModel offer;
   final DateFormat dateFormat;
   final DateFormat timeFormat;
+  final Map<String, String>? cityNameMap;
 
   @override
   Widget build(BuildContext context) {
     final firstSegment = offer.itineraries.first.segments.first;
     final lastSegment = offer.itineraries.last.segments.last;
-    final departureDate =
-        firstSegment.departure.at != null ? dateFormat.format(firstSegment.departure.at!) : '-';
-    final departureTime =
-        firstSegment.departure.at != null ? timeFormat.format(firstSegment.departure.at!) : '--:--';
-    final arrivalTime =
-        lastSegment.arrival.at != null ? timeFormat.format(lastSegment.arrival.at!) : '--:--';
+    final departureDate = firstSegment.departure.at != null
+        ? dateFormat.format(firstSegment.departure.at!)
+        : '-';
+    final departureTime = firstSegment.departure.at != null
+        ? timeFormat.format(firstSegment.departure.at!)
+        : '--:--';
+    final arrivalTime = lastSegment.arrival.at != null
+        ? timeFormat.format(lastSegment.arrival.at!)
+        : '--:--';
+
+    // Get airline name dynamically
+    final airlineCode = offer.validatingAirlineCodes.isNotEmpty
+        ? offer.validatingAirlineCodes.first
+        : firstSegment.carrierCode;
+    final airlineName = _getAirlineName(airlineCode);
+    final flightNumber = firstSegment.number;
+
+    // Get city names from map or use IATA code as fallback
+    final originCode = firstSegment.departure.iataCode;
+    final destCode = lastSegment.arrival.iataCode;
+    final originCityName = cityNameMap?[originCode] ?? originCode;
+    final destCityName = cityNameMap?[destCode] ?? destCode;
+
+    // Debug print
+    print('🔍 Flight Overview Debug:');
+    print('   Origin: $originCode -> $originCityName');
+    print('   Destination: $destCode -> $destCityName');
+    print('   City name map: $cityNameMap');
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -155,16 +203,19 @@ class _FlightOverview extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${firstSegment.departure.iataCode} → ${lastSegment.arrival.iataCode}',
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+            '$originCityName ($originCode) → $destCityName ($destCode)',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
+          Text(departureDate, style: TextStyle(color: Colors.grey[700])),
+          const SizedBox(height: 8),
           Text(
-            departureDate,
-            style: TextStyle(color: Colors.grey[700]),
+            '$airlineName • $airlineCode$flightNumber',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(height: 16),
           Row(
@@ -186,6 +237,34 @@ class _FlightOverview extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _getAirlineName(String code) {
+    const airlineNames = {
+      'GA': 'Garuda Indonesia',
+      'JT': 'Lion Air',
+      'SJ': 'Sriwijaya Air',
+      'ID': 'Batik Air',
+      'QG': 'Citilink',
+      'QZ': 'AirAsia',
+      'SQ': 'Singapore Airlines',
+      'MH': 'Malaysia Airlines',
+      'TG': 'Thai Airways',
+      'JL': 'Japan Airlines',
+      'KE': 'Korean Air',
+      'CX': 'Cathay Pacific',
+      'QF': 'Qantas',
+      'EK': 'Emirates',
+      'QR': 'Qatar Airways',
+      'LH': 'Lufthansa',
+      'BA': 'British Airways',
+      'AF': 'Air France',
+      'KL': 'KLM',
+      'DL': 'Delta Air Lines',
+      'AA': 'American Airlines',
+      'UA': 'United Airlines',
+    };
+    return airlineNames[code] ?? code;
   }
 }
 
@@ -229,10 +308,7 @@ class _TripNoteFieldState extends ConsumerState<_TripNoteField> {
       children: [
         const Text(
           'Trip Reference',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         TextField(
@@ -247,10 +323,7 @@ class _TripNoteFieldState extends ConsumerState<_TripNoteField> {
         const SizedBox(height: 6),
         Text(
           'Catatan ini hanya disimpan sementara di perangkat ini.',
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 12,
-          ),
+          style: TextStyle(color: Colors.grey[600], fontSize: 12),
         ),
       ],
     );
@@ -273,10 +346,7 @@ class _DatePickerSection extends StatelessWidget {
       children: [
         const Text(
           'Departure Date',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         InkWell(
@@ -307,7 +377,9 @@ class _DatePickerSection extends StatelessWidget {
                       : 'Select departure date',
                   style: TextStyle(
                     fontSize: 16,
-                    color: selectedDate != null ? Colors.black : Colors.grey[600],
+                    color: selectedDate != null
+                        ? Colors.black
+                        : Colors.grey[600],
                   ),
                 ),
               ],
@@ -330,20 +402,11 @@ class _TimeTile extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ],
     );
@@ -365,10 +428,7 @@ class _PassengerSection extends ConsumerWidget {
             const Expanded(
               child: Text(
                 'Passenger Information',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
             IconButton(
@@ -393,10 +453,7 @@ class _PassengerSection extends ConsumerWidget {
             passengers.length,
             (index) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _PassengerCard(
-                index: index,
-                passenger: passengers[index],
-              ),
+              child: _PassengerCard(index: index, passenger: passengers[index]),
             ),
           ),
       ],
@@ -405,10 +462,7 @@ class _PassengerSection extends ConsumerWidget {
 }
 
 class _PassengerCard extends ConsumerStatefulWidget {
-  const _PassengerCard({
-    required this.index,
-    required this.passenger,
-  });
+  const _PassengerCard({required this.index, required this.passenger});
 
   final int index;
   final FlightPassengerForm passenger;
@@ -438,9 +492,7 @@ class _PassengerCardState extends ConsumerState<_PassengerCard> {
             children: [
               Text(
                 'Passenger ${widget.index + 1}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
               const Spacer(),
               if (widget.index > 0)
@@ -453,10 +505,7 @@ class _PassengerCardState extends ConsumerState<_PassengerCard> {
           DropdownButtonFormField<String>(
             value: passenger.type,
             items: passengerTypes
-                .map((type) => DropdownMenuItem(
-                      value: type,
-                      child: Text(type),
-                    ))
+                .map((type) => DropdownMenuItem(value: type, child: Text(type)))
                 .toList(),
             onChanged: (value) {
               if (value == null) return;
@@ -465,9 +514,7 @@ class _PassengerCardState extends ConsumerState<_PassengerCard> {
                 passenger.copyWith(type: value),
               );
             },
-            decoration: const InputDecoration(
-              labelText: 'Passenger Type',
-            ),
+            decoration: const InputDecoration(labelText: 'Passenger Type'),
           ),
           const SizedBox(height: 12),
           Row(
@@ -560,7 +607,18 @@ class _SeatSelectionSection extends StatelessWidget {
 
   static const seatLabels = ['A', 'B', 'C', 'D', 'E', 'F'];
   static const occupiedSeats = {
-    '1A', '1B', '2C', '3D', '5E', '5F', '7A', '8B', '10C', '12D', '15E', '20F'
+    '1A',
+    '1B',
+    '2C',
+    '3D',
+    '5E',
+    '5F',
+    '7A',
+    '8B',
+    '10C',
+    '12D',
+    '15E',
+    '20F',
   };
   static const rows = 30;
 
@@ -571,10 +629,7 @@ class _SeatSelectionSection extends StatelessWidget {
       children: [
         const Text(
           'Seat Selection (Optional)',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         Container(
@@ -650,24 +705,28 @@ class _SeatSelectionSection extends StatelessWidget {
                                   if (isAisle) {
                                     return const SizedBox(width: 18);
                                   }
-                                  final isOccupied =
-                                      occupiedSeats.contains(seatId);
-                                  final isSelected =
-                                      selectedSeats.contains(seatId);
+                                  final isOccupied = occupiedSeats.contains(
+                                    seatId,
+                                  );
+                                  final isSelected = selectedSeats.contains(
+                                    seatId,
+                                  );
                                   return GestureDetector(
-                                    onTap:
-                                        isOccupied ? null : () => onToggle(seatId),
+                                    onTap: isOccupied
+                                        ? null
+                                        : () => onToggle(seatId),
                                     child: Container(
                                       width: 36,
                                       height: 36,
-                                      margin:
-                                          const EdgeInsets.symmetric(horizontal: 3),
+                                      margin: const EdgeInsets.symmetric(
+                                        horizontal: 3,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: isOccupied
                                             ? Colors.red[300]
                                             : isSelected
-                                                ? Colors.blue[400]
-                                                : Colors.grey[300],
+                                            ? Colors.blue[400]
+                                            : Colors.grey[300],
                                         borderRadius: BorderRadius.circular(6),
                                         border: Border.all(
                                           color: isSelected
@@ -745,10 +804,7 @@ class _LegendItem extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 6),
-        Text(
-          label,
-          style: TextStyle(color: Colors.grey[700]),
-        ),
+        Text(label, style: TextStyle(color: Colors.grey[700])),
       ],
     );
   }
@@ -787,24 +843,15 @@ class _BookingSummary extends StatelessWidget {
         children: [
           const Text(
             'Booking Summary',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
-          _SummaryRow(
-            label: 'Passengers',
-            value: '$passengerCount pax',
-          ),
+          _SummaryRow(label: 'Passengers', value: '$passengerCount pax'),
           _SummaryRow(
             label: 'Selected seats',
             value: selectedSeats > 0 ? '$selectedSeats seats' : 'Not selected',
           ),
-          _SummaryRow(
-            label: 'Fare per passenger',
-            value: unitPrice.toIDR(),
-          ),
+          _SummaryRow(label: 'Fare per passenger', value: unitPrice.toIDR()),
           if (selectedSeats > 0)
             _SummaryRow(
               label: 'Seat price (${seatPrice.toIDR()} × $selectedSeats)',
@@ -839,12 +886,7 @@ class _SummaryRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.grey[700],
-            ),
-          ),
+          Text(label, style: TextStyle(color: Colors.grey[700])),
           const Spacer(),
           Text(
             value,
@@ -886,10 +928,7 @@ class _CheckoutButton extends StatelessWidget {
             ),
             child: Text(
               label,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -897,4 +936,3 @@ class _CheckoutButton extends StatelessWidget {
     );
   }
 }
-

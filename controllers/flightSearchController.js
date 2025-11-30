@@ -318,12 +318,32 @@ exports.searchFlightOffers = async (req, res) => {
     }
 
     // 6. Call Amadeus service (LIVE API)
+    console.log("🔍 Flight Search Request:");
+    console.log("   Origin Destinations:", JSON.stringify(originDestinations, null, 2));
+    console.log("   Travelers:", JSON.stringify(travelers, null, 2));
+
     const data = await amadeusService.searchFlightOffers({
       originDestinations,
       travelers,
       sources,
       searchCriteria,
     });
+
+    // Debug: Log first few offers to verify origin/destination
+    if (data.data && data.data.length > 0) {
+      console.log("✅ Flight Search Response:");
+      console.log("   Total offers:", data.data.length);
+      const firstOffer = data.data[0];
+      if (firstOffer.itineraries && firstOffer.itineraries.length > 0) {
+        const firstItinerary = firstOffer.itineraries[0];
+        if (firstItinerary.segments && firstItinerary.segments.length > 0) {
+          const firstSegment = firstItinerary.segments[0];
+          const lastSegment = firstItinerary.segments[firstItinerary.segments.length - 1];
+          console.log("   First offer origin:", firstSegment.departure?.iataCode);
+          console.log("   First offer destination:", lastSegment.arrival?.iataCode);
+        }
+      }
+    }
 
     // 7. Cek jika tidak ada hasil
     if (!data.data || data.data.length === 0) {

@@ -96,9 +96,12 @@ class CustomBottomNav extends ConsumerWidget {
                         onTap: () {
                           if (currentIndex == i) return;
                           ref.read(bottomNavIndexProvider.notifier).state = i;
-                          // Tidak perlu handle navigation karena MainNavigationScreen
-                          // sudah menggunakan IndexedStack yang otomatis menampilkan screen
-                          // berdasarkan index provider
+                          // Call onIndexChanged callback if provided (for navigation from non-MainNavigationScreen screens)
+                          if (onIndexChanged != null) {
+                            onIndexChanged!(i);
+                          }
+                          // Jika tidak ada callback, MainNavigationScreen akan otomatis
+                          // menampilkan screen berdasarkan index provider
                         },
                       ),
                     ),

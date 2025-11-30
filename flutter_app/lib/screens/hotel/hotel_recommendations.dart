@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_app/models/hotel_offer_model.dart';
 import 'package:flutter_app/utils/formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../providers/hotel_providers.dart';
 import '../../providers/flight_providers.dart'; // For locationSearchProvider
+import '../../providers/providers.dart';
+import '../../widgets/common/custom_bottom_nav.dart';
+import '../../core/theme/app_colors.dart';
+import '../main/main_navigation_screen.dart';
+import '../user/profile_screens.dart';
+import '../notification/notification_screen.dart';
 import 'hotel_rooms.dart';
 
 class HotelRecommendations extends ConsumerStatefulWidget {
@@ -106,13 +113,23 @@ class _HotelRecommendationsState extends ConsumerState<HotelRecommendations> {
 
   @override
   Widget build(BuildContext context) {
-    final AsyncValue<List<HotelOfferGroup>>? offersAsync =
-        selectedCityCode != null
-        ? ref.watch(hotelSearchByCityProvider(selectedCityCode!))
+    // Build search params with check-in, check-out, and guests from widget
+    final searchParams = selectedCityCode != null
+        ? HotelSearchByCityParams(
+            cityCode: selectedCityCode!,
+            checkIn: widget.checkIn,
+            checkOut: widget.checkOut,
+            adults: widget.guests,
+          )
+        : null;
+
+    final offersAsync = searchParams != null
+        ? ref.watch(hotelSearchByCityProvider(searchParams))
         : null;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F9),
+      bottomNavigationBar: _buildBottomNav(context),
       body: SafeArea(
         child: Column(
           children: [
@@ -122,13 +139,75 @@ class _HotelRecommendationsState extends ConsumerState<HotelRecommendations> {
               child: offersAsync == null
                   ? _buildEmptyState()
                   : offersAsync.when(
-                      loading: () =>
-                          const Center(child: CircularProgressIndicator()),
-                      error: (err, stack) => Center(child: Text('Error: $err')),
+                      loading: () => const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                      error: (err, stack) {
+                        print('❌ Hotel search error: $err');
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.error_outline,
+                                  size: 64, color: Colors.red[300]),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Gagal memuat hotel',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey[800],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 32),
+                                child: Text(
+                                  err.toString(),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () {
+                                  // Refresh the provider
+                                  if (searchParams != null) {
+                                    ref.invalidate(
+                                      hotelSearchByCityProvider(searchParams),
+                                    );
+                                  }
+                                },
+                                child: const Text('Coba Lagi'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                       data: (hotels) {
                         if (hotels.isEmpty) {
-                          return const Center(
-                            child: Text('No hotels found in this city.'),
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.hotel_outlined,
+                                    size: 64, color: Colors.grey[300]),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Tidak ada hotel ditemukan',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Coba cari kota lain atau ubah tanggal',
+                                  style: TextStyle(color: Colors.grey[500]),
+                                ),
+                              ],
+                            ),
                           );
                         }
 
@@ -178,45 +257,291 @@ class _HotelRecommendationsState extends ConsumerState<HotelRecommendations> {
   }
 
   Widget _buildHeader() {
+    final userAsync = ref.watch(userProvider);
+    final locationAsync = ref.watch(userLocationTextProvider);
+    final unreadAsync = ref.watch(unreadNotificationsProvider);
+    final latestFlightAsync = ref.watch(latestFlightFromTripsProvider);
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: Colors.grey[300],
-            child: Icon(Icons.person, color: Colors.grey[700]),
+          userAsync.when(
+            data: (user) => GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProfileScreens(),
+                  ),
+                );
+              },
+              child: CircleAvatar(
+                radius: 24,
+                backgroundColor: AppColors.white,
+                backgroundImage:
+                    user.photoURL != null && user.photoURL!.isNotEmpty
+                    ? NetworkImage(user.photoURL!)
+                    : null,
+                child: user.photoURL == null || user.photoURL!.isEmpty
+                    ? const Icon(Icons.person, color: AppColors.gray4)
+                    : null,
+              ),
+            ),
+            loading: () => const CircleAvatar(
+              radius: 24,
+              backgroundColor: AppColors.gray2,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            error: (error, stackTrace) => GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProfileScreens(),
+                  ),
+                );
+              },
+              child: CircleAvatar(
+                radius: 24,
+                backgroundColor: AppColors.gray2,
+                child: const Icon(Icons.person, color: AppColors.gray4),
+              ),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Location',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                Row(
-                  children: [
-                    Icon(Icons.location_on, size: 16, color: Colors.blue[400]),
-                    const SizedBox(width: 4),
-                    Text(
-                      selectedCityName.isNotEmpty
-                          ? selectedCityName
-                          : 'Select Location',
+                userAsync.when(
+                  data: (user) {
+                    final displayText =
+                        (user.displayName != null &&
+                            user.displayName!.isNotEmpty)
+                        ? user.displayName!
+                        : (user.email.isNotEmpty
+                              ? user.email.split('@').first
+                              : 'Traveler');
+                    return Text(
+                      'Hello, $displayText',
                       style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.gray5,
                       ),
+                      overflow: TextOverflow.ellipsis,
+                    );
+                  },
+                  loading: () => Container(
+                    width: 140,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: AppColors.gray1,
+                      borderRadius: BorderRadius.circular(999),
                     ),
-                  ],
+                  ),
+                  error: (_, __) => const Text(
+                    'Hello, Traveler',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.gray5,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                latestFlightAsync.when(
+                  data: (flight) {
+                    if (flight != null && flight.departureDate != null) {
+                      final dateFormat = DateFormat('dd MMM yyyy');
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.flight_takeoff,
+                            size: 16,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              '${flight.origin} → ${flight.destination} • ${dateFormat.format(flight.departureDate!)}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.gray3,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          size: 16,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: locationAsync.when(
+                            data: (text) => Text(
+                              text,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.gray3,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            loading: () => const Text(
+                              'Mengambil lokasi...',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.gray3,
+                              ),
+                            ),
+                            error: (_, __) => const Text(
+                              'Lokasi tidak tersedia',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.gray3,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                  loading: () => Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: locationAsync.when(
+                          data: (text) => Text(
+                            text,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.gray3,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          loading: () => const Text(
+                            'Mengambil lokasi...',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.gray3,
+                            ),
+                          ),
+                          error: (_, __) => const Text(
+                            'Lokasi tidak tersedia',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.gray3,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  error: (_, __) => Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: locationAsync.when(
+                          data: (text) => Text(
+                            text,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.gray3,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          loading: () => const Text(
+                            'Mengambil lokasi...',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.gray3,
+                            ),
+                          ),
+                          error: (_, __) => const Text(
+                            'Lokasi tidak tersedia',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.gray3,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(Icons.notifications_none, color: Colors.grey[700]),
+          const SizedBox(width: 12),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.notifications_none),
+                  color: AppColors.gray5,
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const NotificationScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              unreadAsync.when(
+                data: (items) => items.isEmpty
+                    ? const SizedBox.shrink()
+                    : Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: const BoxDecoration(
+                            color: AppColors.error,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+            ],
           ),
         ],
       ),
@@ -608,6 +933,24 @@ class _HotelRecommendationsState extends ConsumerState<HotelRecommendations> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildBottomNav(BuildContext context) {
+    return CustomBottomNav(
+      onIndexChanged: (index) {
+        // Navigate to MainNavigationScreen with the selected index
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) {
+              // Set the index before navigating
+              ref.read(bottomNavIndexProvider.notifier).state = index;
+              return const MainNavigationScreen();
+            },
+          ),
+          (route) => false, // Remove all previous routes
+        );
+      },
     );
   }
 }

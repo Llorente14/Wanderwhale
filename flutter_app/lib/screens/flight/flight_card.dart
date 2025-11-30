@@ -1,24 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/models/flight_offer_model.dart';
 import 'package:flutter_app/utils/formatters.dart';
+import 'package:flutter_app/widgets/common/custom_bottom_nav.dart';
+import 'package:flutter_app/screens/main/main_navigation_screen.dart';
+import 'package:flutter_app/providers/providers.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import 'flight_booking_details.dart';
+import '../main/home_screen.dart';
 
-class FlightsCardScreen extends StatelessWidget {
+class FlightsCardScreen extends ConsumerWidget {
   const FlightsCardScreen({super.key, required this.offers});
 
   final List<FlightOfferModel> offers;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final formatter = DateFormat('dd MMM yyyy, HH:mm');
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-            _Header(onBack: () => Navigator.pop(context)),
+            const _HeaderSection(),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -49,60 +54,303 @@ class FlightsCardScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: const _BottomNav(),
+      bottomNavigationBar: _buildBottomNav(context, ref),
+    );
+  }
+
+  Widget _buildBottomNav(BuildContext context, WidgetRef ref) {
+    return CustomBottomNav(
+      onIndexChanged: (index) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) {
+              ref.read(bottomNavIndexProvider.notifier).state = index;
+              return const MainNavigationScreen();
+            },
+          ),
+          (route) => false,
+        );
+      },
     );
   }
 }
 
-class _Header extends StatelessWidget {
-  const _Header({required this.onBack});
-
-  final VoidCallback onBack;
+// Header section copied from home_screen.dart
+class _HeaderSection extends ConsumerWidget {
+  const _HeaderSection();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userAsync = ref.watch(userProvider);
+    final locationAsync = ref.watch(userLocationTextProvider);
+    final unreadAsync = ref.watch(unreadNotificationsProvider);
+    final latestFlightAsync = ref.watch(latestFlightFromTripsProvider);
+
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Row(
         children: [
           IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: onBack,
+            onPressed: () => Navigator.pop(context),
             color: Colors.grey[700],
           ),
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: Colors.grey[300],
-            child: Icon(Icons.person, color: Colors.grey[700]),
+          const SizedBox(width: 8),
+          userAsync.when(
+            data: (user) => GestureDetector(
+              onTap: () {
+                // Navigate to profile if needed
+              },
+              child: CircleAvatar(
+                radius: 24,
+                backgroundColor: Colors.white,
+                backgroundImage: user.photoURL != null
+                    ? NetworkImage(user.photoURL!)
+                    : null,
+                child: user.photoURL == null
+                    ? const Icon(Icons.person, color: Colors.grey)
+                    : null,
+              ),
+            ),
+            loading: () => const CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.grey,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            error: (_, __) => const CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.grey,
+              child: Icon(Icons.person, color: Colors.white),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Location',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                Row(
-                  children: [
-                    Icon(Icons.location_on, size: 16, color: Colors.blue[400]),
-                    const SizedBox(width: 4),
-                    const Text(
-                      'Jakarta, ID',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                userAsync.when(
+                  data: (user) {
+                    final displayText =
+                        (user.displayName != null && user.displayName!.isNotEmpty)
+                            ? user.displayName!
+                            : (user.email.isNotEmpty
+                                  ? user.email.split('@').first
+                                  : 'Traveler');
+                    return Text(
+                      'Hello, $displayText',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
                       ),
+                      overflow: TextOverflow.ellipsis,
+                    );
+                  },
+                  loading: () => Container(
+                    width: 140,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(999),
                     ),
-                  ],
+                  ),
+                  error: (_, __) => const Text(
+                    'Hello, Traveler',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                latestFlightAsync.when(
+                  data: (flight) {
+                    if (flight != null && flight.departureDate != null) {
+                      final dateFormat = DateFormat('dd MMM yyyy');
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.flight_takeoff,
+                            size: 16,
+                            color: Colors.blue,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              '${flight.origin} → ${flight.destination} • ${dateFormat.format(flight.departureDate!)}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          size: 16,
+                          color: Colors.blue,
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: locationAsync.when(
+                            data: (text) => Text(
+                              text,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            loading: () => const Text(
+                              'Mengambil lokasi...',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            error: (_, __) => const Text(
+                              'Lokasi tidak tersedia',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                  loading: () => Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: Colors.blue,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: locationAsync.when(
+                          data: (text) => Text(
+                            text,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          loading: () => const Text(
+                            'Mengambil lokasi...',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          error: (_, __) => const Text(
+                            'Lokasi tidak tersedia',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  error: (_, __) => Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: Colors.blue,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: locationAsync.when(
+                          data: (text) => Text(
+                            text,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          loading: () => const Text(
+                            'Mengambil lokasi...',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          error: (_, __) => const Text(
+                            'Lokasi tidak tersedia',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-          IconButton(
-            icon: Icon(Icons.notifications_outlined, color: Colors.grey[700]),
-            onPressed: () {},
+          const SizedBox(width: 12),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.notifications_none),
+                  color: Colors.black87,
+                  onPressed: () {
+                    // Navigate to notifications if needed
+                  },
+                ),
+              ),
+              unreadAsync.when(
+                data: (items) => items.isEmpty
+                    ? const SizedBox.shrink()
+                    : Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+            ],
           ),
         ],
       ),
@@ -220,72 +468,6 @@ class _FlightCard extends StatelessWidget {
   }
 }
 
-class _BottomNav extends StatelessWidget {
-  const _BottomNav();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            spreadRadius: 1,
-            blurRadius: 5,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: const [
-              _NavItem(icon: Icons.home, label: 'Home', active: true),
-              _NavItem(icon: Icons.favorite_border, label: 'Favorite'),
-              _NavItem(icon: Icons.add_circle_outline, label: 'Planning'),
-              _NavItem(icon: Icons.auto_awesome_outlined, label: 'AI Chat'),
-              _NavItem(icon: Icons.settings_outlined, label: 'Settings'),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  const _NavItem({required this.icon, required this.label, this.active = false});
-
-  final IconData icon;
-  final String label;
-  final bool active;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          color: active ? Colors.blue[700] : Colors.grey[600],
-          size: 24,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: active ? Colors.blue[700] : Colors.grey[600],
-            fontWeight: active ? FontWeight.w600 : FontWeight.normal,
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 const Map<String, String> _airportLabels = {
   'CGK': 'Jakarta',

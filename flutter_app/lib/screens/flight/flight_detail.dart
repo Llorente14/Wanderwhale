@@ -7,13 +7,16 @@ class FlightBookingDetailsPage extends StatefulWidget {
     super.key,
     required this.flight,
     required this.passengers,
+    this.cityNameMap,
   });
 
   final SimpleFlightModel flight;
   final int passengers;
+  final Map<String, String>? cityNameMap;
 
   @override
-  State<FlightBookingDetailsPage> createState() => _FlightBookingDetailsPageState();
+  State<FlightBookingDetailsPage> createState() =>
+      _FlightBookingDetailsPageState();
 }
 
 class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
@@ -27,7 +30,18 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
 
   // Occupied seats (dummy data)
   final Set<String> occupiedSeats = {
-    '1A', '1B', '2C', '3D', '5E', '5F', '7A', '8B', '10C', '12D', '15E', '20F'
+    '1A',
+    '1B',
+    '2C',
+    '3D',
+    '5E',
+    '5F',
+    '7A',
+    '8B',
+    '10C',
+    '12D',
+    '15E',
+    '20F',
   };
 
   final DateFormat _routeDateFormat = DateFormat('EEE, dd MMM yyyy');
@@ -107,21 +121,12 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            const Color.fromARGB(255, 54, 19, 169),
-            Colors.blue[100]!,
-          ],
+          colors: [const Color.fromARGB(255, 54, 19, 169), Colors.blue[100]!],
         ),
       ),
       child: Stack(
         children: [
-          Center(
-            child: Icon(
-              Icons.flight,
-              size: 80,
-              color: Colors.grey[600],
-            ),
-          ),
+          Center(child: Icon(Icons.flight, size: 80, color: Colors.grey[600])),
           // Decorative elements
           Positioned(
             top: 20,
@@ -148,55 +153,93 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
   }
 
   Widget _buildFlightRouteInfo() {
-    final originLabel = _airportLabels[widget.flight.origin] ?? widget.flight.origin;
-    final destinationLabel =
-        _airportLabels[widget.flight.destination] ?? widget.flight.destination;
+    // Get city name from map or use fallback
+    final originCityName =
+        widget.cityNameMap?[widget.flight.origin] ??
+        _airportLabels[widget.flight.origin] ??
+        widget.flight.origin;
+    final destCityName =
+        widget.cityNameMap?[widget.flight.destination] ??
+        _airportLabels[widget.flight.destination] ??
+        widget.flight.destination;
     final departureDate = _routeDateFormat.format(widget.flight.departureTime);
-    
+
+    // Get airline name dynamically
+    final airlineName = _getAirlineName(widget.flight.airline);
+
+    // Debug print
+    print('🔍 Flight Detail Debug:');
+    print('   Origin: ${widget.flight.origin} -> $originCityName');
+    print('   Destination: ${widget.flight.destination} -> $destCityName');
+    print('   City name map: ${widget.cityNameMap}');
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
         children: [
           const SizedBox(height: 16),
           Text(
-            '$originLabel - $destinationLabel',
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+            '$originCityName (${widget.flight.origin}) - $destCityName (${widget.flight.destination})',
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
-            '${widget.flight.airline} • ${widget.flight.flightNumber} • ${widget.flight.aircraft}',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
+            '$airlineName • ${widget.flight.flightNumber} • ${widget.flight.aircraft}',
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
           ),
           const SizedBox(height: 4),
           Text(
             departureDate,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
           ),
         ],
       ),
     );
   }
 
+  String _getAirlineName(String code) {
+    const airlineNames = {
+      'GA': 'Garuda Indonesia',
+      'JT': 'Lion Air',
+      'SJ': 'Sriwijaya Air',
+      'ID': 'Batik Air',
+      'QG': 'Citilink',
+      'QZ': 'AirAsia',
+      'SQ': 'Singapore Airlines',
+      'MH': 'Malaysia Airlines',
+      'TG': 'Thai Airways',
+      'JL': 'Japan Airlines',
+      'KE': 'Korean Air',
+      'CX': 'Cathay Pacific',
+      'QF': 'Qantas',
+      'EK': 'Emirates',
+      'QR': 'Qatar Airways',
+      'LH': 'Lufthansa',
+      'BA': 'British Airways',
+      'AF': 'Air France',
+      'KL': 'KLM',
+      'DL': 'Delta Air Lines',
+      'AA': 'American Airlines',
+      'UA': 'United Airlines',
+    };
+    return airlineNames[code] ?? code;
+  }
+
   Widget _buildFlightDetailsCard() {
-    final departureCode = '${_cityLabel(widget.flight.origin)} (${widget.flight.origin})';
-    final arrivalCode = '${_cityLabel(widget.flight.destination)} (${widget.flight.destination})';
-    
+    final departureCode =
+        '${_cityLabel(widget.flight.origin)} (${widget.flight.origin})';
+    final arrivalCode =
+        '${_cityLabel(widget.flight.destination)} (${widget.flight.destination})';
+
     // Mock terminal info as it's not in SimpleFlightModel
     const departureTerminal = 'Terminal 1';
     const arrivalTerminal = 'Terminal 2';
-    
-    final departureAirport = _airportFullNames[widget.flight.origin] ?? 'Departure Airport';
-    final arrivalAirport = _airportFullNames[widget.flight.destination] ?? 'Arrival Airport';
-    
+
+    final departureAirport =
+        _airportFullNames[widget.flight.origin] ?? 'Departure Airport';
+    final arrivalAirport =
+        _airportFullNames[widget.flight.destination] ?? 'Arrival Airport';
+
     final departureTime = _formatTime(widget.flight.departureTime);
     final arrivalTime = _formatTime(widget.flight.arrivalTime);
 
@@ -244,7 +287,7 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
             ],
           ),
           const SizedBox(height: 8),
-           Row(
+          Row(
             children: [
               Icon(Icons.airplane_ticket, size: 16, color: Colors.grey[700]),
               const SizedBox(width: 8),
@@ -282,19 +325,10 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
       children: [
         Text(
           code,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 4),
-        Text(
-          terminal,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey[700],
-          ),
-        ),
+        Text(terminal, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
         const SizedBox(height: 4),
         Row(
           children: [
@@ -303,10 +337,7 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
             Expanded(
               child: Text(
                 airport,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
             ),
           ],
@@ -335,17 +366,16 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
             children: [
               const Text(
                 'Select Your Seats',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               Text(
                 '${selectedSeats.length}/${widget.passengers} Selected',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: selectedSeats.length == widget.passengers ? Colors.green : Colors.grey[600],
+                  color: selectedSeats.length == widget.passengers
+                      ? Colors.green
+                      : Colors.grey[600],
                 ),
               ),
             ],
@@ -443,19 +473,21 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
           Row(
             children: [
               const SizedBox(width: 30), // Row number space
-              ...seatLabels.map((label) => SizedBox(
-                    width: 35,
-                    child: Center(
-                      child: Text(
-                        label,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
+              ...seatLabels.map(
+                (label) => SizedBox(
+                  width: 35,
+                  child: Center(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[700],
                       ),
                     ),
-                  )),
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -472,10 +504,7 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
                     child: Text(
                       rowNumber.toString(),
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
                   ),
                   // Seats
@@ -498,11 +527,16 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
                                 if (isSelected) {
                                   selectedSeats.remove(seatId);
                                 } else {
-                                  if (selectedSeats.length < widget.passengers) {
+                                  if (selectedSeats.length <
+                                      widget.passengers) {
                                     selectedSeats.add(seatId);
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('You can only select ${widget.passengers} seats')),
+                                      SnackBar(
+                                        content: Text(
+                                          'You can only select ${widget.passengers} seats',
+                                        ),
+                                      ),
                                     );
                                   }
                                 }
@@ -516,8 +550,8 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
                           color: isOccupied
                               ? Colors.red[300]
                               : isSelected
-                                  ? Colors.blue[400]
-                                  : Colors.grey[300],
+                              ? Colors.blue[400]
+                              : Colors.grey[300],
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
                             color: isSelected
@@ -534,12 +568,12 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
                                   color: Colors.white,
                                 )
                               : isSelected
-                                  ? const Icon(
-                                      Icons.check,
-                                      size: 16,
-                                      color: Colors.white,
-                                    )
-                                  : null,
+                              ? const Icon(
+                                  Icons.check,
+                                  size: 16,
+                                  color: Colors.white,
+                                )
+                              : null,
                         ),
                       ),
                     );
@@ -577,13 +611,7 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
           ),
         ),
         const SizedBox(width: 8),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[700],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
       ],
     );
   }
@@ -627,13 +655,10 @@ class _FlightBookingDetailsPageState extends State<FlightBookingDetailsPage> {
               disabledBackgroundColor: Colors.grey[300],
             ),
             child: Text(
-              isReady 
-                ? 'Confirm Booking (\$${totalPrice})' 
-                : 'Select ${widget.passengers - selectedSeats.length} more seat(s)',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              isReady
+                  ? 'Confirm Booking (\$${totalPrice})'
+                  : 'Select ${widget.passengers - selectedSeats.length} more seat(s)',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -662,4 +687,3 @@ const Map<String, String> _airportFullNames = {
   'SIN': 'Changi Airport',
   'DPS': 'Ngurah Rai International Airport',
 };
-

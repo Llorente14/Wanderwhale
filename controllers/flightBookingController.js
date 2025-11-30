@@ -167,6 +167,33 @@ exports.storeFlightBooking = async (req, res) => {
     const lastSegment = segments[segments.length - 1] || {};
     const price = flightOffer.price || {};
 
+    // Debug: Log extracted flight details
+    console.log("🔍 Extracting flight details from offer:");
+    console.log("   Flight Offer ID:", flightOffer.id);
+    console.log("   Number of itineraries:", flightOffer.itineraries?.length || 0);
+    console.log("   Number of segments:", segments.length);
+    if (firstSegment.departure) {
+      console.log("   First segment departure:", {
+        iataCode: firstSegment.departure.iataCode,
+        cityCode: firstSegment.departure.cityCode,
+        at: firstSegment.departure.at,
+      });
+    }
+    if (lastSegment.arrival) {
+      console.log("   Last segment arrival:", {
+        iataCode: lastSegment.arrival.iataCode,
+        cityCode: lastSegment.arrival.cityCode,
+        at: lastSegment.arrival.at,
+      });
+    }
+
+    // Extract origin and destination
+    const originCode = firstSegment.departure?.iataCode || null;
+    const destinationCode = lastSegment.arrival?.iataCode || null;
+
+    console.log("   Extracted origin:", originCode);
+    console.log("   Extracted destination:", destinationCode);
+
     // 8. Prepare booking data untuk Firestore
     const bookingData = {
       // User & Trip Info
@@ -184,8 +211,8 @@ exports.storeFlightBooking = async (req, res) => {
       flightOffer: flightOffer, // Entire offer object
 
       // Flight Route Info
-      origin: firstSegment.departure?.iataCode || null,
-      destination: lastSegment.arrival?.iataCode || null,
+      origin: originCode,
+      destination: destinationCode,
       originCity: firstSegment.departure?.cityCode || null,
       destinationCity: lastSegment.arrival?.cityCode || null,
 

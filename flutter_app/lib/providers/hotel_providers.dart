@@ -155,35 +155,105 @@ List<HotelOfferGroup> _getDemoHotelOffers() {
 }
 
 // Provider to search hotels by city code (Chained: City -> Hotel IDs -> Offers)
-final hotelSearchByCityProvider = FutureProvider.family<List<HotelOfferGroup>, String>((ref, cityCode) async {
+// This provider accepts optional check-in, check-out, and adults parameters
+@immutable
+class HotelSearchByCityParams {
+  const HotelSearchByCityParams({
+    required this.cityCode,
+    this.checkIn,
+    this.checkOut,
+    this.adults,
+  });
+
+  final String cityCode;
+  final DateTime? checkIn;
+  final DateTime? checkOut;
+  final int? adults;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is HotelSearchByCityParams &&
+        other.cityCode == cityCode &&
+        other.checkIn == checkIn &&
+        other.checkOut == checkOut &&
+        other.adults == adults;
+  }
+
+  @override
+  int get hashCode => Object.hash(cityCode, checkIn, checkOut, adults);
+}
+
+final hotelSearchByCityProvider = FutureProvider.family<List<HotelOfferGroup>, HotelSearchByCityParams>((ref, params) async {
   final api = ref.watch(apiServiceProvider);
   
   try {
-    // 1. Get hotels in city
-    final hotels = await api.searchHotelsByCity(cityCode: cityCode);
-    if (hotels.isEmpty) return [];
+    // 1. Get hotels in city using /api/hotels/search/by-city
+    // This calls GET /api/hotels/search/by-city?cityCode=XXX
+    final hotels = await api.searchHotelsByCity(cityCode: params.cityCode);
+    if (hotels.isEmpty) {
+      print('⚠️ No hotels found in city ${params.cityCode}');
+      return [];
+    }
     
-    final hotelIds = hotels.map((h) => h['hotelId'] as String).toList();
+    print('🔍 Found ${hotels.length} hotels in city ${params.cityCode}');
     
-    // 2. Get offers for these hotels
+    // Extract hotel IDs from response
+    // Response structure from Amadeus: each hotel has 'hotelId' field
+    final hotelIds = <String>[];
+    for (final hotel in hotels) {
+      if (hotel is Map<String, dynamic>) {
+        // Try different possible field names
+        final hotelId = hotel['hotelId'] as String? ?? 
+                       hotel['id'] as String?;
+        if (hotelId != null && hotelId.isNotEmpty) {
+          hotelIds.add(hotelId);
+        }
+      }
+    }
+    
+    if (hotelIds.isEmpty) {
+      print('⚠️ No valid hotel IDs found in response');
+      print('   Response sample: ${hotels.isNotEmpty ? hotels.first : "empty"}');
+      return [];
+    }
+    
     // Limit to 20 hotels to avoid URL length issues or API limits
     final limitedIds = hotelIds.take(20).toList();
     
-    if (limitedIds.isEmpty) return [];
-
-    // Default dates: +7 days from now, 3 nights stay
-    final checkIn = DateTime.now().add(const Duration(days: 7));
-    final checkOut = checkIn.add(const Duration(days: 3));
+    print('🔍 Extracted ${limitedIds.length} hotel IDs: ${limitedIds.take(3).join(", ")}${limitedIds.length > 3 ? "..." : ""}');
     
-    return api.getHotelOffers(
+    // 2. Determine check-in, check-out, and adults
+    // Use provided values or defaults
+    final checkIn = params.checkIn ?? DateTime.now().add(const Duration(days: 7));
+    final checkOut = params.checkOut ?? checkIn.add(const Duration(days: 3));
+    final adults = params.adults ?? 1;
+    
+    // Format dates as YYYY-MM-DD
+    final checkInDate = checkIn.toIso8601String().split('T')[0];
+    final checkOutDate = checkOut.toIso8601String().split('T')[0];
+    
+    print('🔍 Searching hotel offers:');
+    print('   City: ${params.cityCode}');
+    print('   Check-in: $checkInDate, Check-out: $checkOutDate');
+    print('   Adults: $adults');
+    print('   Hotel IDs: ${limitedIds.length}');
+    
+    // 3. Get offers using /api/hotels/offers
+    // This calls GET /api/hotels/offers?hotelIds=XXX,YYY&checkInDate=...&checkOutDate=...&adults=...
+    final offers = await api.getHotelOffers(
       hotelIds: limitedIds,
-      checkInDate: checkIn.toIso8601String().split('T')[0],
-      checkOutDate: checkOut.toIso8601String().split('T')[0],
-      adults: 1, // Default 1 adult
+      checkInDate: checkInDate,
+      checkOutDate: checkOutDate,
+      adults: adults,
     );
+    
+    print('✅ Found ${offers.length} hotel offer groups with available rooms');
+    return offers;
   } catch (e) {
-    print('Hotel search error: $e');
-    // Fallback to demo data if API fails or returns nothing useful
-    return _getDemoHotelOffers();
+    print('❌ Hotel search error: $e');
+    print('   Stack trace: ${StackTrace.current}');
+    // Return empty list instead of demo data for better error handling
+    rethrow;
   }
 });

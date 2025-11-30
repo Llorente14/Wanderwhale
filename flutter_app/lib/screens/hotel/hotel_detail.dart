@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_app/models/hotel_booking_model.dart';
 import 'package:flutter_app/models/hotel_offer_model.dart';
 import 'package:flutter_app/utils/formatters.dart';
+import 'package:flutter_app/widgets/common/custom_bottom_nav.dart';
+import 'package:flutter_app/screens/main/main_navigation_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_app/providers/providers.dart';
 
-class HotelDetail extends StatelessWidget {
+class HotelDetail extends ConsumerWidget {
   const HotelDetail({
     super.key,
     required this.hotelGroup,
@@ -16,7 +20,7 @@ class HotelDetail extends StatelessWidget {
   final String imageUrl;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final booking = _createBookingSummary();
     final taxes = _calculateTaxes();
     final total = booking.totalPrice;
@@ -89,6 +93,25 @@ class HotelDetail extends StatelessWidget {
           ],
         ),
       ),
+      bottomNavigationBar: _buildBottomNav(context, ref),
+    );
+  }
+
+  Widget _buildBottomNav(BuildContext context, WidgetRef ref) {
+    return CustomBottomNav(
+      onIndexChanged: (index) {
+        // Navigate to MainNavigationScreen with the selected index
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) {
+              // Set the index before navigating
+              ref.read(bottomNavIndexProvider.notifier).state = index;
+              return const MainNavigationScreen();
+            },
+          ),
+          (route) => false, // Remove all previous routes
+        );
+      },
     );
   }
 
