@@ -138,6 +138,7 @@ class _FlightOverview extends StatelessWidget {
   Widget build(BuildContext context) {
     final firstSegment = offer.itineraries.first.segments.first;
     final lastSegment = offer.itineraries.last.segments.last;
+    final outboundDestination = offer.itineraries.first.segments.last;
     final departureDate =
         firstSegment.departure.at != null ? dateFormat.format(firstSegment.departure.at!) : '-';
     final departureTime =
@@ -155,7 +156,7 @@ class _FlightOverview extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${firstSegment.departure.iataCode} → ${lastSegment.arrival.iataCode}',
+            '${firstSegment.departure.iataCode} → ${outboundDestination.arrival.iataCode}',
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
