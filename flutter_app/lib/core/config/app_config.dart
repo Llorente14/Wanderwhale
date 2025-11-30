@@ -5,7 +5,7 @@ class AppConfig {
   /// Gunakan --dart-define=API_BASE_URL=https://example.com jika perlu override.
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:5000',
+    defaultValue: 'https://wanderwhale-production.up.railway.app/',
   );
 
   /// Endpoint user profile relatif terhadap [apiBaseUrl].
@@ -14,12 +14,3 @@ class AppConfig {
   /// Timeout default untuk request network.
   static const Duration networkTimeout = Duration(seconds: 20);
 }
-
-
-
-
-
-
-
-
-
