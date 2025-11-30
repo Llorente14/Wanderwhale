@@ -4,9 +4,9 @@ import 'package:flutter/foundation.dart';
 class ApiConstants {
   // Ganti ke "http://localhost:5000/api" jika pakai iOS Simulator
   // 10.0.2.2 adalah alamat IP khusus emulator Android untuk mengakses 'localhost'
- static String get baseUrl {
+  static String get baseUrl {
     if (kIsWeb) {
-      return "http://localhost:5000/api"; 
+      return "http://localhost:5000/api";
     } else if (defaultTargetPlatform == TargetPlatform.android) {
       return "http://10.0.2.2:5000/api";
     } else {
@@ -77,8 +77,7 @@ class ApiConstants {
       "/notifications/$id/read"; // PATCH
   static const String notificationMarkAllRead =
       "/notifications/read-all"; // PATCH
-  static String notificationDelete(String id) =>
-      "/notifications/$id"; // DELETE
+  static String notificationDelete(String id) => "/notifications/$id"; // DELETE
 }
 
 // StorageKeys TIDAK DIPERLUKAN
