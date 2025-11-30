@@ -88,7 +88,10 @@ class TripModel {
   }
 
   // Helpers
-  int get durationInDays => endDate.difference(startDate).inDays;
+  int get durationInDays {
+    final days = endDate.difference(startDate).inDays;
+    return days == 0 ? 1 : days;
+  }
   bool get isUpcoming => startDate.isAfter(DateTime.now());
   bool get isOngoing =>
       DateTime.now().isAfter(startDate) && DateTime.now().isBefore(endDate);

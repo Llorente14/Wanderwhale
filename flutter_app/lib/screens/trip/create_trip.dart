@@ -134,7 +134,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
 
   int get _calculatedDuration {
     if (_startDate != null && _endDate != null) {
-      return _endDate!.difference(_startDate!).inDays;
+      final days = _endDate!.difference(_startDate!).inDays;
+      return days == 0 ? 1 : days;
     }
     return 0;
   }
@@ -256,10 +257,12 @@ class _CreateTripPageState extends State<CreateTripPage> {
       final tripData = {
         "tripName": "Trip to $displayDestinationName",
         "origin": originCity,
-        "destination": destinationCity,
+        "destination": destinationCity, // This might be IATA, which is fine for 'destination'
+        "destinationCity": displayDestinationName, // Save full city name for display
         "startDate": _startDate!.toIso8601String(),
         "endDate": _endDate!.toIso8601String(),
-        "passengers": _travelers,
+        "durationInDays": _calculatedDuration,
+        "travelers": _travelers, // Fixed: changed from 'passengers' to 'travelers'
         "tripType": _tripType,
         "accommodationType": _accommodationType,
         "budget": _budgetController.text.trim().isNotEmpty
