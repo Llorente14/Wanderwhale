@@ -34,6 +34,12 @@ class ApiService {
       ),
     );
 
+    // Debug: print baseUrl used by Dio and enable verbose logging temporarily
+    print('DEBUG: ApiService initialized with baseUrl=${_dio.options.baseUrl}');
+    _dio.interceptors.add(
+      LogInterceptor(requestBody: false, responseBody: false, error: true),
+    );
+
     // Interceptor untuk menambahkan token Firebase Auth
     _dio.interceptors.add(
       InterceptorsWrapper(

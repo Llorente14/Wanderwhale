@@ -6,6 +6,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'screens/main/main_navigation_screen.dart';
 import 'core/theme/app_colors.dart';
 import 'firebase_options.dart';
+import 'package:wanderwhale/core/config/app_config.dart';
+import 'package:wanderwhale/utils/constants.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,6 +15,9 @@ void main() async {
     options: DefaultFirebaseOptions
         .currentPlatform, // if you have firebase_options.dart
   );
+  // Debug: print base URLs to verify which URL app will use on device
+  print('DEBUG: AppConfig.apiBaseUrl = ${AppConfig.apiBaseUrl}');
+  print('DEBUG: ApiConstants.baseUrl = ${ApiConstants.baseUrl}');
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(

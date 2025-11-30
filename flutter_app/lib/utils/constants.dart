@@ -1,17 +1,36 @@
 // lib/core/utils/constants.dart
 import 'package:flutter/foundation.dart';
+import 'package:wanderwhale/core/config/app_config.dart';
 
 class ApiConstants {
   // Ganti ke "http://localhost:5000/api" jika pakai iOS Simulator
   // 10.0.2.2 adalah alamat IP khusus emulator Android untuk mengakses 'localhost'
   static String get baseUrl {
+    // Jika build diset via --dart-define=API_BASE_URL, gunakan itu (compile-time)
+    final env = const String.fromEnvironment('API_BASE_URL', defaultValue: '');
+    if (env.isNotEmpty) {
+      return env.endsWith('/api') ? env : env + '/api';
+    }
+
+    // Untuk web/dev lokal tetap gunakan localhost
     if (kIsWeb) {
       return "http://localhost:5000/api";
-    } else if (defaultTargetPlatform == TargetPlatform.android) {
-      return "http://10.0.2.2:5000/api";
-    } else {
-      return "http://localhost:5000/api"; // Untuk iOS
     }
+
+    // Untuk release builds gunakan AppConfig (production) base URL
+    if (kReleaseMode) {
+      return AppConfig.apiBaseUrl.endsWith('/api')
+          ? AppConfig.apiBaseUrl
+          : AppConfig.apiBaseUrl + '/api';
+    }
+
+    // Untuk pengembangan Android emulator gunakan 10.0.2.2
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return "http://10.0.2.2:5000/api";
+    }
+
+    // Default (mis. iOS simulator)
+    return "http://localhost:5000/api"; // Untuk iOS
   }
 
   // Naikkan durasi jadi 60 detik (1 menit) biar aman
