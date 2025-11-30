@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../providers/booking_providers.dart';
+import '../../utils/formatters.dart';
 
 // Import Widget Reusable
 import '../../widgets/common/section_title.dart';
@@ -8,14 +11,14 @@ import '../../widgets/common/contact_info_tile.dart';
 import '../../widgets/common/payment_option_card.dart';
 import '../../widgets/common/promo_code_field.dart'; // <--- Widget Promo
 
-class CheckoutHotelScreen extends StatefulWidget {
+class CheckoutHotelScreen extends ConsumerStatefulWidget {
   const CheckoutHotelScreen({super.key});
 
   @override
-  State<CheckoutHotelScreen> createState() => _CheckoutHotelScreenState();
+  ConsumerState<CheckoutHotelScreen> createState() => _CheckoutHotelScreenState();
 }
 
-class _CheckoutHotelScreenState extends State<CheckoutHotelScreen> {
+class _CheckoutHotelScreenState extends ConsumerState<CheckoutHotelScreen> {
   int _selectedPaymentIndex = 0;
   final TextEditingController _promoController = TextEditingController();
 
@@ -27,6 +30,19 @@ class _CheckoutHotelScreenState extends State<CheckoutHotelScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bookingState = ref.watch(hotelBookingProvider);
+    final firstGuest = bookingState.guests.isNotEmpty 
+        ? bookingState.guests.first 
+        : null;
+    
+    final fullName = firstGuest != null 
+        ? '${firstGuest.title} ${firstGuest.firstName} ${firstGuest.lastName}'
+        : 'N/A';
+    final email = firstGuest?.email ?? 'N/A';
+    final phone = firstGuest?.phone ?? 'N/A';
+    final totalPrice = bookingState.totalPrice.toIDR();
+    final hotelName = bookingState.hotel?.name ?? 'Hotel';
+
     return Scaffold(
       backgroundColor: AppColors.gray0,
       appBar: AppBar(
@@ -49,7 +65,7 @@ class _CheckoutHotelScreenState extends State<CheckoutHotelScreen> {
       ),
 
       // BOTTOM BAR (Sticky)
-      bottomNavigationBar: _buildBottomBar(),
+      bottomNavigationBar: _buildBottomBar(totalPrice),
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -94,7 +110,7 @@ class _CheckoutHotelScreenState extends State<CheckoutHotelScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "Hotel Borobudur",
+                                hotelName,
                                 style: AppTextStyles.baseM.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -127,7 +143,7 @@ class _CheckoutHotelScreenState extends State<CheckoutHotelScreen> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  "Superior Twin Bed",
+                                  bookingState.offer?.room?.description ?? "Superior Twin Bed",
                                   style: AppTextStyles.caption.copyWith(
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.bold,
@@ -194,21 +210,21 @@ class _CheckoutHotelScreenState extends State<CheckoutHotelScreen> {
               ),
               child: Column(
                 children: [
-                  const ContactInfoTile(
+                  ContactInfoTile(
                     label: "Full Name",
-                    value: "John Doe",
+                    value: fullName,
                     icon: Icons.person_outline,
                   ),
                   const SizedBox(height: 15),
-                  const ContactInfoTile(
+                  ContactInfoTile(
                     label: "Email Address",
-                    value: "john.doe@gmail.com",
+                    value: email,
                     icon: Icons.email_outlined,
                   ),
                   const SizedBox(height: 15),
-                  const ContactInfoTile(
+                  ContactInfoTile(
                     label: "Phone Number",
-                    value: "+62 812 3456 7890",
+                    value: phone,
                     icon: Icons.phone_outlined,
                   ),
                 ],
@@ -318,7 +334,7 @@ class _CheckoutHotelScreenState extends State<CheckoutHotelScreen> {
 
   // --- LOCAL HELPER (Hanya dipakai di screen ini) ---
 
-  Widget _buildBottomBar() {
+  Widget _buildBottomBar(String totalPrice) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
       decoration: BoxDecoration(
@@ -346,7 +362,7 @@ class _CheckoutHotelScreenState extends State<CheckoutHotelScreen> {
                     ),
                   ),
                   Text(
-                    "Rp 1.393.258",
+                    totalPrice,
                     style: AppTextStyles.headingS.copyWith(
                       color: AppColors.primary,
                     ),

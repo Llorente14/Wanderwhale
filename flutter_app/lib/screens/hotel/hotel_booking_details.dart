@@ -7,6 +7,8 @@ import 'package:flutter_app/utils/formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import 'checkout_hotel.dart';
+
 class HotelBookingDetailsScreen extends ConsumerStatefulWidget {
   const HotelBookingDetailsScreen({
     super.key,
@@ -112,9 +114,11 @@ class _HotelBookingDetailsScreenState
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Detail booking hotel tersimpan. Lanjut ke checkout!'),
+    // Navigate to checkout screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const CheckoutHotelScreen(),
       ),
     );
   }

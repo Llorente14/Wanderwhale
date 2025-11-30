@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../providers/booking_providers.dart';
+import '../../utils/formatters.dart';
 
 // Import Widget Reusable (Common)
 import '../../widgets/common/section_title.dart';
@@ -11,19 +15,31 @@ import '../../widgets/common/promo_code_field.dart'; // Widget Promo yang tadi k
 // Import Widget Khusus Flight
 import '../../widgets/flight/flight_ticket_card.dart';
 
-class CheckoutFlightScreen extends StatefulWidget {
+class CheckoutFlightScreen extends ConsumerStatefulWidget {
   const CheckoutFlightScreen({super.key});
 
   @override
-  State<CheckoutFlightScreen> createState() => _CheckoutFlightScreenState();
+  ConsumerState<CheckoutFlightScreen> createState() => _CheckoutFlightScreenState();
 }
 
-class _CheckoutFlightScreenState extends State<CheckoutFlightScreen> {
+class _CheckoutFlightScreenState extends ConsumerState<CheckoutFlightScreen> {
   int _selectedPaymentIndex = 0;
   final TextEditingController _promoController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
+    final bookingState = ref.watch(flightBookingProvider);
+    final firstPassenger = bookingState.passengers.isNotEmpty 
+        ? bookingState.passengers.first 
+        : null;
+    
+    final fullName = firstPassenger != null 
+        ? '${firstPassenger.firstName} ${firstPassenger.lastName}'
+        : 'N/A';
+    final email = firstPassenger?.email ?? 'N/A';
+    final phone = firstPassenger?.phone ?? 'N/A';
+    final totalPrice = bookingState.totalPrice.toIDR();
+
     return Scaffold(
       backgroundColor: AppColors.gray0,
       appBar: AppBar(
@@ -45,7 +61,7 @@ class _CheckoutFlightScreenState extends State<CheckoutFlightScreen> {
         ),
       ),
 
-      bottomNavigationBar: _buildBottomBar(),
+      bottomNavigationBar: _buildBottomBar(totalPrice),
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -68,23 +84,31 @@ class _CheckoutFlightScreenState extends State<CheckoutFlightScreen> {
               ),
               child: Column(
                 children: [
-                  const ContactInfoTile(
+                  ContactInfoTile(
                     label: "Full Name",
-                    value: "Brooklyn Jannete",
+                    value: fullName,
                     icon: Icons.person_outline,
                   ),
                   const SizedBox(height: 15),
-                  const ContactInfoTile(
+                  ContactInfoTile(
                     label: "Email Address",
-                    value: "brooklyn@gmail.com",
+                    value: email,
                     icon: Icons.email_outlined,
                   ),
                   const SizedBox(height: 15),
-                  const ContactInfoTile(
+                  ContactInfoTile(
                     label: "Phone Number",
-                    value: "+62 812 3456 7890",
+                    value: phone,
                     icon: Icons.phone_outlined,
                   ),
+                  if (firstPassenger?.dateOfBirth != null) ...[
+                    const SizedBox(height: 15),
+                    ContactInfoTile(
+                      label: "Date of Birth",
+                      value: DateFormat('dd MMM yyyy').format(firstPassenger!.dateOfBirth!),
+                      icon: Icons.cake_outlined,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -133,7 +157,7 @@ class _CheckoutFlightScreenState extends State<CheckoutFlightScreen> {
     );
   }
 
-  Widget _buildBottomBar() {
+  Widget _buildBottomBar(String totalPrice) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
       decoration: BoxDecoration(
@@ -161,7 +185,7 @@ class _CheckoutFlightScreenState extends State<CheckoutFlightScreen> {
                     ),
                   ),
                   Text(
-                    "Rp 2.450.000",
+                    totalPrice,
                     style: AppTextStyles.headingS.copyWith(
                       color: AppColors.primary,
                     ),
